@@ -193,7 +193,11 @@ jobs:
         id: download
         run: |
           mkdir -p artifacts
-          FILENAME="EcoPick-ios-${{ needs.resolve-profile.outputs.profile }}.ipa"
+          if [[ "${{ needs.resolve-profile.outputs.profile }}" == "preview" ]]; then
+            FILENAME="EcoPick-ios-${{ needs.resolve-profile.outputs.profile }}.tar.gz"
+          else
+            FILENAME="EcoPick-ios-${{ needs.resolve-profile.outputs.profile }}.ipa"
+          fi
           BUILD_URL=$(eas build:list --platform ios --status finished --limit 1 --json --non-interactive | npx -y json -a artifacts.buildUrl | head -1)
           if [ -n "$BUILD_URL" ]; then
             curl -L -o "artifacts/${FILENAME}" "$BUILD_URL"
