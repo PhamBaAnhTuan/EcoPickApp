@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, FontSizes, LineHeights, BorderRadius, Spacing } from '../constants';
 import { WasteReport } from '../data/mockData';
 import { getSeverityIcon } from '../utils/severity';
+import { useTranslation } from 'react-i18next';
 
 interface ReportCardProps {
   report: WasteReport;
@@ -14,6 +15,7 @@ interface ReportCardProps {
 export function ReportCard({ report, onNavigate, onView }: ReportCardProps) {
   const icon = getSeverityIcon(report.severity);
   const isPrimary = report.severity === 'heavy' || report.severity === 'extreme';
+  const { t } = useTranslation();
 
   return (
     <View style={styles.card}>
@@ -34,9 +36,15 @@ export function ReportCard({ report, onNavigate, onView }: ReportCardProps) {
       </View>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{report.title}</Text>
-        <Text style={styles.description}>
-          {report.description} • {report.distance}
-        </Text>
+        <View style={styles.descriptionRow}>
+          <Text style={styles.description} numberOfLines={1}>
+            {report.description}
+          </Text>
+          <View style={styles.distanceBadge}>
+            <Ionicons name="bicycle-outline" size={12} color={Colors.textSecondary} />
+            <Text style={styles.distanceText}>{report.distance}</Text>
+          </View>
+        </View>
       </View>
       <TouchableOpacity
         style={[styles.actionButton, isPrimary ? styles.actionButtonPrimary : styles.actionButtonSecondary]}
@@ -44,7 +52,7 @@ export function ReportCard({ report, onNavigate, onView }: ReportCardProps) {
         activeOpacity={0.7}
       >
         <Text style={[styles.actionText, isPrimary ? styles.actionTextPrimary : styles.actionTextSecondary]}>
-          {isPrimary ? 'Navigate' : 'View'}
+          {isPrimary ? t('reportCard.navigate') : t('reportCard.view')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -78,10 +86,24 @@ const styles = StyleSheet.create({
     lineHeight: LineHeights.md,
     color: Colors.textPrimary,
   },
+  descriptionRow: {
+    marginTop: 2,
+  },
   description: {
     fontFamily: Fonts.regular,
     fontSize: FontSizes.sm,
     lineHeight: LineHeights.sm,
+    color: Colors.textSecondary,
+  },
+  distanceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 4,
+  },
+  distanceText: {
+    fontFamily: Fonts.medium,
+    fontSize: 11,
     color: Colors.textSecondary,
   },
   actionButton: {

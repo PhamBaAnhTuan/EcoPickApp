@@ -1,11 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, Fonts } from '../../constants';
+import { useTranslation } from 'react-i18next';
 
 export default function BadgesScreen() {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Badges</Text>
+      <Text style={styles.title}>{t('badges.title')}</Text>
     </View>
   );
 }

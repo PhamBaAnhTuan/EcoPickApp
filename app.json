@@ -7,15 +7,19 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#C3D9CA"
     },
     "scheme": "ecopick",
     "ios": {
       "supportsTablet": true,
       "config": {
         "googleMapsApiKey": ""
+      },
+      "bundleIdentifier": "com.luanthnh.EcoPick",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -30,7 +34,12 @@
         "googleMaps": {
           "apiKey": ""
         }
-      }
+      },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -58,7 +67,14 @@
           "cameraPermission": "Allow EcoPick to access your camera to take photos of waste.",
           "photosPermission": "Allow EcoPick to access your photos to attach waste images."
         }
-      ]
-    ]
+      ],
+      "expo-localization"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2f0bcb84-4144-41a0-85bb-cea6302e9c80"
+      }
+    }
   }
 }

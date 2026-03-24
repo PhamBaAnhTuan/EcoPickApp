@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { BorderRadius, Colors, Fonts, FontSizes, LineHeights, Spacing } from '../constants';
 import { WasteReport } from '../data/mockData';
 import { ReportCard } from './ReportCard';
+import { useTranslation } from 'react-i18next';
 
 interface BottomSheetProps {
   reports: WasteReport[];
@@ -14,6 +15,7 @@ interface BottomSheetProps {
 
 export function ReportsBottomSheet({ reports, totalCount, onNavigateReport, onViewReport }: BottomSheetProps) {
   const sheetRef = useRef<BottomSheetLib>(null);
+  const { t } = useTranslation();
 
   // Snap points: Peek (25%), Half (50%), Max (92% — covers search bar)
   const snapPoints = useMemo(() => ['25%', '50%', '92%'], []);
@@ -39,10 +41,10 @@ export function ReportsBottomSheet({ reports, totalCount, onNavigateReport, onVi
       handleIndicatorStyle={styles.handle}
     >
       <BottomSheetView style={styles.headerRow}>
-        <Text style={styles.title}>Nearby Reports</Text>
+        <Text style={styles.title}>{t('bottomSheet.nearbyReports')}</Text>
         <View style={styles.headerRight}>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{totalCount} Found</Text>
+            <Text style={styles.badgeText}>{t('bottomSheet.found', { count: totalCount })}</Text>
           </View>
         </View>
       </BottomSheetView>
@@ -57,7 +59,7 @@ export function ReportsBottomSheet({ reports, totalCount, onNavigateReport, onVi
         />
       ) : (
         <BottomSheetView style={{ alignItems: 'center', justifyContent: 'center', flex: 1, padding: 32 }}>
-          <Text style={{ color: Colors.textSecondary, fontSize: 16 }}>No locations found.</Text>
+          <Text style={{ color: Colors.textSecondary, fontSize: 16 }}>{t('bottomSheet.noLocations')}</Text>
         </BottomSheetView>
       )}
     </BottomSheetLib>

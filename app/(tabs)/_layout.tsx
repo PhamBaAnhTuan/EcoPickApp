@@ -4,23 +4,25 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, Platform, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Fonts, FontSizes } from '../../constants';
+import { useTranslation } from 'react-i18next';
 
 export default function TabLayout() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleReportPress = async (e: any) => {
     e.preventDefault(); // Prevent default navigation to the report tab
 
     // Request camera permissions
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    
+
     if (status !== 'granted') {
       Alert.alert(
-        'Permission Required',
-        'Camera permission is needed to report an issue. Please enable it in your device settings.',
+        t('permissions.title'),
+        t('permissions.cameraMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Go without photo', onPress: () => router.push('/report') }
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('permissions.goWithoutPhoto'), onPress: () => router.push('/report') }
         ]
       );
       return;
@@ -43,7 +45,7 @@ export default function TabLayout() {
       }
     } catch (error) {
       console.error('Error opening camera:', error);
-      Alert.alert('Error', 'Could not open the camera');
+      Alert.alert(t('common.error'), t('permissions.cameraError'));
     }
   };
   return (
@@ -59,38 +61,39 @@ export default function TabLayout() {
       <Tabs.Screen
         name="map"
         options={{
-          title: 'Explore',
+          title: t('tabs.explore'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'compass' : 'compass-outline'} size={24} color={color} />
           ),
           tabBarLabel: ({ focused, color }) => (
-            <Text style={[styles.tabBarLabel, { color }]}>Explore</Text>
+            <Text style={[styles.tabBarLabel, { color }]}>{t('tabs.explore')}</Text>
           ),
         }}
       />
       <Tabs.Screen
         name="events"
         options={{
-          title: 'Events',
+          title: t('tabs.events'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
           ),
           tabBarLabel: ({ focused, color }) => (
-            <Text style={[styles.tabBarLabel, { color }]}>Events</Text>
+            <Text style={[styles.tabBarLabel, { color }]}>{t('tabs.events')}</Text>
           ),
         }}
       />
       <Tabs.Screen
         name="report"
         options={{
-          title: 'Report',
+          title: t('tabs.report'),
+          tabBarStyle: { display: 'none' },
           tabBarIcon: ({ focused }) => (
             <View style={styles.floatingReportBtn}>
               <Ionicons name="camera-outline" size={30} color={Colors.white} />
             </View>
           ),
           tabBarLabel: ({ color }) => (
-            <Text style={[styles.tabBarLabel, { color, marginTop: 12 }]}>Report</Text>
+            <Text style={[styles.tabBarLabel, { color, marginTop: 12 }]}>{t('tabs.report')}</Text>
           ),
         }}
         listeners={{
@@ -100,24 +103,24 @@ export default function TabLayout() {
       <Tabs.Screen
         name="badges"
         options={{
-          title: 'Badges',
+          title: t('tabs.badges'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={24} color={color} />
           ),
           tabBarLabel: ({ focused, color }) => (
-            <Text style={[styles.tabBarLabel, { color }]}>Badges</Text>
+            <Text style={[styles.tabBarLabel, { color }]}>{t('tabs.badges')}</Text>
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
           ),
           tabBarLabel: ({ focused, color }) => (
-            <Text style={[styles.tabBarLabel, { color }]}>Profile</Text>
+            <Text style={[styles.tabBarLabel, { color }]}>{t('tabs.profile')}</Text>
           ),
         }}
       />

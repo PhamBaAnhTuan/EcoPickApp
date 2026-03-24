@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, SafeAreaView, TextInput, Platform, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { Colors, Fonts, FontSizes, Spacing, BorderRadius } from '../../constants';
 import { MOCK_REPORTS, SeverityLevel } from '../../data/mockData';
 import { getSeverityTheme } from '../../utils/severity';
+import { formatDistanceInfo } from '../../utils/distance';
+import { useTranslation } from 'react-i18next';
 
 const SEVERITY_LABELS: Record<SeverityLevel, string> = {
   light: 'Light',
@@ -16,10 +19,33 @@ const SEVERITY_LABELS: Record<SeverityLevel, string> = {
 export default function LocationDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const report = MOCK_REPORTS.find(r => r.id === id) || MOCK_REPORTS[0];
   const severityTheme = getSeverityTheme(report.severity);
-  const severityLabel = SEVERITY_LABELS[report.severity];
+  const severityLabel = t(`severity.${report.severity}`);
+
+  // Compute real distance from user location
+  const [distanceText, setDistanceText] = useState(report.distance);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+        const location = await Location.getCurrentPositionAsync({});
+        const info = formatDistanceInfo(
+          location.coords.latitude,
+          location.coords.longitude,
+          report.latitude,
+          report.longitude,
+        );
+        setDistanceText(info);
+      } catch (e) {
+        console.log('Error computing distance:', e);
+      }
+    })();
+  }, [report.latitude, report.longitude]);
 
   const handleNavigate = () => {
     // Navigate to the main Map tab and pass the destination coordinates 
@@ -41,9 +67,9 @@ export default function LocationDetailScreen() {
   if (!report) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Report not found</Text>
+        <Text style={styles.errorText}>{t('location.reportNotFound')}</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>Go Back</Text>
+          <Text style={styles.backBtnText}>{t('common.goBack')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -56,7 +82,7 @@ export default function LocationDetailScreen() {
         <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Location Details</Text>
+        <Text style={styles.headerTitle}>{t('location.detailsTitle')}</Text>
         <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}>
           <Ionicons name="share-social-outline" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
@@ -89,11 +115,11 @@ export default function LocationDetailScreen() {
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
               <Ionicons name="navigate-outline" size={16} color={Colors.textSecondary} />
-              <Text style={styles.metaText}>{report.distance}</Text>
+              <Text style={styles.metaText}>{distanceText}</Text>
             </View>
             <View style={styles.metaItem}>
               <Ionicons name="time-outline" size={16} color={Colors.textSecondary} />
-              <Text style={styles.metaText}>Reported 2 days ago</Text>
+              <Text style={styles.metaText}>{t('location.reportedAgo')}</Text>
             </View>
           </View>
         </View>
@@ -102,27 +128,27 @@ export default function LocationDetailScreen() {
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.navigateBtn} activeOpacity={0.8} onPress={handleNavigate}>
             <Ionicons name="navigate" size={20} color={Colors.white} />
-            <Text style={styles.navigateText}>Navigate</Text>
+            <Text style={styles.navigateText}>{t('location.navigate')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.eventBtn} activeOpacity={0.8}>
             <Ionicons name="calendar-outline" size={20} color={Colors.white} />
-            <Text style={styles.eventText}>Create Event</Text>
+            <Text style={styles.eventText}>{t('location.createEvent')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Status History */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Status History</Text>
+          <Text style={styles.sectionTitle}>{t('location.statusHistory')}</Text>
           <View style={styles.timeline}>
             <View style={styles.timelineLine} />
-            
+
             <View style={styles.timelineItem}>
               <View style={[styles.timelineIconWrapper, { backgroundColor: Colors.primary }]}>
                 <Ionicons name="checkmark" size={16} color={Colors.white} />
               </View>
               <View style={styles.timelineContent}>
-                <Text style={styles.timelineTitle}>Reported</Text>
-                <Text style={styles.timelineDesc}>Oct 24, 2023 by @naturelover</Text>
+                <Text style={styles.timelineTitle}>{t('location.reported')}</Text>
+                <Text style={styles.timelineDesc}>{t('location.reportedDesc')}</Text>
               </View>
             </View>
 
@@ -131,8 +157,8 @@ export default function LocationDetailScreen() {
                 <Ionicons name="eye-outline" size={16} color={Colors.textSecondary} />
               </View>
               <View style={styles.timelineContent}>
-                <Text style={styles.timelineTitle}>Under Review</Text>
-                <Text style={styles.timelineDesc}>Processing by local authorities</Text>
+                <Text style={styles.timelineTitle}>{t('location.underReview')}</Text>
+                <Text style={styles.timelineDesc}>{t('location.underReviewDesc')}</Text>
               </View>
             </View>
 
@@ -141,8 +167,8 @@ export default function LocationDetailScreen() {
                 <Ionicons name="leaf-outline" size={16} color={Colors.textSecondary} />
               </View>
               <View style={styles.timelineContent}>
-                <Text style={styles.timelineTitle}>Cleaned</Text>
-                <Text style={styles.timelineDesc}>Pending verification</Text>
+                <Text style={styles.timelineTitle}>{t('location.cleaned')}</Text>
+                <Text style={styles.timelineDesc}>{t('location.cleanedDesc')}</Text>
               </View>
             </View>
           </View>
@@ -150,18 +176,18 @@ export default function LocationDetailScreen() {
 
         {/* Description */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.sectionTitle}>{t('location.description')}</Text>
           <Text style={styles.description}>
-            {report.description}. This area is frequented by wildlife and the waste is starting to enter the water stream. Requires at least 4 volunteers for a thorough cleanup.
+            {report.description}. {t('location.descriptionExtra')}
           </Text>
         </View>
 
         {/* Comments */}
         <View style={styles.section}>
           <View style={styles.commentsHeader}>
-            <Text style={styles.sectionTitle}>Comments (3)</Text>
+            <Text style={styles.sectionTitle}>{t('location.comments', { count: 3 })}</Text>
             <TouchableOpacity>
-              <Text style={styles.viewAllText}>View all</Text>
+              <Text style={styles.viewAllText}>{t('common.viewAll')}</Text>
             </TouchableOpacity>
           </View>
           
@@ -184,7 +210,7 @@ export default function LocationDetailScreen() {
             <View style={styles.inputContainer}>
               <TextInput 
                 style={styles.input} 
-                placeholder="Add a comment..."
+                placeholder={t('location.addComment')}
                 placeholderTextColor={Colors.textInactive}
               />
               <TouchableOpacity style={styles.sendBtn}>
