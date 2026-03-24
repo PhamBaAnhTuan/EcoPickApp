@@ -1,4 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Image,
   KeyboardAvoidingView,
@@ -11,15 +16,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import { Fonts, AuthColors, authStyles } from '../../constants';
 import LanguageToggle from '../../components/LanguageToggle';
+import { AuthColors, authStyles, Fonts } from '../../constants';
 
 const INTERESTS = [
   { id: 'beach', icon: 'water-outline' as const, label: 'Beach', labelKey: 'auth.interestBeach' as const },
@@ -43,7 +43,7 @@ export default function CompleteProfileScreen() {
 
   const toggleInterest = (id: string) => {
     setSelectedInterests((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 3 ? [...prev, id] : prev
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 3 ? [...prev, id] : prev,
     );
   };
 
@@ -52,11 +52,7 @@ export default function CompleteProfileScreen() {
     router.replace('/(tabs)');
   };
 
-  const progress = [
-    username.length > 0,
-    location.length > 0,
-    selectedInterests.length >= 1,
-  ].filter(Boolean).length;
+  const progress = [username.length > 0, location.length > 0, selectedInterests.length >= 1].filter(Boolean).length;
   const progressPercent = (progress / 3) * 100;
 
   return (
@@ -70,25 +66,17 @@ export default function CompleteProfileScreen() {
       {/* Header */}
       <View style={[authStyles.headerBar, { paddingTop: insets.top, height: 64 + insets.top }]}>
         <View style={authStyles.headerLeft}>
-          <TouchableOpacity
-            style={authStyles.headerBackBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={authStyles.headerBackBtn} onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={20} color={AuthColors.brandAccent} />
           </TouchableOpacity>
           <Text style={authStyles.headerTitle}>{t('auth.profileSetup')}</Text>
         </View>
         <View style={authStyles.headerRight}>
           <LanguageToggle />
-          <Text style={authStyles.headerBrand}>{t('auth.appName')}</Text>
         </View>
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={[styles.scrollContent, { paddingTop: 64 + insets.top + 24 }]}
@@ -113,7 +101,10 @@ export default function CompleteProfileScreen() {
           </Animated.View>
 
           {/* Profile Card */}
-          <Animated.View entering={FadeInDown.delay(300).duration(500)} style={[authStyles.glassCard, styles.profileCard]}>
+          <Animated.View
+            entering={FadeInDown.delay(300).duration(500)}
+            style={[authStyles.glassCard, styles.profileCard]}
+          >
             {/* Avatar */}
             <View style={styles.avatarSection}>
               <TouchableOpacity style={styles.avatarContainer} activeOpacity={0.7}>
@@ -171,7 +162,10 @@ export default function CompleteProfileScreen() {
           </Animated.View>
 
           {/* Interests */}
-          <Animated.View entering={FadeInDown.delay(400).duration(500)} style={[authStyles.glassCard, styles.interestsCard]}>
+          <Animated.View
+            entering={FadeInDown.delay(400).duration(500)}
+            style={[authStyles.glassCard, styles.interestsCard]}
+          >
             <View style={styles.interestsHeader}>
               <Text style={authStyles.label}>{t('auth.cleanupInterests')}</Text>
               <Text style={styles.pickLabel}>{t('auth.pick3')}</Text>
@@ -186,11 +180,7 @@ export default function CompleteProfileScreen() {
                     onPress={() => toggleInterest(item.id)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons
-                      name={item.icon}
-                      size={20}
-                      color={isSelected ? AuthColors.white : AuthColors.brandDark}
-                    />
+                    <Ionicons name={item.icon} size={20} color={isSelected ? AuthColors.white : AuthColors.brandDark} />
                     <Text style={[styles.interestLabel, isSelected && styles.interestLabelSelected]}>
                       {t(item.labelKey)}
                     </Text>
@@ -201,7 +191,10 @@ export default function CompleteProfileScreen() {
           </Animated.View>
 
           {/* Notification Preferences */}
-          <Animated.View entering={FadeInDown.delay(500).duration(500)} style={[authStyles.glassCard, styles.notifCard]}>
+          <Animated.View
+            entering={FadeInDown.delay(500).duration(500)}
+            style={[authStyles.glassCard, styles.notifCard]}
+          >
             <Text style={[authStyles.label, { marginBottom: 0 }]}>{t('auth.notifications')}</Text>
 
             <View style={styles.toggleRow}>

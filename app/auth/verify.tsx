@@ -1,4 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,15 +14,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import { Fonts, AuthColors, authStyles } from '../../constants';
 import LanguageToggle from '../../components/LanguageToggle';
+import { AuthColors, authStyles, Fonts } from '../../constants';
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
@@ -97,25 +97,17 @@ export default function VerifyScreen() {
       {/* Header */}
       <View style={[authStyles.headerBar, { paddingTop: insets.top, height: 64 + insets.top }]}>
         <View style={authStyles.headerLeft}>
-          <TouchableOpacity
-            style={authStyles.headerBackBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={authStyles.headerBackBtn} onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={20} color={AuthColors.brandAccent} />
           </TouchableOpacity>
           <Text style={authStyles.headerTitle}>{t('auth.verification')}</Text>
         </View>
         <View style={authStyles.headerRight}>
           <LanguageToggle />
-          <Text style={authStyles.headerBrand}>{t('auth.appName')}</Text>
         </View>
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={[styles.scrollContent, { paddingTop: 64 + insets.top + 40 }]}
@@ -148,7 +140,9 @@ export default function VerifyScreen() {
               {otp.map((digit, i) => (
                 <TextInput
                   key={i}
-                  ref={(ref) => { inputRefs.current[i] = ref; }}
+                  ref={(ref) => {
+                    inputRefs.current[i] = ref;
+                  }}
                   style={[
                     styles.otpInput,
                     focusedIndex === i && styles.otpInputFocused,
@@ -179,10 +173,7 @@ export default function VerifyScreen() {
             </View>
 
             {/* Verify Button */}
-            <TouchableOpacity
-              activeOpacity={isComplete ? 0.85 : 1}
-              onPress={isComplete ? handleVerify : undefined}
-            >
+            <TouchableOpacity activeOpacity={isComplete ? 0.85 : 1} onPress={isComplete ? handleVerify : undefined}>
               <LinearGradient
                 colors={isComplete ? ['#144227', '#2D5A3D'] : ['#94A3B8', '#94A3B8']}
                 start={{ x: 0, y: 0 }}
@@ -197,13 +188,8 @@ export default function VerifyScreen() {
 
           {/* Verify Later */}
           <Animated.View entering={FadeIn.delay(500).duration(400)} style={authStyles.footerLink}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => router.push('/auth/complete-profile')}
-            >
-              <Text style={[authStyles.footerLinkBold, { color: AuthColors.brandTeal }]}>
-                {t('auth.verifyLater')}
-              </Text>
+            <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/auth/complete-profile')}>
+              <Text style={[authStyles.footerLinkBold, { color: AuthColors.brandTeal }]}>{t('auth.verifyLater')}</Text>
             </TouchableOpacity>
           </Animated.View>
 

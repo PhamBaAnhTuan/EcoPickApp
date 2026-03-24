@@ -1,4 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Image,
   KeyboardAvoidingView,
@@ -10,15 +15,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import { Fonts, AuthColors, authStyles } from '../../constants';
 import LanguageToggle from '../../components/LanguageToggle';
+import { AuthColors, authStyles, Fonts } from '../../constants';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -46,25 +46,17 @@ export default function LoginScreen() {
       {/* Header */}
       <View style={[authStyles.headerBar, { paddingTop: insets.top, height: 64 + insets.top }]}>
         <View style={authStyles.headerLeft}>
-          <TouchableOpacity
-            style={authStyles.headerBackBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={authStyles.headerBackBtn} onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={20} color={AuthColors.brandAccent} />
           </TouchableOpacity>
           <Text style={authStyles.headerTitle}>{t('auth.logIn')}</Text>
         </View>
         <View style={authStyles.headerRight}>
           <LanguageToggle />
-          <Text style={authStyles.headerBrand}>{t('auth.appName')}</Text>
         </View>
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={[styles.scrollContent, { paddingTop: 64 + insets.top + 40 }]}
@@ -189,7 +181,7 @@ export default function LoginScreen() {
 
           {/* Footer */}
           <Animated.View entering={FadeIn.delay(500).duration(400)} style={[authStyles.footerLink, { marginTop: 32 }]}>
-            <Text style={authStyles.footerLinkText}>{t('auth.noAccount')}{' '}</Text>
+            <Text style={authStyles.footerLinkText}>{t('auth.noAccount')} </Text>
             <TouchableOpacity activeOpacity={0.7} onPress={() => router.back()}>
               <Text style={authStyles.footerLinkBold}>{t('auth.signUp')}</Text>
             </TouchableOpacity>
