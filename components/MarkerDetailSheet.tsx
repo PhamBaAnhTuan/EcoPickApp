@@ -6,6 +6,7 @@ import { Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { BorderRadius, Colors, Fonts, FontSizes, LineHeights, Spacing } from '../constants';
 import { SeverityLevel, WasteReport } from '../data/mockData';
 import { getSeverityIcon, getSeverityTheme } from '../utils/severity';
+import { useTranslation } from 'react-i18next';
 
 export interface MarkerDetailSheetRef {
   show: (report: WasteReport) => void;
@@ -27,6 +28,7 @@ export const MarkerDetailSheet = forwardRef<MarkerDetailSheetRef, MarkerDetailSh
   const sheetRef = useRef<BottomSheetLib>(null);
   const snapPoints = useMemo(() => [320], []);
   const [report, setReport] = React.useState<WasteReport | null>(null);
+  const { t } = useTranslation();
 
   useImperativeHandle(ref, () => ({
     show: (r: WasteReport) => {
@@ -59,7 +61,7 @@ export const MarkerDetailSheet = forwardRef<MarkerDetailSheetRef, MarkerDetailSh
 
   const theme = report ? getSeverityTheme(report.severity) : null;
   const icon = report ? getSeverityIcon(report.severity) : null;
-  const severityLabel = report ? SEVERITY_LABELS[report.severity] : '';
+  const severityLabel = report ? t(`severity.${report.severity}`) : '';
 
   return (
     <BottomSheetLib
@@ -115,11 +117,11 @@ export const MarkerDetailSheet = forwardRef<MarkerDetailSheetRef, MarkerDetailSh
             <View style={styles.actionsRow}>
               <TouchableOpacity style={styles.navigateBtn} onPress={handleNavigate} activeOpacity={0.8}>
                 <Ionicons name="navigate" size={18} color={Colors.white} />
-                <Text style={styles.navigateBtnText}>Navigate</Text>
+                <Text style={styles.navigateBtnText}>{t('markerSheet.navigate')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.shareBtn} onPress={() => sheetRef.current?.close()} activeOpacity={0.8}>
                 <Ionicons name="share-outline" size={18} color={Colors.primary} />
-                <Text style={styles.shareBtnText}>Share</Text>
+                <Text style={styles.shareBtnText}>{t('markerSheet.share')}</Text>
               </TouchableOpacity>
             </View>
           </>

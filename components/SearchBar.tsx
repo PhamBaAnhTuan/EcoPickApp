@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, FontSizes, BorderRadius } from '../constants';
+import { useTranslation } from 'react-i18next';
 
 interface SearchBarProps {
   value: string;
@@ -14,8 +15,9 @@ export function SearchBar({
   value,
   onChangeText,
   onFilterPress,
-  placeholder = 'Search areas or cleanup spots',
+  placeholder,
 }: SearchBarProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <View style={styles.shadowWrapper} />
@@ -24,7 +26,7 @@ export function SearchBar({
         <TextInput
           value={value}
           onChangeText={onChangeText}
-          placeholder={placeholder}
+          placeholder={placeholder || t('search.placeholder')}
           placeholderTextColor={Colors.textPlaceholder}
           style={styles.input}
         />

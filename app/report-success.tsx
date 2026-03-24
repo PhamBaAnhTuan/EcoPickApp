@@ -4,12 +4,14 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { Colors, Fonts, Spacing, BorderRadius } from '../constants';
 
 const { width } = Dimensions.get('window');
 
 export default function ReportSuccessScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleViewOnMap = () => {
     // Return to map to see the reported location or just default map
@@ -60,16 +62,16 @@ export default function ReportSuccessScreen() {
           </View>
 
           {/* Titles */}
-          <Text style={styles.titleText}>Thank You! 🌱</Text>
-          
+          <Text style={styles.titleText}>{t('reportSuccess.thankYou')} 🌱</Text>
+
           <View style={styles.pointsPill}>
             <Ionicons name="star" size={16} color="#FBBF24" />
-            <Text style={styles.pointsPillText}>You earned +10 Eco Points</Text>
+            <Text style={styles.pointsPillText}>{t('reportSuccess.earnedPoints')}</Text>
           </View>
 
           {/* Total Points Card */}
           <View style={styles.cardContainer}>
-            <Text style={styles.cardLabel}>TOTAL ECO POINTS</Text>
+            <Text style={styles.cardLabel}>{t('reportSuccess.totalEcoPoints')}</Text>
             <View style={styles.cardScoreRow}>
               <Text style={styles.cardScore}>450</Text>
               <View style={styles.cardTrend}>
@@ -83,11 +85,11 @@ export default function ReportSuccessScreen() {
           <View style={styles.actionsContainer}>
             <TouchableOpacity style={styles.primaryBtn} onPress={handleViewOnMap} activeOpacity={0.8}>
               <Ionicons name="map-outline" size={20} color="#1E293B" />
-              <Text style={styles.primaryBtnText}>View on Map</Text>
+              <Text style={styles.primaryBtnText}>{t('reportSuccess.viewOnMap')}</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.secondaryBtn} onPress={handleContinueExploring} activeOpacity={0.7}>
-              <Text style={styles.secondaryBtnText}>Continue Exploring</Text>
+              <Text style={styles.secondaryBtnText}>{t('reportSuccess.continueExploring')}</Text>
               <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
             </TouchableOpacity>
           </View>

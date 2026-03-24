@@ -1,36 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Image, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView, 
-  Platform, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Platform,
   KeyboardAvoidingView,
-  Dimensions
+  Dimensions,
+  type ImageStyle,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts, FontSizes, Spacing } from '../../constants';
+import { Colors, Fonts, FontSizes, Spacing, BorderRadius } from '../../constants';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Slider from '@react-native-community/slider';
+import { useTranslation } from 'react-i18next';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+  clamp,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 const { width, height } = Dimensions.get('window');
 
-const WASTE_TYPES = ['Plastic', 'Paper', 'Glass', 'Organic', 'Metal'];
+const WASTE_TYPE_KEYS = ['plastic', 'paper', 'glass', 'organic', 'metal'] as const;
+
+const PHOTO_HEIGHT = height * 0.42;
+const SHEET_TOP = height * 0.34;
+const MAX_DRAG = 100;
+const SPRING_CONFIG = { damping: 18, stiffness: 220, mass: 0.8 };
+
+// Retake button sits at the bottom-right of the visible photo (just above where the sheet starts)
+const RETAKE_BTN_TOP = SHEET_TOP - 44;
 
 export default function ReportScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ imageUri?: string }>();
-  
+  const { t } = useTranslation();
+
   const [image, setImage] = useState<string | null>(null);
   const [description, setDescription] = useState('');
-  const [severityValue, setSeverityValue] = useState(0.2); // 0 to 1
-  const [selectedWasteTypes, setSelectedWasteTypes] = useState<Set<string>>(new Set(['Plastic']));
+  const [severityValue, setSeverityValue] = useState(0.6); // 0 to 1
+  const [selectedWasteTypes, setSelectedWasteTypes] = useState<Set<string>>(new Set(['plastic']));
+
+  // ─── Animation shared values ───
+  const sheetTranslateY = useSharedValue(0);
+  const startY = useSharedValue(0);
 
   useEffect(() => {
     if (params.imageUri) {
@@ -41,7 +64,7 @@ export default function ReportScreen() {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      alert('Camera permissions are required');
+      alert(t('report.cameraPermissionRequired'));
       return;
     }
 
@@ -57,97 +80,145 @@ export default function ReportScreen() {
   };
 
   const toggleWasteType = (type: string) => {
-    setSelectedWasteTypes(prev => {
+    setSelectedWasteTypes((prev) => {
       const next = new Set(prev);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
+      if (next.has(type)) {
+        if (next.size > 1) next.delete(type);
+      } else {
+        next.add(type);
+      }
       return next;
     });
   };
 
-  const getSeverityLabel = (val: number) => {
-    if (val < 0.25) return 'Light';
-    if (val < 0.5) return 'Medium';
-    if (val < 0.75) return 'Heavy';
-    return 'Extreme';
+  const getSeverityLabel = (val: number): string => {
+    if (val < 0.2) return t('severity.minor');
+    if (val < 0.4) return t('severity.light');
+    if (val < 0.6) return t('severity.moderate');
+    if (val < 0.8) return t('severity.heavy');
+    return t('severity.extreme');
   };
 
   const handleSubmit = () => {
     if (!image) {
-      alert('Please take a photo first!');
+      alert(t('report.takePhotoFirst'));
       return;
     }
-    
+
     // Clear the form
     setImage(null);
     setDescription('');
-    setSeverityValue(0.2);
-    setSelectedWasteTypes(new Set());
-    
+    setSeverityValue(0.6);
+    setSelectedWasteTypes(new Set(['plastic']));
+
     // Navigate to Success Screen
     router.replace('/report-success');
   };
 
+  // ─── Pan Gesture (attached to drag handle only) ───
+  const pan = Gesture.Pan()
+    .onStart(() => {
+      startY.value = sheetTranslateY.value;
+    })
+    .onUpdate((e) => {
+      // Only allow downward drag (positive translationY), clamp to max
+      sheetTranslateY.value = clamp(startY.value + e.translationY, 0, MAX_DRAG);
+    })
+    .onEnd(() => {
+      sheetTranslateY.value = withSpring(0, SPRING_CONFIG);
+    });
+
+  // ─── Animated Styles ───
+  const animatedPhotoStyle = useAnimatedStyle(() => {
+    const s = interpolate(sheetTranslateY.value, [0, MAX_DRAG], [1, 1.12]);
+    return {
+      transform: [{ scale: s }],
+    };
+  });
+
+  const animatedSheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: sheetTranslateY.value }],
+  }));
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
-      {/* 1. Full-Width Background Image (matching Design 2017:6) */}
-      <View style={styles.imageBackgroundContainer}>
+
+      {/* ─── Top Half: Photo Preview (animated scale) ─── */}
+      <View style={styles.photoSection}>
         {image ? (
-          <Image source={{ uri: image }} style={styles.backgroundImage} resizeMode="cover" />
+          <Animated.View style={[styles.capturedPhotoContainer, animatedPhotoStyle]}>
+            <Image source={{ uri: image }} style={styles.capturedPhoto as ImageStyle} resizeMode="cover" />
+          </Animated.View>
         ) : (
-          <View style={styles.placeholderBg}>
-            <TouchableOpacity style={styles.placeholderBtn} onPress={takePhoto}>
+          <View style={styles.placeholderContainer}>
+            <TouchableOpacity style={styles.placeholderBtn} onPress={takePhoto} activeOpacity={0.7}>
               <Ionicons name="camera" size={48} color="#94A3B8" />
-              <Text style={styles.placeholderText}>Tap to open camera</Text>
+              <Text style={styles.placeholderText}>{t('report.tapToOpenCamera')}</Text>
             </TouchableOpacity>
           </View>
         )}
-        {/* Subtle dark gradient/overlay for header readability */}
-        <View style={styles.imageOverlay} />
       </View>
 
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header (Floating on top of image) */}
+      {/* ─── Retake Button (fixed position, outside animated photo) ─── */}
+      {image && (
+        <TouchableOpacity style={styles.retakeBtn} onPress={takePhoto} activeOpacity={0.8}>
+          <Ionicons name="refresh" size={12} color="#20693A" />
+          <Text style={styles.retakeBtnText}>{t('report.retake')}</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* ─── Header (Floating on top of image) ─── */}
+      <SafeAreaView style={styles.headerSafeArea} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Review Report</Text>
-          <View style={styles.headerBtnPlaceholder} />
+          <Text style={styles.headerTitle}>{t('report.reviewTitle')}</Text>
+          <View style={styles.headerPlaceholder} />
         </View>
+      </SafeAreaView>
 
-        <KeyboardAvoidingView 
-          style={{ flex: 1 }} 
+      {/* ─── Bottom Half: Floating Details Sheet (animated translate) ─── */}
+      <Animated.View style={[styles.sheetContainer, animatedSheetStyle]}>
+        {/* Drag Handle — gesture target */}
+        <GestureDetector gesture={pan}>
+          <Animated.View style={styles.dragHandleRow}>
+            <View style={styles.dragHandle} />
+          </Animated.View>
+        </GestureDetector>
+
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
-          <ScrollView 
-            style={styles.scrollView} 
-            contentContainerStyle={styles.scrollContent} 
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
-            {/* White Sheet Container (Design 2017:6 style) */}
-            <View style={styles.sheetContainer}>
-              
-              {/* Drag Handle */}
-              <View style={styles.dragHandle} />
+            {/* ─── Location Section ─── */}
+            <View style={styles.section}>
+              <View style={styles.locationLabelRow}>
+                <Ionicons name="location" size={15} color="#20693A" />
+                <Text style={styles.locationLabel}>{t('report.detectedLocation')}</Text>
+              </View>
+              <Text style={styles.locationTitle}>123 Nguyen Hue Street</Text>
+              <Text style={styles.locationSubtitle}>Ho Chi Minh City, Vietnam</Text>
+            </View>
 
-              {/* 2. Detected Location Section */}
-              <View style={styles.section}>
-                <View style={styles.locationLabelRow}>
-                  <Ionicons name="location" size={16} color="#20693A" />
-                  <Text style={styles.locationLabel}>DETECTED LOCATION</Text>
+            {/* ─── Severity Slider Section ─── */}
+            <View style={styles.section}>
+              <View style={styles.severityHeaderRow}>
+                <Text style={styles.sectionLabel}>{t('report.severityScale')}</Text>
+                <View style={styles.severityBadge}>
+                  <Text style={styles.severityBadgeText}>{getSeverityLabel(severityValue)}</Text>
                 </View>
-                <Text style={styles.locationTitle}>123 Nguyen Hue Street</Text>
-                <Text style={styles.locationSubtitle}>Ho Chi Minh City, Vietnam</Text>
               </View>
 
-              {/* 3. Trash Severity (With Slider requested by user) */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Trash Severity</Text>
-                
+              <View style={styles.sliderContainer}>
                 <Slider
                   style={styles.slider}
                   minimumValue={0}
@@ -155,96 +226,71 @@ export default function ReportScreen() {
                   value={severityValue}
                   onValueChange={setSeverityValue}
                   minimumTrackTintColor="#20693A"
-                  maximumTrackTintColor="#E2E8F0"
+                  maximumTrackTintColor="rgba(32, 105, 58, 0.2)"
                   thumbTintColor="#20693A"
                 />
-                
-                <View style={styles.severityLabelRow}>
-                  <Text style={[
-                      styles.severityLabel, 
-                      getSeverityLabel(severityValue) === 'Light' && styles.severityLabelActive
-                  ]}>LIGHT</Text>
-                  <Text style={[
-                      styles.severityLabel, 
-                      getSeverityLabel(severityValue) === 'Medium' && styles.severityLabelActive
-                  ]}>MEDIUM</Text>
-                  <Text style={[
-                      styles.severityLabel, 
-                      getSeverityLabel(severityValue) === 'Heavy' && styles.severityLabelActive
-                  ]}>HEAVY</Text>
-                  <Text style={[
-                      styles.severityLabel, 
-                      getSeverityLabel(severityValue) === 'Extreme' && styles.severityLabelActive
-                  ]}>EXTREME</Text>
-                </View>
               </View>
 
-              {/* 4. Waste Types */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Waste Types</Text>
-                <View style={styles.chipsRow}>
-                  {WASTE_TYPES.map((type) => {
-                    const isSelected = selectedWasteTypes.has(type);
-                    return (
-                      <TouchableOpacity
-                        key={type}
-                        style={[
-                          styles.wasteChip, 
-                          isSelected && styles.wasteChipSelected,
-                        ]}
-                        onPress={() => toggleWasteType(type)}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={[
-                          styles.wasteChipText, 
-                          isSelected && styles.wasteChipTextSelected,
-                        ]}>
-                          {type}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+              <View style={styles.sliderLabelsRow}>
+                <Text style={styles.sliderLabel}>{t('report.sliderMinor')}</Text>
+                <Text style={styles.sliderLabel}>{t('report.sliderExtreme')}</Text>
               </View>
+            </View>
 
-              {/* 5. Additional Notes */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Additional Notes (Optional)</Text>
+            {/* ─── Waste Types ─── */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>{t('report.wasteTypes')}</Text>
+              <View style={styles.wasteChipsRow}>
+                {WASTE_TYPE_KEYS.map((typeKey) => {
+                  const isSelected = selectedWasteTypes.has(typeKey);
+                  return (
+                    <TouchableOpacity
+                      key={typeKey}
+                      style={[styles.wasteChip, isSelected && styles.wasteChipSelected]}
+                      onPress={() => toggleWasteType(typeKey)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.wasteChipText, isSelected && styles.wasteChipTextSelected]}>
+                        {t(`report.${typeKey}`)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* ─── Additional Notes ─── */}
+            <View style={styles.sectionLast}>
+              <Text style={styles.sectionLabel}>{t('report.additionalNotes')}</Text>
+              <View style={styles.textAreaWrapper}>
                 <TextInput
                   style={styles.textArea}
-                  placeholder="Provide more context here..."
+                  placeholder={t('report.notesPlaceholder')}
+                  placeholderTextColor="#6B7280"
                   value={description}
                   onChangeText={setDescription}
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
-                  placeholderTextColor="#94A3B8"
                 />
               </View>
-
-              {/* 6. Submit Button */}
-              <TouchableOpacity 
-                style={[styles.submitBtn, !image && styles.submitBtnDisabled]} 
-                onPress={handleSubmit}
-                activeOpacity={0.8}
-                disabled={!image}
-              >
-                <Ionicons name="send" size={18} color="#FFFFFF" />
-                <Text style={styles.submitBtnText}>SUBMIT REPORT</Text>
-              </TouchableOpacity>
-
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      </SafeAreaView>
-      
-      {/* Retake Button (Floating Pill on top of image, but separate from content) */}
-      {image && (
-        <TouchableOpacity style={styles.retakeBtn} onPress={takePhoto} activeOpacity={0.9}>
-          <Ionicons name="refresh" size={18} color="#FFFFFF" />
-          <Text style={styles.retakeBtnText}>Retake Photo</Text>
-        </TouchableOpacity>
-      )}
+
+        {/* ─── Fixed Bottom Submit Button ─── */}
+        <View style={styles.submitBarContainer}>
+          <TouchableOpacity
+            style={[styles.submitBtn, !image && styles.submitBtnDisabled]}
+            onPress={handleSubmit}
+            activeOpacity={0.8}
+            disabled={!image}
+          >
+            <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.submitBtnText}>{t('report.submitReport')}</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
     </View>
   );
 }
@@ -252,25 +298,60 @@ export default function ReportScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F6F8F7',
   },
-  imageBackgroundContainer: {
+
+  // ─── Photo Section ───
+  photoSection: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: height * 0.45, // Full width, top segment
+    height: PHOTO_HEIGHT,
+    backgroundColor: 'rgba(32, 105, 58, 0.1)',
+    overflow: 'hidden',
   },
-  backgroundImage: {
+  capturedPhotoContainer: {
     width: '100%',
     height: '100%',
   },
-  placeholderBg: {
+  capturedPhoto: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#F1F5F9',
+  },
+
+  // ─── Retake Button (fixed position, bottom-right of photo thumbnail) ───
+  retakeBtn: {
+    position: 'absolute',
+    top: RETAKE_BTN_TOP,
+    right: 20,
+    zIndex: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 9999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  retakeBtnText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    color: '#20693A',
+  },
+
+  placeholderContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#F1F5F9',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   placeholderBtn: {
     alignItems: 'center',
@@ -281,70 +362,92 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#94A3B8',
   },
-  imageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.2)', // Darker top area
-  },
-  safeArea: {
-    flex: 1,
+
+  // ─── Header ───
+  headerSafeArea: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    zIndex: 10,
-  },
-  headerTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 18,
-    color: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   backBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 9999,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    backdropFilter: 'blur(10px)',
+    ...Platform.select({
+      ios: {},
+      android: {},
+    }),
   },
-  headerBtnPlaceholder: {
+  headerTitle: {
+    fontFamily: Fonts.bold,
+    fontSize: 18,
+    lineHeight: 28,
+    color: '#FFFFFF',
+  },
+  headerPlaceholder: {
     width: 40,
+    height: 40,
   },
+
+  // ─── Bottom Sheet ───
+  sheetContainer: {
+    position: 'absolute',
+    top: SHEET_TOP,
+    left: 0,
+    right: 0,
+    height: height - SHEET_TOP,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 40,
+    elevation: 20,
+    overflow: 'hidden',
+  },
+  dragHandleRow: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+  },
+  dragHandle: {
+    width: 48,
+    height: 5,
+    borderRadius: 9999,
+    backgroundColor: '#D1D5DB',
+  },
+
+  // ─── Scroll Content ───
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingTop: height * 0.35, // Push sheet starting point down
-  },
-  sheetContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
     paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 20,
-    minHeight: height * 0.65,
+    paddingBottom: 24,
   },
-  dragHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#E2E8F0',
-    alignSelf: 'center',
+
+  // ─── Sections ───
+  section: {
     marginBottom: 24,
   },
-  section: {
-    marginBottom: 32,
+  sectionLast: {
+    marginBottom: 8,
   },
+
+  // ─── Location ───
   locationLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -354,114 +457,152 @@ const styles = StyleSheet.create({
   locationLabel: {
     fontFamily: Fonts.bold,
     fontSize: 12,
-    color: '#20693A',
-    letterSpacing: 1,
+    color: '#2D5A3D',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   locationTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 20,
+    fontFamily: Fonts.semiBold,
+    fontSize: 18,
+    lineHeight: 28,
     color: '#1E293B',
-    marginBottom: 4,
   },
   locationSubtitle: {
-    fontFamily: Fonts.medium,
+    fontFamily: Fonts.regular,
     fontSize: 14,
+    lineHeight: 20,
     color: '#64748B',
   },
-  sectionTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 16,
-    color: '#334155',
+
+  // ─── Severity ───
+  severityHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
     marginBottom: 16,
+  },
+  sectionLabel: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#334155',
+  },
+  severityBadge: {
+    backgroundColor: 'rgba(32, 105, 58, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  severityBadgeText: {
+    fontFamily: Fonts.medium,
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#20693A',
+  },
+  sliderContainer: {
+    height: 24,
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   slider: {
     width: '100%',
-    height: 40,
+    height: 24,
   },
-  severityLabelRow: {
+  sliderLabelsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
   },
-  severityLabel: {
+  sliderLabel: {
     fontFamily: Fonts.bold,
     fontSize: 10,
+    lineHeight: 15,
     color: '#94A3B8',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
-  severityLabelActive: {
-    color: '#20693A',
-  },
-  chipsRow: {
+
+  // ─── Waste Types ───
+  wasteChipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginTop: 12,
   },
   wasteChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(45, 90, 61, 0.1)',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(45, 90, 61, 0.2)',
+    borderRadius: 9999,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
   },
   wasteChipSelected: {
-    backgroundColor: '#E7F2EB',
-    borderColor: '#20693A',
+    backgroundColor: '#2D5A3D',
+    borderColor: '#2D5A3D',
   },
   wasteChipText: {
-    fontFamily: Fonts.bold,
-    fontSize: 13,
-    color: '#64748B',
+    fontFamily: Fonts.medium,
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#2D5A3D',
   },
   wasteChipTextSelected: {
-    color: '#20693A',
+    color: '#FFFFFF',
   },
-  textArea: {
-    fontFamily: Fonts.medium,
-    fontSize: 15,
-    color: '#334155',
-    backgroundColor: '#F8FAFC',
+
+  // ─── Text Area ───
+  textAreaWrapper: {
+    marginTop: 8,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 16,
-    padding: 16,
-    minHeight: 120,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  textArea: {
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#334155',
+    paddingHorizontal: 17,
+    paddingTop: 13,
+    paddingBottom: 53,
+    minHeight: 86,
+  },
+
+  // ─── Submit Bar ───
+  submitBarContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingHorizontal: 24,
+    paddingTop: 25,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
   },
   submitBtn: {
-    backgroundColor: '#20693A',
+    backgroundColor: '#2D5A3D',
+    borderRadius: 24,
+    paddingVertical: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 18,
-    borderRadius: 18,
-    gap: 10,
-    marginTop: 8,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 8,
   },
   submitBtnDisabled: {
     backgroundColor: '#94A3B8',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   submitBtnText: {
-    color: '#FFFFFF',
     fontFamily: Fonts.bold,
     fontSize: 16,
-    letterSpacing: 0.5,
-  },
-  retakeBtn: {
-    position: 'absolute',
-    top: height * 0.35 - 60, // Positioned slightly above sheet
-    right: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    gap: 8,
-    zIndex: 15,
-  },
-  retakeBtnText: {
-    fontFamily: Fonts.bold,
-    fontSize: 13,
+    lineHeight: 24,
     color: '#FFFFFF',
+    textAlign: 'center',
   },
 });
