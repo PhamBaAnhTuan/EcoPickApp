@@ -1,0 +1,309 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# EcoPick — CI/CD: Build iOS & Android + GitHub Release
+# ──────────────────────────────────────────────────────────────────────────────
+#
+# Triggers:
+#   1. Push tag  v*  (e.g. v1.0.0)  → production build + GitHub Release
+#   2. Push to  main                 → preview build (internal testing)
+#   3. Manual   workflow_dispatch    → choose profile (preview / production)
+#
+# Required GitHub Secrets:
+#   EXPO_TOKEN — Expo access token (https://expo.dev/accounts/[you]/settings/access-tokens)
+#
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'EAS Build profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - production
+
+# Cancel any in-progress runs on the same ref
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Environment
+# ──────────────────────────────────────────────────────────────────────────────
+env:
+  NODE_VERSION: '20'
+  EAS_CLI_VERSION: 'latest'
+
+jobs:
+  # ════════════════════════════════════════════════════════════════════════════
+  # 1. Lint & Type-check
+  # ════════════════════════════════════════════════════════════════════════════
+  quality:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npx expo lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 2. Determine build profile
+  # ════════════════════════════════════════════════════════════════════════════
+  resolve-profile:
+    name: Resolve Build Profile
+    runs-on: ubuntu-latest
+    outputs:
+      profile: ${{ steps.set.outputs.profile }}
+      is_release: ${{ steps.set.outputs.is_release }}
+    steps:
+      - name: Determine profile
+        id: set
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "profile=${{ github.event.inputs.profile }}" >> "$GITHUB_OUTPUT"
+            echo "is_release=${{ github.event.inputs.profile == 'production' }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "profile=production" >> "$GITHUB_OUTPUT"
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "profile=preview" >> "$GITHUB_OUTPUT"
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 3. Build Android (.apk / .aab)
+  # ════════════════════════════════════════════════════════════════════════════
+  build-android:
+    name: Build Android
+    needs: [quality, resolve-profile]
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_path: ${{ steps.download.outputs.artifact_path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: ${{ env.EAS_CLI_VERSION }}
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Android
+        run: |
+          eas build \
+            --platform android \
+            --profile ${{ needs.resolve-profile.outputs.profile }} \
+            --non-interactive \
+            --wait
+
+      - name: Download build artifact
+        id: download
+        run: |
+          mkdir -p artifacts
+          # Get the latest Android build URL and download
+          BUILD_URL=$(eas build:list --platform android --status finished --limit 1 --json --non-interactive | npx -y json -a artifacts.buildUrl | head -1)
+          if [ -n "$BUILD_URL" ]; then
+            FILENAME="EcoPick-android-${{ needs.resolve-profile.outputs.profile }}"
+            if [[ "${{ needs.resolve-profile.outputs.profile }}" == "production" ]]; then
+              curl -L -o "artifacts/${FILENAME}.aab" "$BUILD_URL"
+              echo "artifact_path=artifacts/${FILENAME}.aab" >> "$GITHUB_OUTPUT"
+            else
+              curl -L -o "artifacts/${FILENAME}.apk" "$BUILD_URL"
+              echo "artifact_path=artifacts/${FILENAME}.apk" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: artifacts/
+          retention-days: 30
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 4. Build iOS (.ipa)
+  # ════════════════════════════════════════════════════════════════════════════
+  build-ios:
+    name: Build iOS
+    needs: [quality, resolve-profile]
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_path: ${{ steps.download.outputs.artifact_path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: ${{ env.EAS_CLI_VERSION }}
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build iOS
+        run: |
+          eas build \
+            --platform ios \
+            --profile ${{ needs.resolve-profile.outputs.profile }} \
+            --non-interactive \
+            --wait
+
+      - name: Download build artifact
+        id: download
+        run: |
+          mkdir -p artifacts
+          FILENAME="EcoPick-ios-${{ needs.resolve-profile.outputs.profile }}.ipa"
+          BUILD_URL=$(eas build:list --platform ios --status finished --limit 1 --json --non-interactive | npx -y json -a artifacts.buildUrl | head -1)
+          if [ -n "$BUILD_URL" ]; then
+            curl -L -o "artifacts/${FILENAME}" "$BUILD_URL"
+            echo "artifact_path=artifacts/${FILENAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: artifacts/
+          retention-days: 30
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 5. Create GitHub Release (only on tag push or production dispatch)
+  # ════════════════════════════════════════════════════════════════════════════
+  release:
+    name: GitHub Release
+    if: needs.resolve-profile.outputs.is_release == 'true'
+    needs: [resolve-profile, build-android, build-ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets/
+          merge-multiple: true
+
+      - name: List release assets
+        run: ls -lhR release-assets/
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            # Manual dispatch without tag — generate one from version
+            VERSION=$(node -p "require('./package.json').version")
+            TAG="v${VERSION}-build.$(date +%Y%m%d%H%M%S)"
+            git tag "$TAG"
+            git push origin "$TAG"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get previous tag
+          PREV_TAG=$(git tag --sort=-creatordate | grep '^v' | sed -n '2p')
+          if [ -n "$PREV_TAG" ]; then
+            echo "## What's Changed" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges >> CHANGELOG.md
+          else
+            echo "## Initial Release" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "First production release of EcoPick!" >> CHANGELOG.md
+          fi
+          echo "" >> CHANGELOG.md
+          echo "---" >> CHANGELOG.md
+          echo "Built with [EAS Build](https://expo.dev) on $(date -u '+%Y-%m-%d %H:%M UTC')" >> CHANGELOG.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: EcoPick ${{ steps.tag.outputs.tag }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
+          files: release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 6. (Optional) Submit to App Store & Google Play
+  # ════════════════════════════════════════════════════════════════════════════
+  # submit:
+  #   name: Submit to Stores
+  #   if: needs.resolve-profile.outputs.is_release == 'true'
+  #   needs: [resolve-profile, build-android, build-ios]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ env.NODE_VERSION }}
+  #         cache: 'npm'
+  #
+  #     - name: Install dependencies
+  #       run: npm ci
+  #
+  #     - name: Setup EAS CLI
+  #       uses: expo/expo-github-action@v8
+  #       with:
+  #         eas-version: ${{ env.EAS_CLI_VERSION }}
+  #         token: ${{ secrets.EXPO_TOKEN }}
+  #
+  #     - name: Submit to stores
+  #       run: |
+  #         eas submit --platform android --latest --non-interactive
+  #         eas submit --platform ios --latest --non-interactive
