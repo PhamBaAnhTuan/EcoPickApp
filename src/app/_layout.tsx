@@ -3,8 +3,12 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack, SplashScreen } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../lib/queryClient';
 import { Colors } from '../constants/Colors';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Toast from 'react-native-toast-message';
+import { toastConfig } from '../components/ToastConfig';
 import { I18nextProvider } from 'react-i18next';
 import i18n, { loadSavedLanguage } from '../i18n';
 
@@ -40,20 +44,23 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <I18nextProvider i18n={i18n}>
-        <View style={styles.container} onLayout={onLayoutRootView}>
-          <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
-            <Stack.Screen name="index" options={{ headerShown: false, animation: 'none' }} />
-            <Stack.Screen name="splash" options={{ headerShown: false, animation: 'none' }} />
-            <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
-            <Stack.Screen name="auth" options={{ headerShown: false, animation: 'slide_from_right' }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
-            <Stack.Screen name="location/[id]" options={{ presentation: 'fullScreenModal' }} />
-            <Stack.Screen name="events/[id]" options={{ presentation: 'card' }} />
-            <Stack.Screen name="settings" options={{ headerShown: false, presentation: 'card' }} />
-          </Stack>
-        </View>
-      </I18nextProvider>
+      <QueryClientProvider client={queryClient}>
+        <I18nextProvider i18n={i18n}>
+          <View style={styles.container} onLayout={onLayoutRootView}>
+            <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
+              <Stack.Screen name="index" options={{ headerShown: false, animation: 'none' }} />
+              <Stack.Screen name="splash" options={{ headerShown: false, animation: 'none' }} />
+              <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
+              <Stack.Screen name="auth" options={{ headerShown: false, animation: 'slide_from_right' }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
+              <Stack.Screen name="location/[id]" options={{ presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="events/[id]" options={{ presentation: 'card' }} />
+              <Stack.Screen name="settings" options={{ headerShown: false, presentation: 'card' }} />
+            </Stack>
+          </View>
+          <Toast config={toastConfig} topOffset={60} visibilityTime={3000} />
+        </I18nextProvider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }

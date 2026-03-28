@@ -1,5 +1,3 @@
-import { useSignIn } from '@/hooks/useUserQueries';
-import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
 import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,7 +8,6 @@ import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -25,58 +22,80 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import LanguageToggle from '../../components/LanguageToggle';
 import { AuthColors, authStyles, Fonts } from '../../constants';
+import { useSignUp, useSignIn } from '@/hooks/useUserQueries';
+import { registerSchema, type RegisterFormData } from '@/lib/validations/auth';
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
+  const signUp = useSignUp();
   const signIn = useSignIn();
+
+  const isPending = signUp.isPending || signIn.isPending;
 
   // ─── React Hook Form + Zod ────────────────────────────────
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       email: '',
       password: '',
+      confirmPassword: '',
+      fullname: '',
     },
   });
 
-  // ─── Submit handler ────────────────────────────────────────
-  const onSubmit = (data: LoginFormData) => {
-    signIn.mutate(
+  // ─── Submit: đăng ký → tự động đăng nhập ─────────────────
+  const onSubmit = (data: RegisterFormData) => {
+    signUp.mutate(
       { email: data.email.trim(), password: data.password },
       {
-        onSuccess: (result) => {
+        onSuccess: () => {
           Toast.show({
             type: 'success',
-            text1: 'Đăng nhập thành công!',
-            text2: `Chào mừng ${result.user.fullname || result.user.email}`,
+            text1: t('auth.registerSuccess'),
+            text2: t('auth.registerSuccessDesc'),
           });
-          // Delay nhẹ để toast hiện trước khi navigate
-          setTimeout(() => {
-            router.replace('/(tabs)/map');
-          }, 800);
+
+          // Auto sign-in sau khi đăng ký thành công
+          signIn.mutate(
+            { email: data.email.trim(), password: data.password },
+            {
+              onSuccess: () => {
+                setTimeout(() => {
+                  router.replace('/(tabs)/map');
+                }, 800);
+              },
+              onError: () => {
+                // Nếu auto-login fail, chuyển về login page
+                setTimeout(() => {
+                  router.replace('/auth/login');
+                }, 1000);
+              },
+            }
+          );
         },
         onError: (error: any) => {
           const message =
+            error?.response?.data?.email?.[0] ||
             error?.response?.data?.detail ||
             error?.response?.data?.error ||
             error?.message ||
-            'Đăng nhập thất bại. Vui lòng kiểm tra lại.';
+            t('auth.registerFailed');
           Toast.show({
             type: 'error',
-            text1: 'Đăng nhập thất bại',
+            text1: t('auth.registerFailedTitle'),
             text2: message,
           });
         },
-      },
+      }
     );
   };
 
@@ -85,8 +104,8 @@ export default function LoginScreen() {
       <StatusBar style="dark" />
 
       {/* Background accents */}
-      <View style={[authStyles.bgAccentGreen, { top: -88, left: 28, width: 260, height: 260 }]} />
-      <View style={[authStyles.bgAccentBlue, { bottom: -40, right: -40, width: 200, height: 200 }]} />
+      <View style={[authStyles.bgAccentGreen, { top: -60, right: -20, width: 240, height: 240 }]} />
+      <View style={[authStyles.bgAccentBlue, { bottom: -60, left: -30, width: 180, height: 180 }]} />
 
       {/* Header */}
       <View style={[authStyles.headerBar, { paddingTop: insets.top, height: 64 + insets.top }]}>
@@ -94,7 +113,7 @@ export default function LoginScreen() {
           <TouchableOpacity style={authStyles.headerBackBtn} onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={20} color={AuthColors.brandAccent} />
           </TouchableOpacity>
-          <Text style={authStyles.headerTitle}>{t('auth.logIn')}</Text>
+          <Text style={authStyles.headerTitle}>{t('auth.signUp')}</Text>
         </View>
         <View style={authStyles.headerRight}>
           <LanguageToggle />
@@ -104,20 +123,61 @@ export default function LoginScreen() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={[styles.scrollContent, { paddingTop: 64 + insets.top + 40 }]}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: 64 + insets.top + 28 }]}
           bounces={false}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           {/* Hero Text */}
           <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.heroText}>
-            <Text style={styles.heroTitle}>{t('auth.loginTitle')}</Text>
-            <Text style={styles.heroSubtitle}>{t('auth.loginSubtitle')}</Text>
+            <Text style={styles.heroTitle}>{t('auth.registerTitle')}</Text>
+            <Text style={styles.heroSubtitle}>{t('auth.registerSubtitle')}</Text>
           </Animated.View>
 
-          {/* Login Form Card */}
+          {/* Register Form Card */}
           <Animated.View entering={FadeInDown.delay(250).duration(500)} style={[authStyles.glassCard, styles.formCard]}>
             <View style={styles.formFields}>
+              {/* Fullname (optional) */}
+              <View>
+                <Text style={authStyles.label}>{t('auth.fullnameLabel')}</Text>
+                <Controller
+                  control={control}
+                  name="fullname"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <View style={authStyles.inputWrapper}>
+                      <TextInput
+                        style={[
+                          authStyles.input,
+                          authStyles.inputWithIcon,
+                          errors.fullname && styles.inputError,
+                        ]}
+                        placeholder={t('auth.fullnamePlaceholder')}
+                        placeholderTextColor={AuthColors.textPlaceholder}
+                        value={value}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        autoCapitalize="words"
+                        autoComplete="name"
+                        editable={!isPending}
+                      />
+                      <View style={styles.inputIcon}>
+                        <Ionicons
+                          name="person-outline"
+                          size={18}
+                          color={errors.fullname ? '#EF4444' : AuthColors.textPlaceholder}
+                        />
+                      </View>
+                    </View>
+                  )}
+                />
+                {errors.fullname && (
+                  <View style={styles.errorRow}>
+                    <Ionicons name="alert-circle" size={14} color="#EF4444" />
+                    <Text style={styles.errorText}>{errors.fullname.message}</Text>
+                  </View>
+                )}
+              </View>
+
               {/* Email */}
               <View>
                 <Text style={authStyles.label}>{t('auth.emailLabel')}</Text>
@@ -127,7 +187,11 @@ export default function LoginScreen() {
                   render={({ field: { onChange, onBlur, value } }) => (
                     <View style={authStyles.inputWrapper}>
                       <TextInput
-                        style={[authStyles.input, authStyles.inputWithIcon, errors.email && styles.inputError]}
+                        style={[
+                          authStyles.input,
+                          authStyles.inputWithIcon,
+                          errors.email && styles.inputError,
+                        ]}
                         placeholder={t('auth.emailPlaceholder')}
                         placeholderTextColor={AuthColors.textPlaceholder}
                         value={value}
@@ -136,7 +200,7 @@ export default function LoginScreen() {
                         keyboardType="email-address"
                         autoCapitalize="none"
                         autoComplete="email"
-                        editable={!signIn.isPending}
+                        editable={!isPending}
                       />
                       <View style={styles.inputIcon}>
                         <Ionicons
@@ -158,12 +222,7 @@ export default function LoginScreen() {
 
               {/* Password */}
               <View>
-                <View style={styles.passwordHeader}>
-                  <Text style={authStyles.label}>{t('auth.passwordLabel')}</Text>
-                  <TouchableOpacity activeOpacity={0.7}>
-                    <Text style={styles.forgotLink}>{t('auth.forgotPassword')}</Text>
-                  </TouchableOpacity>
-                </View>
+                <Text style={authStyles.label}>{t('auth.passwordLabel')}</Text>
                 <Controller
                   control={control}
                   name="password"
@@ -182,8 +241,8 @@ export default function LoginScreen() {
                         onChangeText={onChange}
                         onBlur={onBlur}
                         secureTextEntry={!showPassword}
-                        autoComplete="password"
-                        editable={!signIn.isPending}
+                        autoComplete="new-password"
+                        editable={!isPending}
                       />
                       <View style={styles.inputIcon}>
                         <Ionicons
@@ -214,31 +273,76 @@ export default function LoginScreen() {
                 )}
               </View>
 
-              {/* Remember me */}
-              <TouchableOpacity
-                style={styles.rememberRow}
-                onPress={() => setRememberMe(!rememberMe)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
-                  {rememberMe && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
-                </View>
-                <Text style={styles.rememberText}>{t('auth.rememberDevice')}</Text>
-              </TouchableOpacity>
+              {/* Confirm Password */}
+              <View>
+                <Text style={authStyles.label}>{t('auth.confirmPasswordLabel')}</Text>
+                <Controller
+                  control={control}
+                  name="confirmPassword"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <View style={authStyles.inputWrapper}>
+                      <TextInput
+                        style={[
+                          authStyles.input,
+                          authStyles.inputWithIcon,
+                          { paddingRight: 48 },
+                          errors.confirmPassword && styles.inputError,
+                        ]}
+                        placeholder="••••••••"
+                        placeholderTextColor={AuthColors.textPlaceholder}
+                        value={value}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        secureTextEntry={!showConfirm}
+                        autoComplete="new-password"
+                        editable={!isPending}
+                      />
+                      <View style={styles.inputIcon}>
+                        <Ionicons
+                          name="shield-checkmark-outline"
+                          size={18}
+                          color={errors.confirmPassword ? '#EF4444' : AuthColors.textPlaceholder}
+                        />
+                      </View>
+                      <TouchableOpacity
+                        style={styles.eyeButton}
+                        onPress={() => setShowConfirm(!showConfirm)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons
+                          name={showConfirm ? 'eye-outline' : 'eye-off-outline'}
+                          size={20}
+                          color={AuthColors.textPlaceholder}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                />
+                {errors.confirmPassword && (
+                  <View style={styles.errorRow}>
+                    <Ionicons name="alert-circle" size={14} color="#EF4444" />
+                    <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>
+                  </View>
+                )}
+              </View>
 
               {/* Submit */}
-              <TouchableOpacity activeOpacity={0.85} onPress={handleSubmit(onSubmit)} disabled={signIn.isPending}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleSubmit(onSubmit)}
+                disabled={isPending}
+              >
                 <LinearGradient
-                  colors={signIn.isPending ? ['#94A3B8', '#94A3B8'] : ['#144227', '#2D5A3D']}
+                  colors={isPending ? ['#94A3B8', '#94A3B8'] : ['#144227', '#2D5A3D']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={authStyles.primaryButton}
                 >
-                  {signIn.isPending ? (
+                  {isPending ? (
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
                     <>
-                      <Text style={authStyles.primaryButtonText}>{t('auth.logIn')}</Text>
+                      <Text style={authStyles.primaryButtonText}>{t('auth.createAccount')}</Text>
                       <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
                     </>
                   )}
@@ -246,36 +350,22 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Divider */}
-            <View style={authStyles.dividerRow}>
-              <View style={authStyles.dividerLine} />
-              <Text style={authStyles.dividerText}>{t('auth.orContinueWith')}</Text>
-              <View style={authStyles.dividerLine} />
-            </View>
-
-            {/* Social icons row */}
-            <View style={styles.socialRow}>
-              <TouchableOpacity style={authStyles.socialIconButton} activeOpacity={0.7}>
-                <Image
-                  source={require('../../assets/auth/google.png')}
-                  style={styles.socialSmallIcon}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-              <TouchableOpacity style={authStyles.socialIconButton} activeOpacity={0.7}>
-                <Ionicons name="logo-apple" size={20} color="#191C1D" />
-              </TouchableOpacity>
-              <TouchableOpacity style={authStyles.socialIconButton} activeOpacity={0.7}>
-                <Ionicons name="logo-facebook" size={20} color="#1877F2" />
-              </TouchableOpacity>
+            {/* Terms */}
+            <View style={styles.termsRow}>
+              <Text style={styles.termsText}>
+                {t('auth.agreeTermsPrefix')}{' '}
+                <Text style={styles.termsLink}>{t('auth.termsOfService')}</Text>
+                {' '}{t('auth.and')}{' '}
+                <Text style={styles.termsLink}>{t('auth.privacyPolicy')}</Text>
+              </Text>
             </View>
           </Animated.View>
 
           {/* Footer */}
-          <Animated.View entering={FadeIn.delay(500).duration(400)} style={[authStyles.footerLink, { marginTop: 32 }]}>
-            <Text style={authStyles.footerLinkText}>{t('auth.noAccount')} </Text>
-            <TouchableOpacity activeOpacity={0.7} onPress={() => router.replace('/auth/register')}>
-              <Text style={authStyles.footerLinkBold}>{t('auth.signUp')}</Text>
+          <Animated.View entering={FadeIn.delay(500).duration(400)} style={[authStyles.footerLink, { marginTop: 24 }]}>
+            <Text style={authStyles.footerLinkText}>{t('auth.alreadyHaveAccount')} </Text>
+            <TouchableOpacity activeOpacity={0.7} onPress={() => router.replace('/auth/login')}>
+              <Text style={authStyles.footerLinkBold}>{t('auth.logIn')}</Text>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>
@@ -292,7 +382,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 24,
     paddingBottom: 48,
-    gap: 40,
+    gap: 32,
   },
   heroText: {
     gap: 8,
@@ -300,31 +390,31 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontFamily: Fonts.bold,
-    fontSize: 36,
-    lineHeight: 40,
+    fontSize: 32,
+    lineHeight: 38,
     color: AuthColors.brandDark,
-    letterSpacing: -0.9,
+    letterSpacing: -0.8,
     textAlign: 'center',
   },
   heroSubtitle: {
     fontFamily: Fonts.medium,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
     color: AuthColors.textSecondary,
     textAlign: 'center',
   },
   formCard: {
-    paddingHorizontal: 33,
-    paddingTop: 33,
-    paddingBottom: 25,
-    gap: 32,
+    paddingHorizontal: 28,
+    paddingTop: 28,
+    paddingBottom: 24,
+    gap: 24,
     borderRadius: 12,
   },
   formFields: {
-    gap: 20,
+    gap: 16,
   },
 
-  // ─── Input Error State ───
+  // ─── Error State ───
   inputError: {
     borderWidth: 1,
     borderColor: '#FECACA',
@@ -359,50 +449,20 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
   },
-  passwordHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  forgotLink: {
-    fontFamily: Fonts.bold,
-    fontSize: 12,
-    lineHeight: 16,
-    color: AuthColors.brandTeal,
-  },
-  rememberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+
+  // ─── Terms ───
+  termsRow: {
     paddingHorizontal: 4,
-    gap: 12,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    backgroundColor: AuthColors.inputBg,
-    borderWidth: 1,
-    borderColor: AuthColors.borderLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxActive: {
-    backgroundColor: AuthColors.brandDark,
-    borderColor: AuthColors.brandDark,
-  },
-  rememberText: {
-    fontFamily: Fonts.medium,
-    fontSize: 14,
-    lineHeight: 20,
+  termsText: {
+    fontFamily: Fonts.regular,
+    fontSize: 12,
+    lineHeight: 18,
     color: AuthColors.textSecondary,
+    textAlign: 'center',
   },
-  socialRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-  },
-  socialSmallIcon: {
-    width: 24,
-    height: 24,
+  termsLink: {
+    fontFamily: Fonts.semiBold,
+    color: AuthColors.brandDark,
   },
 });

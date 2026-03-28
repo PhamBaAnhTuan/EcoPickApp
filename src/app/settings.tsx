@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
-  Alert,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -14,8 +13,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import Toast from 'react-native-toast-message';
 import { Colors, Fonts, FontSizes, LineHeights, BorderRadius, Spacing } from '../constants';
 import { setLanguage } from '../i18n';
+import { useSignOut } from '@/hooks/useUserQueries';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const APP_VERSION = '1.0.0';
 
@@ -138,33 +140,37 @@ export default function SettingsScreen() {
   const [shareActivity, setShareActivity] = useState(false);
   const [analytics, setAnalytics] = useState(true);
 
+  // ─── Modal states ───
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const handleLanguageChange = async (langCode: string) => {
     if (langCode !== currentLanguage) {
       await setLanguage(langCode);
     }
   };
 
-  const handleSignOut = () => {
-    Alert.alert(
-      t('settings.signOut'),
-      t('settings.signOutConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('settings.signOut'), style: 'destructive', onPress: () => {} },
-      ]
-    );
+  const signOut = useSignOut();
+
+  const handleSignOut = () => setShowSignOutModal(true);
+
+  const confirmSignOut = () => {
+    signOut.mutate(undefined, {
+      onSuccess: () => {
+        setShowSignOutModal(false);
+        Toast.show({
+          type: 'success',
+          text1: t('settings.signOutSuccess'),
+          text2: t('settings.signOutSuccessDesc'),
+        });
+        setTimeout(() => {
+          router.replace('/auth/welcome');
+        }, 600);
+      },
+    });
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      t('settings.deleteAccount'),
-      t('settings.deleteAccountWarning'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('settings.deleteAccount'), style: 'destructive', onPress: () => {} },
-      ]
-    );
-  };
+  const handleDeleteAccount = () => setShowDeleteModal(true);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -401,6 +407,33 @@ export default function SettingsScreen() {
         </View>
 
       </ScrollView>
+
+      {/* ─── Sign Out Confirmation ─── */}
+      <ConfirmModal
+        visible={showSignOutModal}
+        onClose={() => setShowSignOutModal(false)}
+        onConfirm={confirmSignOut}
+        title={t('settings.signOut')}
+        message={t('settings.signOutConfirm')}
+        confirmText={t('settings.signOut')}
+        cancelText={t('common.cancel')}
+        variant="danger"
+        icon="log-out-outline"
+        loading={signOut.isPending}
+      />
+
+      {/* ─── Delete Account Confirmation ─── */}
+      <ConfirmModal
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => setShowDeleteModal(false)}
+        title={t('settings.deleteAccount')}
+        message={t('settings.deleteAccountWarning')}
+        confirmText={t('settings.deleteAccount')}
+        cancelText={t('common.cancel')}
+        variant="danger"
+        icon="trash-outline"
+      />
     </SafeAreaView>
   );
 }
