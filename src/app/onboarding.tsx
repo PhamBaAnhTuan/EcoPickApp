@@ -326,7 +326,7 @@ export default function OnboardingScreen() {
     try {
       await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
     } catch {}
-    router.replace('/(tabs)/map');
+    router.replace('/auth/welcome');
   }, [router]);
 
   const handleNext = useCallback(() => {

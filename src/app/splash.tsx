@@ -11,6 +11,7 @@ import Animated, {
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
+import { useAuthStore } from '@/stores/authStore';
 
 // Logo dimensions from Figma: 195x264 centered
 const LOGO_WIDTH = 195;
@@ -24,6 +25,7 @@ const ONBOARDING_KEY = '@ecopick_onboarding_complete';
 export default function SplashScreenView() {
   const router = useRouter();
   const hasNavigated = useRef(false);
+  const loadStoredAuth = useAuthStore((s) => s.loadStoredAuth);
 
   const logoOpacity = useSharedValue(0);
   const logoScale = useSharedValue(0.6);
@@ -34,13 +36,24 @@ export default function SplashScreenView() {
     hasNavigated.current = true;
 
     try {
-      // TODO: Remove this line after testing — forces onboarding flow
-      await AsyncStorage.removeItem(ONBOARDING_KEY);
+      // 1. Load auth từ AsyncStorage
+      await loadStoredAuth();
 
+      const isAuthenticated = useAuthStore.getState().isAuthenticated;
+
+      // 2. Nếu đã login → vào app luôn
+      if (isAuthenticated) {
+        router.replace('/(tabs)/map');
+        return;
+      }
+
+      // 3. Chưa login → check onboarding
       const onboardingDone = await AsyncStorage.getItem(ONBOARDING_KEY);
       if (onboardingDone === 'true') {
-        router.replace('/(tabs)/map');
+        // Đã xem onboarding → vào màn welcome/login
+        router.replace('/auth/welcome');
       } else {
+        // Chưa xem onboarding → show onboarding
         router.replace('/onboarding');
       }
     } catch {

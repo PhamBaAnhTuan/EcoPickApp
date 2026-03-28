@@ -134,7 +134,11 @@
     "dumpingTime": "Today at 10:45 AM \u2022 Oakwood Park",
     "organizedCleanup": "Organized community cleanup",
     "cleanupTime": "2 days ago \u2022 Riverside Area",
-    "pointsEarned": "+50 Eco Points earned"
+    "pointsEarned": "+50 Eco Points earned",
+    "logoutTitle": "Sign Out",
+    "logoutMessage": "Are you sure you want to sign out?",
+    "logout": "Sign Out",
+    "details": "Details"
   },
   "badges": {
     "title": "Badges"
@@ -199,7 +203,9 @@
     "deleteAccount": "Delete Account",
     "deleteAccountWarning": "This action cannot be undone",
     "signOut": "Sign Out",
-    "signOutConfirm": "Are you sure you want to sign out?"
+    "signOutConfirm": "Are you sure you want to sign out?",
+    "signOutSuccess": "Signed out",
+    "signOutSuccessDesc": "See you next time!"
   },
   "onboarding": {
     "skip": "Skip",
@@ -279,7 +285,22 @@
     "ecoAchievements": "Eco Achievements",
     "ecoAchievementsDesc": "Celebrate milestones and earn badges",
     "startCleaning": "Start Cleaning",
-    "natureGuidelines": "By continuing, you agree to our community & nature guidelines"
+    "natureGuidelines": "By continuing, you agree to our community & nature guidelines",
+    "fillAllFields": "Please enter your email and password",
+    "registerTitle": "Join EcoPick",
+    "registerSubtitle": "Create your account and start your eco journey",
+    "fullnameLabel": "Full Name",
+    "fullnamePlaceholder": "Your full name",
+    "confirmPasswordLabel": "Confirm Password",
+    "createAccount": "Create Account",
+    "registerSuccess": "Account created!",
+    "registerSuccessDesc": "Welcome to EcoPick! Signing you in...",
+    "registerFailed": "Registration failed. Please try again.",
+    "registerFailedTitle": "Registration Failed",
+    "agreeTermsPrefix": "By signing up, you agree to our",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy"
   },
   "duration": {
     "seconds": "{{count}} seconds",

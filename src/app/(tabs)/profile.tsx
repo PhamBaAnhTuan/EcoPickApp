@@ -1,16 +1,34 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, SafeAreaView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  SafeAreaView,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Colors, Fonts, BorderRadius, Spacing } from '../../constants';
+import { Colors, Fonts } from '../../constants';
+import { useAuthStore } from '@/stores/authStore';
+import { useUserInfo } from '@/hooks/useUserQueries';
 
-const mockCover = 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop';
+const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?u=ecopick_default';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+
+  // Auth & user data
+  const storeUser = useAuthStore((s) => s.user);
+  const { data: apiUser, isPending: isLoadingUser } = useUserInfo();
+
+  // Ưu tiên data từ API (mới nhất), fallback về store
+  const user = apiUser ?? storeUser;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -31,15 +49,18 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
         {/* ─── Profile Info Section ─── */}
         <View style={styles.profileSection}>
           <View style={styles.avatarWrapper}>
             <View style={styles.avatarBorder}>
-              <Image
-                source={{ uri: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' }}
-                style={styles.avatarImage}
-              />
+              {isLoadingUser ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <Image
+                  source={{ uri: user?.avatar || DEFAULT_AVATAR }}
+                  style={styles.avatarImage}
+                />
+              )}
             </View>
             <View style={styles.avatarBadge}>
               <Ionicons name="leaf" size={10.5} color={Colors.white} />
@@ -47,20 +68,31 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{t('profile.name')}</Text>
+            <Text style={styles.profileName}>
+              {user?.fullname || user?.email?.split('@')[0] || 'User'}
+            </Text>
+            <View style={styles.emailRow}>
+              <Ionicons name="mail-outline" size={14} color="#64748B" />
+              <Text style={styles.emailText}>{user?.email || '—'}</Text>
+            </View>
             <View style={styles.roleBadgeMargin}>
               <View style={styles.roleBadge}>
                 <Ionicons name="shield-checkmark" size={14.667} color={Colors.primary} />
-                <Text style={styles.roleText}>{t('profile.role')}</Text>
+                <Text style={styles.roleText}>
+                  {user?.role?.name ?? 'user'}
+                </Text>
               </View>
             </View>
-            <View style={styles.memberSinceMargin}>
-              <Text style={styles.memberSince}>{t('profile.memberSince')}</Text>
-            </View>
+            {user?.is_verified && (
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="checkmark-circle" size={14} color="#2D5A3D" />
+                <Text style={styles.verifiedText}>Đã xác minh</Text>
+              </View>
+            )}
           </View>
         </View>
 
-        {/* ─── Stats Grid ─── */}
+        {/* ─── Stats Grid (from real API data) ─── */}
         <View style={styles.statsGrid}>
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
@@ -68,14 +100,14 @@ export default function ProfileScreen() {
                 <Ionicons name="flag-outline" size={12.75} color={Colors.primary} />
                 <Text style={styles.statLabel}>{t('profile.reports')}</Text>
               </View>
-              <Text style={styles.statValue}>15</Text>
+              <Text style={styles.statValue}>{user?.total_reports ?? 0}</Text>
             </View>
             <View style={styles.statCard}>
               <View style={styles.statIconRow}>
-                <Ionicons name="trash-bin-outline" size={16.5} color={Colors.primary} />
-                <Text style={styles.statLabel}>{t('profile.cleanups')}</Text>
+                <Ionicons name="calendar-outline" size={16.5} color={Colors.primary} />
+                <Text style={styles.statLabel}>{t('profile.cleanups') || 'Events'}</Text>
               </View>
-              <Text style={styles.statValue}>8</Text>
+              <Text style={styles.statValue}>{user?.total_events ?? 0}</Text>
             </View>
           </View>
           <View style={styles.statsRow}>
@@ -84,19 +116,80 @@ export default function ProfileScreen() {
                 <Ionicons name="star-outline" size={15} color={Colors.primary} />
                 <Text style={styles.statLabel}>{t('profile.ecoPoints')}</Text>
               </View>
-              <Text style={styles.statValue}>450</Text>
+              <Text style={styles.statValue}>{user?.eco_points ?? 0}</Text>
             </View>
             <View style={styles.statCard}>
               <View style={styles.statIconRow}>
                 <Ionicons name="leaf-outline" size={12.747} color={Colors.primary} />
-                <Text style={styles.statLabel}>{t('profile.impact')}</Text>
+                <Text style={styles.statLabel}>Level</Text>
               </View>
-              <Text style={styles.statValue}>120kg</Text>
+              <Text style={styles.statValue}>{user?.level ?? 1}</Text>
             </View>
           </View>
         </View>
 
-        {/* ─── Achievements ─── */}
+        {/* ─── Social Stats ─── */}
+        <View style={styles.socialStatsCard}>
+          <View style={styles.socialStatItem}>
+            <Text style={styles.socialStatValue}>{user?.followers_count ?? 0}</Text>
+            <Text style={styles.socialStatLabel}>Followers</Text>
+          </View>
+          <View style={styles.socialStatDivider} />
+          <View style={styles.socialStatItem}>
+            <Text style={styles.socialStatValue}>{user?.following_count ?? 0}</Text>
+            <Text style={styles.socialStatLabel}>Following</Text>
+          </View>
+          <View style={styles.socialStatDivider} />
+          <View style={styles.socialStatItem}>
+            <Text style={styles.socialStatValue}>{user?.total_trees ?? 0}</Text>
+            <Text style={styles.socialStatLabel}>Trees</Text>
+          </View>
+        </View>
+
+        {/* ─── Bio ─── */}
+        {user?.bio ? (
+          <View style={styles.bioSection}>
+            <Text style={styles.sectionTitle}>Bio</Text>
+            <View style={styles.bioCard}>
+              <Text style={styles.bioText}>{user.bio}</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {/* ─── User Details ─── */}
+        <View style={styles.detailsSection}>
+          <Text style={styles.sectionTitle}>{t('profile.details') || 'Thông tin'}</Text>
+          <View style={styles.detailsCard}>
+            {user?.phone_number ? (
+              <View style={styles.detailRow}>
+                <Ionicons name="call-outline" size={16} color="#64748B" />
+                <Text style={styles.detailText}>{user.phone_number}</Text>
+              </View>
+            ) : null}
+            {user?.address ? (
+              <View style={styles.detailRow}>
+                <Ionicons name="location-outline" size={16} color="#64748B" />
+                <Text style={styles.detailText}>{user.address}</Text>
+              </View>
+            ) : null}
+            {user?.date_of_birth ? (
+              <View style={styles.detailRow}>
+                <Ionicons name="calendar-outline" size={16} color="#64748B" />
+                <Text style={styles.detailText}>{user.date_of_birth}</Text>
+              </View>
+            ) : null}
+            {!user?.phone_number && !user?.address && !user?.date_of_birth && (
+              <View style={styles.detailRow}>
+                <Ionicons name="information-circle-outline" size={16} color="#94A3B8" />
+                <Text style={[styles.detailText, { color: '#94A3B8' }]}>
+                  Chưa cập nhật thông tin chi tiết
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* ─── Achievements (placeholder – giữ UI cũ) ─── */}
         <View style={styles.achievementsMargin}>
           <View style={styles.achievementsSection}>
             <View style={styles.sectionHeader}>
@@ -134,48 +227,6 @@ export default function ProfileScreen() {
             </View>
           </View>
         </View>
-
-        {/* ─── Recent Activity ─── */}
-        <View style={styles.activityMargin}>
-          <View style={styles.activitySection}>
-            <Text style={styles.sectionTitle}>{t('profile.recentActivity')}</Text>
-
-            <View style={styles.timelineContainer}>
-              {/* Activity 1 */}
-              <View style={styles.timelineItem}>
-                {/* Vertical border line */}
-                <View style={styles.timelineLine} />
-                {/* Dot with ring */}
-                <View style={styles.timelineDotWrapper}>
-                  <View style={[styles.timelineDot, { backgroundColor: Colors.primary }]} />
-                </View>
-
-                <View style={styles.activityContent}>
-                  <Text style={styles.activityTitle}>{t('profile.reportedDumping')}</Text>
-                  <Text style={styles.activityTime}>{t('profile.dumpingTime')}</Text>
-                  <Image source={{ uri: mockCover }} style={styles.activityImage} />
-                </View>
-              </View>
-
-              {/* Activity 2 */}
-              <View style={styles.timelineItem}>
-                <View style={styles.timelineLine} />
-                <View style={styles.timelineDotWrapper}>
-                  <View style={[styles.timelineDot, { backgroundColor: 'rgba(32,105,58,0.4)' }]} />
-                </View>
-
-                <View style={[styles.activityContent, { paddingBottom: 16 }]}>
-                  <Text style={styles.activityTitle}>{t('profile.organizedCleanup')}</Text>
-                  <Text style={styles.activityTime}>{t('profile.cleanupTime')}</Text>
-                  <View style={styles.activityPointsMargin}>
-                    <Text style={styles.activityPoints}>{t('profile.pointsEarned')}</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
-        </View>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -217,7 +268,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
 
   // ─── Profile Section ───
@@ -266,6 +317,7 @@ const styles = StyleSheet.create({
   },
   profileInfo: {
     alignItems: 'center',
+    gap: 4,
   },
   profileName: {
     fontFamily: Fonts.bold,
@@ -274,6 +326,18 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     letterSpacing: -0.6,
     textAlign: 'center',
+  },
+  emailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  emailText: {
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#64748B',
   },
   roleBadgeMargin: {
     paddingTop: 4,
@@ -293,23 +357,24 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#20693A',
     textAlign: 'center',
+    textTransform: 'capitalize',
   },
-  memberSinceMargin: {
-    paddingTop: 8,
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
   },
-  memberSince: {
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#64748B',
-    textAlign: 'center',
+  verifiedText: {
+    fontFamily: Fonts.medium,
+    fontSize: 12,
+    color: '#2D5A3D',
   },
 
   // ─── Stats Grid ───
   statsGrid: {
     paddingHorizontal: 16,
     gap: 14,
-    marginBottom: 0,
   },
   statsRow: {
     flexDirection: 'row',
@@ -349,9 +414,96 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
 
+  // ─── Social Stats ───
+  socialStatsCard: {
+    marginHorizontal: 16,
+    marginTop: 14,
+    backgroundColor: Colors.white,
+    borderRadius: 24,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(32,105,58,0.05)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  socialStatItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  socialStatValue: {
+    fontFamily: Fonts.bold,
+    fontSize: 20,
+    lineHeight: 28,
+    color: '#0F172A',
+  },
+  socialStatLabel: {
+    fontFamily: Fonts.medium,
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#64748B',
+  },
+  socialStatDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: 'rgba(32,105,58,0.1)',
+  },
+
+  // ─── Bio ───
+  bioSection: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    gap: 12,
+  },
+  bioCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(32,105,58,0.05)',
+  },
+  bioText: {
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#334155',
+  },
+
+  // ─── Details ───
+  detailsSection: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    gap: 12,
+  },
+  detailsCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(32,105,58,0.05)',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  detailText: {
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#334155',
+    flex: 1,
+  },
+
   // ─── Achievements ───
   achievementsMargin: {
-    paddingTop: 32,
+    paddingTop: 24,
   },
   achievementsSection: {
     paddingHorizontal: 16,
@@ -411,79 +563,5 @@ const styles = StyleSheet.create({
     lineHeight: 10,
     color: '#94A3B8',
     textAlign: 'center',
-  },
-
-  // ─── Recent Activity ───
-  activityMargin: {
-    paddingTop: 32,
-  },
-  activitySection: {
-    paddingHorizontal: 16,
-    gap: 16,
-  },
-  timelineContainer: {
-    paddingLeft: 8,
-    gap: 16,
-  },
-  timelineItem: {
-    position: 'relative',
-    paddingLeft: 26,
-  },
-  timelineLine: {
-    position: 'absolute',
-    left: -1,
-    top: 0,
-    bottom: 0,
-    width: 2,
-    backgroundColor: 'rgba(32,105,58,0.2)',
-  },
-  timelineDotWrapper: {
-    position: 'absolute',
-    left: -9,
-    top: 0,
-    zIndex: 2,
-  },
-  timelineDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 9999,
-    // Ring effect using shadow (simulates box-shadow 0 0 0 4px)
-    shadowColor: '#F6F8F7',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    borderWidth: 4,
-    borderColor: '#F6F8F7',
-  },
-  activityContent: {
-    flex: 1,
-    gap: 2,
-  },
-  activityTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#0F172A',
-  },
-  activityTime: {
-    fontFamily: Fonts.regular,
-    fontSize: 12,
-    lineHeight: 16,
-    color: '#64748B',
-  },
-  activityImage: {
-    width: '100%',
-    height: 102,
-    borderRadius: 16,
-    marginTop: 2,
-  },
-  activityPointsMargin: {
-    paddingTop: 2,
-  },
-  activityPoints: {
-    fontFamily: Fonts.medium,
-    fontSize: 12,
-    lineHeight: 16,
-    color: '#20693A',
   },
 });

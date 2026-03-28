@@ -134,7 +134,11 @@
     "dumpingTime": "H\u00f4m nay l\u00fac 10:45 SA \u2022 C\u00f4ng vi\u00ean Oakwood",
     "organizedCleanup": "T\u1ed5 ch\u1ee9c d\u1ecdn s\u1ea1ch c\u1ed9ng \u0111\u1ed3ng",
     "cleanupTime": "2 ng\u00e0y tr\u01b0\u1edbc \u2022 Khu v\u1ef1c ven s\u00f4ng",
-    "pointsEarned": "+50 \u0111i\u1ec3m Eco \u0111\u00e3 nh\u1eadn"
+    "pointsEarned": "+50 \u0111i\u1ec3m Eco \u0111\u00e3 nh\u1eadn",
+    "logoutTitle": "\u0110\u0103ng xu\u1ea5t",
+    "logoutMessage": "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n \u0111\u0103ng xu\u1ea5t kh\u00f4ng?",
+    "logout": "\u0110\u0103ng xu\u1ea5t",
+    "details": "Th\u00f4ng tin"
   },
   "badges": {
     "title": "Huy hi\u1ec7u"
@@ -199,7 +203,9 @@
     "deleteAccount": "Xo\u00e1 t\u00e0i kho\u1ea3n",
     "deleteAccountWarning": "H\u00e0nh \u0111\u1ed9ng n\u00e0y kh\u00f4ng th\u1ec3 ho\u00e0n t\u00e1c",
     "signOut": "\u0110\u0103ng xu\u1ea5t",
-    "signOutConfirm": "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n \u0111\u0103ng xu\u1ea5t kh\u00f4ng?"
+    "signOutConfirm": "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n \u0111\u0103ng xu\u1ea5t kh\u00f4ng?",
+    "signOutSuccess": "\u0110\u00e3 \u0111\u0103ng xu\u1ea5t",
+    "signOutSuccessDesc": "H\u1eb9n g\u1eb7p l\u1ea1i b\u1ea1n!"
   },
   "onboarding": {
     "skip": "Bỏ qua",
@@ -279,7 +285,22 @@
     "ecoAchievements": "Thành tựu Eco",
     "ecoAchievementsDesc": "Ăn mừng các cột mốc và nhận huy hiệu",
     "startCleaning": "Bắt đầu dọn dẹp",
-    "natureGuidelines": "Tiếp tục đồng nghĩa với việc bạn đồng ý với nguyên tắc cộng đồng & thiên nhiên"
+    "natureGuidelines": "Tiếp tục đồng nghĩa với việc bạn đồng ý với nguyên tắc cộng đồng & thiên nhiên",
+    "fillAllFields": "Vui lòng nhập đầy đủ email và mật khẩu",
+    "registerTitle": "Tham gia EcoPick",
+    "registerSubtitle": "Tạo tài khoản và bắt đầu hành trình xanh của bạn",
+    "fullnameLabel": "Họ và tên",
+    "fullnamePlaceholder": "Nguyễn Văn A",
+    "confirmPasswordLabel": "Xác nhận mật khẩu",
+    "createAccount": "Tạo tài khoản",
+    "registerSuccess": "Tạo tài khoản thành công!",
+    "registerSuccessDesc": "Chào mừng bạn đến với EcoPick! Đang đăng nhập...",
+    "registerFailed": "Đăng ký thất bại. Vui lòng thử lại.",
+    "registerFailedTitle": "Đăng ký thất bại",
+    "agreeTermsPrefix": "Bằng việc đăng ký, bạn đồng ý với",
+    "termsOfService": "Điều khoản dịch vụ",
+    "and": "và",
+    "privacyPolicy": "Chính sách bảo mật"
   },
   "duration": {
     "seconds": "{{count}} gi\u00e2y",

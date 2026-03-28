@@ -1,22 +1,14 @@
-import React from 'react';
-import {
-  Image,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import { Fonts, AuthColors, authStyles } from '../../constants';
 import LanguageToggle from '../../components/LanguageToggle';
+import { AuthColors, authStyles, Fonts } from '../../constants';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -50,11 +42,7 @@ export default function WelcomeScreen() {
 
           <Animated.View entering={FadeIn.duration(600)} style={styles.logoContainer}>
             <View style={styles.logoCircle}>
-              <Image
-                source={require('../../assets/auth/logo_icon.png')}
-                style={styles.logoImage}
-                resizeMode="contain"
-              />
+              <Image source={require('../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
             </View>
             <Text style={styles.brandName}>{t('auth.appName')}</Text>
           </Animated.View>
@@ -72,10 +60,7 @@ export default function WelcomeScreen() {
             {/* Action buttons */}
             <Animated.View entering={FadeInDown.delay(350).duration(500)} style={styles.actionCluster}>
               {/* Continue with Email */}
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => router.push('/auth/login')}
-              >
+              <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/auth/register')}>
                 <LinearGradient
                   colors={['#144227', '#2D5A3D']}
                   start={{ x: 0, y: 0 }}
@@ -128,13 +113,8 @@ export default function WelcomeScreen() {
               <Text style={[authStyles.footerLinkText, { fontSize: 14, lineHeight: 20 }]}>
                 {t('auth.alreadyHaveAccount')}{' '}
               </Text>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => router.push('/auth/login')}
-              >
-                <Text style={[authStyles.footerLinkBold, { fontSize: 14, lineHeight: 20 }]}>
-                  {t('auth.logIn')}
-                </Text>
+              <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/auth/login')}>
+                <Text style={[authStyles.footerLinkBold, { fontSize: 14, lineHeight: 20 }]}>{t('auth.logIn')}</Text>
               </TouchableOpacity>
             </Animated.View>
           </View>
@@ -177,8 +157,8 @@ const styles = StyleSheet.create({
     }),
   },
   logoImage: {
-    width: 36,
-    height: 40,
+    width: 64,
+    height: 64,
   },
   brandName: {
     fontFamily: Fonts.bold,
@@ -187,6 +167,7 @@ const styles = StyleSheet.create({
     color: AuthColors.brandDark,
     letterSpacing: -0.6,
     marginTop: 16,
+    marginBottom: 32,
   },
   cardContainer: {
     flex: 1,
