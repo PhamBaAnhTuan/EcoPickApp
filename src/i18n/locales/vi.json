@@ -12,7 +12,12 @@
     "on": "B\u1eadt",
     "off": "T\u1eaft",
     "enabled": "\u0110\u00e3 b\u1eadt",
-    "disabled": "\u0110\u00e3 t\u1eaft"
+    "disabled": "\u0110\u00e3 t\u1eaft",
+    "back": "Quay l\u1ea1i",
+    "next": "Ti\u1ebfp",
+    "required": "Tr\u01b0\u1eddng n\u00e0y l\u00e0 b\u1eaft bu\u1ed9c",
+    "done": "Xong",
+    "optional": "Tu\u1ef3 ch\u1ecdn"
   },
   "tabs": {
     "explore": "Kh\u00e1m ph\u00e1",
@@ -56,13 +61,22 @@
     "submitReport": "G\u1eecI B\u00c1O C\u00c1O",
     "takePhotoFirst": "Vui l\u00f2ng ch\u1ee5p \u1ea3nh tr\u01b0\u1edbc!",
     "cameraPermissionRequired": "C\u1ea7n quy\u1ec1n truy c\u1eadp camera",
+    "galleryPermissionRequired": "C\u1ea7n quy\u1ec1n truy c\u1eadp th\u01b0 vi\u1ec7n \u1ea3nh",
     "plastic": "Nh\u1ef1a",
     "paper": "Gi\u1ea5y",
     "glass": "Th\u1ee7y tinh",
     "organic": "H\u1eefu c\u01a1",
     "metal": "Kim lo\u1ea1i",
     "sliderMinor": "NH\u1ece",
-    "sliderExtreme": "NGHI\u00caM TR\u1eccNG"
+    "sliderExtreme": "NGHI\u00caM TR\u1eccNG",
+    "chooseSource": "Ch\u1ecdn ngu\u1ed3n \u1ea3nh",
+    "fromCamera": "Ch\u1ee5p \u1ea3nh",
+    "fromCameraDesc": "Ch\u1ee5p \u1ea3nh r\u00e1c th\u1ea3i",
+    "fromGallery": "Th\u01b0 vi\u1ec7n",
+    "fromGalleryDesc": "Ch\u1ecdn t\u1eeb th\u01b0 vi\u1ec7n \u1ea3nh",
+    "customLocation": "T\u00f9y ch\u1ec9nh",
+    "tapToSetLocation": "Ch\u1ea1m \u0111\u1ec3 ch\u1ecdn v\u1ecb tr\u00ed",
+    "changeLocation": "\u0110\u1ed5i v\u1ecb tr\u00ed"
   },
   "permissions": {
     "title": "Y\u00eau c\u1ea7u quy\u1ec1n",
@@ -309,5 +323,76 @@
     "days": "{{count}} ng\u00e0y",
     "hoursMinutes": "{{hours}} gi\u1edd {{minutes}} ph\u00fat",
     "daysHours": "{{days}} ng\u00e0y {{hours}} gi\u1edd"
+  },
+  "pickLocation": {
+    "title": "Ch\u1ecdn v\u1ecb tr\u00ed",
+    "moveMap": "Di chuy\u1ec3n b\u1ea3n \u0111\u1ed3 \u0111\u1ec3 ch\u1ecdn v\u1ecb tr\u00ed",
+    "detecting": "\u0110ang x\u00e1c \u0111\u1ecbnh \u0111\u1ecba ch\u1ec9...",
+    "confirm": "X\u00e1c nh\u1eadn v\u1ecb tr\u00ed"
+  },
+  "createEvent": {
+    "title": "T\u1ea1o s\u1ef1 ki\u1ec7n",
+    "loginRequired": "Vui l\u00f2ng \u0111\u0103ng nh\u1eadp \u0111\u1ec3 t\u1ea1o s\u1ef1 ki\u1ec7n",
+    "createError": "T\u1ea1o s\u1ef1 ki\u1ec7n th\u1ea5t b\u1ea1i. Vui l\u00f2ng th\u1eed l\u1ea1i.",
+    "creating": "\u0110ang t\u1ea1o...",
+    "publish": "\u0110\u0103ng s\u1ef1 ki\u1ec7n",
+    "map": "B\u1ea3n \u0111\u1ed3",
+    "step": "B\u01b0\u1edbc",
+    "of": "c\u1ee7a",
+    "labels": {
+      "title": "T\u00ean s\u1ef1 ki\u1ec7n",
+      "type": "Lo\u1ea1i s\u1ef1 ki\u1ec7n",
+      "description": "M\u00f4 t\u1ea3",
+      "location": "\u0110\u1ecba \u0111i\u1ec3m",
+      "coverImage": "\u1ea2nh b\u00eca"
+    },
+    "placeholders": {
+      "title": "T\u00ean s\u1ef1 ki\u1ec7n",
+      "description": "M\u00f4 t\u1ea3 s\u1ef1 ki\u1ec7n c\u1ee7a b\u1ea1n...",
+      "location": "\u0110\u1ecba \u0111i\u1ec3m s\u1ef1 ki\u1ec7n",
+      "coverHint": "Ch\u1ea1m \u0111\u1ec3 th\u00eam \u1ea3nh b\u00eca"
+    },
+    "steps": {
+      "details": "Chi ti\u1ebft",
+      "schedule": "L\u1ecbch tr\u00ecnh",
+      "settings": "C\u00e0i \u0111\u1eb7t"
+    },
+    "types": {
+      "cleanup": "D\u1ecdn s\u1ea1ch",
+      "education": "Gi\u00e1o d\u1ee5c",
+      "planting": "Tr\u1ed3ng c\u00e2y"
+    },
+    "difficulty": {
+      "easy": "D\u1ec5",
+      "medium": "Trung b\u00ecnh",
+      "hard": "Kh\u00f3"
+    },
+    "schedule": {
+      "startsAt": "B\u1eaft \u0111\u1ea7u l\u00fac",
+      "endsAt": "K\u1ebft th\u00fac l\u00fac",
+      "duration": "Th\u1eddi l\u01b0\u1ee3ng",
+      "date": "Ng\u00e0y",
+      "time": "Gi\u1edd",
+      "selectDate": "Ch\u1ecdn ng\u00e0y",
+      "selectTime": "Ch\u1ecdn gi\u1edd"
+    },
+    "settings": {
+      "difficulty": "\u0110\u1ed9 kh\u00f3",
+      "participants": "S\u1ed1 ng\u01b0\u1eddi tham gia t\u1ed1i \u0111a",
+      "equipment": "D\u1ee5ng c\u1ee5",
+      "ecoPoints": "\u0110i\u1ec3m Eco th\u01b0\u1edfng",
+      "people": "ng\u01b0\u1eddi"
+    },
+    "equipment": {
+      "Gloves": "G\u0103ng tay",
+      "Trash bags": "T\u00fai r\u00e1c",
+      "Pickers": "K\u1eb9p g\u1eafp r\u00e1c",
+      "Water": "N\u01b0\u1edbc u\u1ed1ng",
+      "Sunscreen": "Kem ch\u1ed1ng n\u1eafng",
+      "First aid kit": "B\u1ed9 s\u01a1 c\u1ee9u"
+    },
+    "validation": {
+      "endDateAfterStart": "Ng\u00e0y k\u1ebft th\u00fac ph\u1ea3i sau ng\u00e0y b\u1eaft \u0111\u1ea7u"
+    }
   }
 }

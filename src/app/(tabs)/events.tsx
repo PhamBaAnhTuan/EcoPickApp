@@ -1,11 +1,13 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Platform } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts, FontSizes, BorderRadius, Spacing } from '../../constants';
-import { MOCK_EVENTS, EventItem } from '../../data/mockData';
+import { Colors, Fonts } from '../../constants';
 import { useTranslation } from 'react-i18next';
+import { useEvents } from '../../hooks/useEventQueries';
+import { useAuthStore } from '../../stores/authStore';
+import type { Event } from '../../api/services/eventService';
 
 const TAB_KEYS = ['upcoming', 'myEvents', 'past'] as const;
 
@@ -15,37 +17,87 @@ const AVATAR_IMAGES = [
   'https://i.pravatar.cc/100?u=c3',
 ];
 
+/** Format API date string to display format */
+function formatEventDate(dateStr: string): string {
+  try {
+    // Handle "DD/MM/YYYY HH:mm:ss" format from API
+    if (dateStr.includes('/')) {
+      const [datePart] = dateStr.split(' ');
+      const [day, month, year] = datePart.split('/');
+      const d = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    // Handle ISO format
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatEventTime(dateStr: string): string {
+  try {
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split(' ');
+      if (parts.length > 1) {
+        const [h, m] = parts[1].split(':');
+        const hour = parseInt(h);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const h12 = hour % 12 || 12;
+        return `${h12}:${m} ${ampm}`;
+      }
+    }
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  } catch {
+    return '';
+  }
+}
+
+/** Default cover image when event has none */
+const DEFAULT_EVENT_IMAGE = 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop';
+
 export default function EventsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('upcoming');
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
 
-  const getFilteredEvents = useCallback(() => {
-    if (activeTab === 'upcoming') return MOCK_EVENTS;
-    if (activeTab === 'myEvents') return MOCK_EVENTS.filter((e) => e.isOrganizer);
-    if (activeTab === 'past') return [];
-    return MOCK_EVENTS;
-  }, [activeTab]);
+  // ── Fetch events from API ──
+  const { data: apiEvents = [], isLoading } = useEvents();
 
-  const handleJoinEvent = useCallback((event: EventItem) => {
+  const filteredEvents = useMemo(() => {
+    if (activeTab === 'upcoming') {
+      return apiEvents.filter((e) => e.status === 'upcoming' || e.status === 'ongoing');
+    }
+    if (activeTab === 'myEvents') {
+      return apiEvents.filter((e) => e.organizer_id === user?.id);
+    }
+    if (activeTab === 'past') {
+      return apiEvents.filter((e) => e.status === 'completed' || e.status === 'cancelled');
+    }
+    return apiEvents;
+  }, [activeTab, apiEvents, user?.id]);
+
+  const handleJoinEvent = useCallback((event: Event) => {
     router.push(`/events/${event.id}`);
   }, [router]);
 
-  const handlePressCard = useCallback((event: EventItem) => {
+  const handlePressCard = useCallback((event: Event) => {
     router.push(`/events/${event.id}`);
   }, [router]);
 
   const renderEvent = useCallback(
-    ({ item }: { item: EventItem }) => (
+    ({ item }: { item: Event }) => (
       <TouchableOpacity
         style={styles.eventCard}
         onPress={() => handlePressCard(item)}
         activeOpacity={0.9}
       >
         <View style={styles.imageContainer}>
-          <Image source={{ uri: item.image }} style={styles.eventImage} resizeMode="cover" />
-          {item.isOrganizer && (
+          <Image source={{ uri: item.cover_image_url || DEFAULT_EVENT_IMAGE }} style={styles.eventImage} resizeMode="cover" />
+          {item.organizer_id === user?.id && (
             <View style={styles.organizerBadge}>
               <Text style={styles.organizerText}>{t('common.organizer').toUpperCase()}</Text>
             </View>
@@ -57,7 +109,7 @@ export default function EventsScreen() {
             <View style={styles.eventDateContainer}>
               <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
               <Text style={styles.eventDateText}>
-                {item.date} • {item.time}
+                {formatEventDate(item.start_date)} • {formatEventTime(item.start_date)}
               </Text>
             </View>
           </View>
@@ -78,7 +130,7 @@ export default function EventsScreen() {
                     </View>
                   ))}
                 </View>
-                <Text style={styles.othersText}>{t('events.others', { count: item.participants })}</Text>
+                <Text style={styles.othersText}>{t('events.others', { count: item.current_paticipants || 0 })}</Text>
               </View>
               <TouchableOpacity
                 style={styles.joinButton}
@@ -92,7 +144,7 @@ export default function EventsScreen() {
         </View>
       </TouchableOpacity>
     ),
-    [handleJoinEvent, handlePressCard]
+    [handleJoinEvent, handlePressCard, user?.id, t]
   );
 
   return (
@@ -132,20 +184,27 @@ export default function EventsScreen() {
       </View>
 
       {/* Event List */}
-      <FlatList
-        data={getFilteredEvents()}
-        renderItem={renderEvent}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="calendar-outline" size={48} color="#94A3B8" />
-            <Text style={styles.emptyText}>{t('events.noEvents')}</Text>
-          </View>
-        }
-      />
+      {isLoading ? (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.emptyText}>{t('common.loading', { defaultValue: 'Loading...' })}</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredEvents}
+          renderItem={renderEvent}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="calendar-outline" size={48} color="#94A3B8" />
+              <Text style={styles.emptyText}>{t('events.noEvents')}</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }

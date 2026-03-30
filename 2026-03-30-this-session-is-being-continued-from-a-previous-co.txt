@@ -1,0 +1,1059 @@
+
+╭─── Claude Code v2.1.19 ──────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting        │
+│                    Welcome back!                   │ started                 │
+│                                                    │ Run /init to create a … │
+│                       ▐▛███▜▌                      │ ─────────────────────── │
+│                      ▝▜█████▛▘                     │ Recent activity         │
+│                        ▘▘ ▝▝                       │ No recent activity      │
+│                                                    │                         │
+│        claude-opus-4.6 · API Usage Billing         │                         │
+│  ~/Public/Workspaces/uda/projects/EcoPick/ecopick  │                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+  /model to try Opus 4.5
+══════════════════ Conversation compacted · ctrl+o for history ═════════════════
+  ⎿  Referenced file src/app/(tabs)/report.tsx
+  ⎿  Referenced file src/i18n/locales/vi.json
+  ⎿  Read src/i18n/locales/en.json (386 lines)
+  ⎿  Read src/app/pick-location.tsx (466 lines)
+  ⎿  Read src/app/(tabs)/_layout.tsx (242 lines)
+  ⎿  Plan file referenced (~/.claude/plans/polymorphic-stargazing-volcano.md)
+
+● I'll continue with the API integration task. Let me first read all the current
+   screen files and API services to understand the current state, then
+  systematically wire everything up.
+
+● Explore(Read all API layer files)
+  ⎿  Done (10 tool uses · 36.0k tokens · 27s)
+
+● Explore(Read current UI screens)
+  ⎿  Done (19 tool uses · 68.8k tokens · 46s)
+
+● Now let me read the exact contents of the critical files I need to modify:
+
+● Read(src/app/(tabs)/report.tsx)
+  ⎿  Read 727 lines
+
+● Read(src/app/(tabs)/map.tsx)
+  ⎿  Read 730 lines
+
+● Read(src/app/(tabs)/events.tsx)
+  ⎿  Read 376 lines
+
+● Read(src/app/location/[id]/index.tsx)
+  ⎿  Read 197 lines
+
+● Read(src/app/events/[id]/index.tsx)
+  ⎿  Read 246 lines
+
+● Read(src/app/report-success/index.tsx)
+  ⎿  Read 169 lines
+
+● Now let me read the mock data and API services to understand the data models:
+
+● Read(src/data/mockData.ts)
+  ⎿  Read 213 lines
+
+● Read(src/api/services/reportService.ts)
+  ⎿  Read 91 lines
+
+● Read(src/hooks/useReportQueries.ts)
+  ⎿  Read 92 lines
+
+● Read(src/hooks/useEventQueries.ts)
+  ⎿  Read 88 lines
+
+● Read(src/api/services/eventService.ts)
+  ⎿  Read 139 lines
+
+● Read(src/stores/authStore.ts)
+  ⎿  Read 116 lines
+
+● Read(src/api/endpoints.ts)
+  ⎿  Read 98 lines
+
+● Read(src/components/ReportsBottomSheet.tsx)
+  ⎿  Error reading file
+
+● Search(pattern: "**/ReportsBottomSheet*", path: "src")
+  ⎿  Found 0 files
+
+● Search(pattern: "**/components/index.{ts,tsx}", path: "src")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+● Read(src/components/index.ts)
+  ⎿  Read 7 lines
+
+● Read(src/components/BottomSheet.tsx)
+  ⎿  Read 138 lines
+
+● Read(src/components/ReportCard.tsx)
+  ⎿  Read 135 lines
+
+● Now I have a complete picture. Let me create tasks and start the API
+  integration systematically.
+✔ Task #1 created: Wire up Report submission with API
+✔ Task #2 created: Replace mock data with real API on Map screen
+✔ Task #3 created: Replace mock data with real API on Events screen
+✔ Task #4 created: Wire up Create Event form with API submission
+✔ Task #5 created: Verify zero diagnostics
+
+● Now let me start with Task 1 — wiring up the Report submission:
+✔ Task #1 updated: status → in progress
+
+● Read(src/api/services/reportService.ts)
+  ⎿  Read 91 lines
+
+● First, let me update the reportService.ts to send FormData (matching the
+  backend API pattern like events):
+
+● Update(src/api/services/reportService.ts)
+  ⎿  Added 10 lines
+      28  }
+      29  
+      30  export interface CreateReportPayload {
+      31 +  reporter_id: string;                                         
+      32 +  title?: string;                                              
+      33 +  description?: string;                                        
+      34 +  location?: string;                                           
+      35 +  address?: string;                                            
+      36 +  latitude: number | string;                                   
+      37 +  longitude: number | string;                                  
+      38 +  severity?: string;                                           
+      39 +  status?: string;                                             
+      40 +  waste_types?: string;                                        
+      41    [key: string]: unknown;
+      42  }
+      43  
+
+● Now update the create method to send FormData:
+
+● Update(src/api/services/reportService.ts)
+  ⎿  Added 8 lines, removed 2 lines
+      58      return data;
+      59    },
+      60  
+      61 -  /** POST /api/report/reports/ */                             
+      61 +  /** POST /api/report/reports/ (formdata) */                  
+      62    create: async (payload: CreateReportPayload) => {
+      63 -    const { data } = await api.post<Report>(ENDPOINTS.REPORTS.L
+         -IST, payload);                                                 
+      63 +    const formData = new FormData();                           
+      64 +    Object.entries(payload).forEach(([key, value]) => {        
+      65 +      if (value !== undefined && value !== null) formData.appen
+         +d(key, String(value));                                         
+      66 +    });                                                        
+      67 +    const { data } = await api.post<Report>(ENDPOINTS.REPORTS.L
+         +IST, formData, {                                               
+      68 +      headers: { 'Content-Type': 'multipart/form-data' },      
+      69 +    });                                                        
+      70      return data;
+      71    },
+      72  
+
+● Now let me update report.tsx to wire up the API submission:
+
+● Update(src/app/(tabs)/report.tsx)
+  ⎿  Added 4 lines
+      10    Platform,
+      11    KeyboardAvoidingView,
+      12    Dimensions,
+      13 +  ActivityIndicator,                                           
+      14 +  Alert,                                                       
+      15    type ImageStyle,
+      16  } from 'react-native';
+      17  import { useLocalSearchParams, useRouter } from 'expo-router';
+     ...
+      30    clamp,
+      31  } from 'react-native-reanimated';
+      32  import { Gesture, GestureDetector } from 'react-native-gesture-
+          handler';
+      33 +import { useCreateReport, useUploadReportImage } from '../../ho
+         +oks/useReportQueries';                                         
+      34 +import { useAuthStore } from '../../stores/authStore';         
+      35  
+      36  const { height } = Dimensions.get('window');
+      37  
+
+● Now update the component to add API hooks and the submission logic:
+
+● Update(src/app/(tabs)/report.tsx)
+  ⎿  Added 6 lines
+      56      locationSource?: string;
+      57    }>();
+      58    const { t } = useTranslation();
+      59 +  const user = useAuthStore((s) => s.user);                    
+      60  
+      61 +  // ── API mutations ──                                       
+      62 +  const createReportMutation = useCreateReport();              
+      63 +  const uploadImageMutation = useUploadReportImage();          
+      64 +  const isSubmitting = createReportMutation.isPending || upload
+         +ImageMutation.isPending;                                       
+      65 +                                                               
+      66    const [image, setImage] = useState<string | null>(null);
+      67    const [description, setDescription] = useState('');
+      68    const [severityValue, setSeverityValue] = useState(0.6); // 0
+           to 1
+
+● Now replace the handleSubmit function with the API-integrated version:
+
+● Update(src/app/(tabs)/report.tsx)
+  ⎿  Added 66 lines, removed 14 lines
+      131      return t('severity.extreme');
+      132    };
+      133  
+      134 -  const handleSubmit = () => {                                
+      134 +  // Map slider value (0-1) to API severity string            
+      135 +  const getSeverityApiValue = (val: number): string => {      
+      136 +    if (val < 0.25) return 'low';                             
+      137 +    if (val < 0.5) return 'medium';                           
+      138 +    if (val < 0.75) return 'high';                            
+      139 +    return 'critical';                                        
+      140 +  };                                                          
+      141 +                                                              
+      142 +  const handleSubmit = async () => {                          
+      143      if (!image) {
+      144        alert(t('report.takePhotoFirst'));
+      145        return;
+      146      }
+      147  
+      140 -    // Clear the form                                         
+      141 -    setImage(null);                                           
+      142 -    setDescription('');                                       
+      143 -    setSeverityValue(0.6);                                    
+      144 -    setSelectedWasteTypes(new Set(['plastic']));              
+      148 +    try {                                                     
+      149 +      // 1. Create the report via API                         
+      150 +      const wasteTypesStr = Array.from(selectedWasteTypes).joi
+          +n(', ');                                                      
+      151 +      const severityApi = getSeverityApiValue(severityValue); 
+      152 +      const locationName = locationAddress || `${locationLat},
+          + ${locationLng}`;                                             
+      153  
+      146 -    // Navigate to Success Screen with location data          
+      147 -    router.replace({                                          
+      148 -      pathname: '/report-success',                            
+      149 -      params: {                                               
+      150 -        latitude: locationLat,                                
+      151 -        longitude: locationLng,                               
+      152 -      },                                                      
+      153 -    } as any);                                                
+      154 +      const report = await createReportMutation.mutateAsync({ 
+      155 +        reporter_id: user?.id || '',                          
+      156 +        title: locationName,                                  
+      157 +        description: description || undefined,                
+      158 +        location: locationName,                               
+      159 +        address: locationAddress || undefined,                
+      160 +        latitude: locationLat ? parseFloat(locationLat) : 0,  
+      161 +        longitude: locationLng ? parseFloat(locationLng) : 0, 
+      162 +        severity: severityApi,                                
+      163 +        status: 'pending',                                    
+      164 +        waste_types: wasteTypesStr,                           
+      165 +      });                                                     
+      166 +                                                              
+      167 +      // 2. Upload the image                                  
+      168 +      if (report?.id && image) {                              
+      169 +        try {                                                 
+      170 +          const imageFormData = new FormData();               
+      171 +          imageFormData.append('report_id', report.id);       
+      172 +          const fileExtension = image.split('.').pop() || 'jpg
+          +';                                                            
+      173 +          imageFormData.append('image', {                     
+      174 +            uri: image,                                       
+      175 +            name: `report_${report.id}.${fileExtension}`,     
+      176 +            type: `image/${fileExtension === 'png' ? 'png' : '
+          +jpeg'}`,                                                      
+      177 +          } as any);                                          
+      178 +          await uploadImageMutation.mutateAsync(imageFormData)
+          +;                                                             
+      179 +        } catch (imgErr) {                                    
+      180 +          console.warn('Image upload failed, report created:',
+          + imgErr);                                                     
+      181 +        }                                                     
+      182 +      }                                                       
+      183 +                                                              
+      184 +      // 3. Clear the form                                    
+      185 +      setImage(null);                                         
+      186 +      setDescription('');                                     
+      187 +      setSeverityValue(0.6);                                  
+      188 +      setSelectedWasteTypes(new Set(['plastic']));            
+      189 +                                                              
+      190 +      // 4. Navigate to Success Screen                        
+      191 +      router.replace({                                        
+      192 +        pathname: '/report-success',                          
+      193 +        params: {                                             
+      194 +          reportId: report?.id || '',                         
+      195 +          latitude: locationLat,                              
+      196 +          longitude: locationLng,                             
+      197 +        },                                                    
+      198 +      } as any);                                              
+      199 +    } catch (error: any) {                                    
+      200 +      console.error('Report submission error:', error);       
+      201 +      Alert.alert(                                            
+      202 +        t('common.error'),                                    
+      203 +        error?.response?.data?.detail || error?.message || 'Fa
+          +iled to submit report. Please try again.',                    
+      204 +      );                                                      
+      205 +    }                                                         
+      206    };
+      207  
+      208    // Navigate to pick-location to change/set location
+
+● Now update the submit button to show loading state:
+
+● Update(src/app/(tabs)/report.tsx)
+  ⎿  Added 10 lines, removed 4 lines
+      416          {/* ─── Fixed Bottom Submit Button ─── */}
+      417          <View style={styles.submitBarContainer}>
+      418            <TouchableOpacity
+      419 -            style={[styles.submitBtn, !image && styles.submitB
+          -tnDisabled]}                                                  
+      419 +            style={[styles.submitBtn, (!image || isSubmitting)
+          + && styles.submitBtnDisabled]}                                
+      420              onPress={handleSubmit}
+      421              activeOpacity={0.8}
+      422 -            disabled={!image}                                 
+      422 +            disabled={!image || isSubmitting}                 
+      423            >
+      424 -            <Ionicons name="cloud-upload-outline" size={18} co
+          -lor="#FFFFFF" />                                              
+      425 -            <Text style={styles.submitBtnText}>{t('report.subm
+          -itReport')}</Text>                                            
+      424 +            {isSubmitting ? (                                 
+      425 +              <ActivityIndicator size="small" color="#FFFFFF" 
+          +/>                                                            
+      426 +            ) : (                                             
+      427 +              <Ionicons name="cloud-upload-outline" size={18} 
+          +color="#FFFFFF" />                                            
+      428 +            )}                                                
+      429 +            <Text style={styles.submitBtnText}>               
+      430 +              {isSubmitting ? t('common.calculating') : t('rep
+          +ort.submitReport')}                                           
+      431 +            </Text>                                           
+      432            </TouchableOpacity>
+      433          </View>
+      434        </Animated.View>
+
+● Task 1 done. Now Task 2 — Map screen with real API data:
+✔ Task #1 updated: status → completed
+✔ Task #2 updated: status → in progress
+
+● Now I need to update the map screen to use useReports() instead of mock data.
+  The key challenge is transforming Report API data → WasteReport and MapMarker
+  types:
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 2 lines, removed 2 lines
+      14    ReportsBottomSheet,
+      15  } from '../../components';
+      16  import {
+      17 -  MOCK_REPORTS,                                                
+      18 -  MAP_MARKERS,                                                 
+      17    INITIAL_REGION,
+      18    SEVERITY_FILTERS,
+      19    SeverityLevel,
+     ...
+      22  import { getSeverityIcon } from '../../utils/severity';
+      23  import { formatDistanceInfo, formatRouteInfo } from '../../util
+          s/distance';
+      24  import { useTranslation } from 'react-i18next';
+      25 +import { useReports } from '../../hooks/useReportQueries';     
+      26 +import type { Report } from '../../api/services/reportService';
+      27  
+      28  // ─── Marker Design Config ───────────────────────────────────
+          ────────
+      29  const MARKER_THEMES: Record<SeverityLevel, { bg: string; border
+          : string; icon: string; glow: string }> = {
+
+● Now add the API severity mapping and transform function inside the component,
+  and replace MOCK_REPORTS usage:
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 21 lines
+      218    },
+      219  });
+      220  
+      221 +// ─── API severity → UI severity mapping ────────────────────
+          +─────────                                                     
+      222 +const API_SEVERITY_TO_UI: Record<string, SeverityLevel> = {   
+      223 +  low: 'light',                                               
+      224 +  medium: 'medium',                                           
+      225 +  high: 'heavy',                                              
+      226 +  critical: 'extreme',                                        
+      227 +};                                                            
+      228 +                                                              
+      229 +/** Transform API Report → UI WasteReport */                  
+      230 +function transformReportToWasteReport(r: Report): WasteReport 
+          +{                                                             
+      231 +  return {                                                    
+      232 +    id: r.id,                                                 
+      233 +    title: r.location || r.title || r.address || `Report #${r.
+          +id.slice(0, 6)}`,                                             
+      234 +    description: r.description || '',                         
+      235 +    severity: API_SEVERITY_TO_UI[r.severity || 'low'] || 'ligh
+          +t',                                                           
+      236 +    distance: '',                                             
+      237 +    latitude: r.latitude || 0,                                
+      238 +    longitude: r.longitude || 0,                              
+      239 +  };                                                          
+      240 +}                                                             
+      241 +                                                              
+      242  // ─── Main MapScreen ────────────────────────────────────────
+           ─────────
+      243  export default function MapScreen() {
+      244    const router = useRouter();
+
+● Now add the API query hook inside the component and replace the mock data
+  usage:
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 7 lines
+      251      new Set(['light', 'medium', 'heavy', 'extreme']),
+      252    );
+      253  
+      254 +  // ── Fetch reports from API ──                             
+      255 +  const { data: apiReports = [], isLoading: isLoadingReports }
+          + = useReports();                                              
+      256 +  const allReports: WasteReport[] = useMemo(                  
+      257 +    () => apiReports.map(transformReportToWasteReport),       
+      258 +    [apiReports],                                             
+      259 +  );                                                          
+      260 +                                                              
+      261    // Routing State
+      262    const [routeCoordinates, setRouteCoordinates] = useState<{ l
+           atitude: number; longitude: number }[]>([]);
+      263    const [isRouting, setIsRouting] = useState(false);
+
+● Now replace the MOCK_REPORTS references with allReports:
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 3 lines, removed 3 lines
+      269  
+      270    // Compute real distance + motorbike time for each report ba
+           sed on user location
+      271    const reportsWithDistance: WasteReport[] = useMemo(() => {
+      272 -    if (!userLocation) return MOCK_REPORTS;                   
+      272 +    if (!userLocation) return allReports;                     
+      273      const uLat = userLocation.coords.latitude;
+      274      const uLng = userLocation.coords.longitude;
+      275 -    return MOCK_REPORTS.map((r) => ({                         
+      275 +    return allReports.map((r) => ({                           
+      276        ...r,
+      277        distance: formatDistanceInfo(uLat, uLng, r.latitude, r.l
+           ongitude),
+      278      }));
+      279 -  }, [userLocation]);                                         
+      279 +  }, [userLocation, allReports]);                             
+      280  
+      281    useEffect(() => {
+      282      (async () => {
+
+● Now replace MAP_MARKERS with the filtered reports for map markers:
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 1 line, removed 1 line
+      378    }, []);
+      379  
+      380    const filteredReports = reportsWithDistance.filter((r) => ac
+           tiveFilters.has(r.severity));
+      381 -  const filteredMarkers = MAP_MARKERS.filter((m) => activeFilt
+          -ers.has(m.severity));                                         
+      381 +  const filteredMarkers = reportsWithDistance.filter((m) => ac
+          +tiveFilters.has(m.severity));                                 
+      382  
+      383    const handleMyLocation = useCallback(async () => {
+      384      try {
+
+● Now update the marker rendering to use the reports data (which has
+  latitude/longitude/severity/id):
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 12 lines, removed 15 lines
+      445    }, [router]);
+      446  
+      447    const handleMarkerClick = useCallback(
+      448 -    (marker: { id?: string }) => {                            
+      449 -      const report = reportsWithDistance.find((r) => r.id === 
+          -marker.id);                                                   
+      450 -      if (report) {                                           
+      451 -        if (mapRef.current) {                                 
+      452 -          mapRef.current.animateToRegion(                     
+      453 -            {                                                 
+      454 -              latitude: report.latitude,                      
+      455 -              longitude: report.longitude,                    
+      456 -              latitudeDelta: 0.015,                           
+      457 -              longitudeDelta: 0.015,                          
+      458 -            },                                                
+      459 -            800,                                              
+      460 -          );                                                  
+      461 -        }                                                     
+      462 -        router.push(`/location/${report.id}`);                
+      448 +    (marker: WasteReport) => {                                
+      449 +      if (mapRef.current) {                                   
+      450 +        mapRef.current.animateToRegion(                       
+      451 +          {                                                   
+      452 +            latitude: marker.latitude,                        
+      453 +            longitude: marker.longitude,                      
+      454 +            latitudeDelta: 0.015,                             
+      455 +            longitudeDelta: 0.015,                            
+      456 +          },                                                  
+      457 +          800,                                                
+      458 +        );                                                    
+      459        }
+      460 +      router.push(`/location/${marker.id}`);                  
+      461      },
+      462      [router],
+      463    );
+
+● Now update the markers rendering to handle the correct type:
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 4 lines, removed 2 lines
+      478          customMapStyle={CUSTOM_MAP_STYLE}
+      479          mapPadding={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      480        >
+      481 -        {/* Waste Report Markers — custom design */}          
+      482 -        {filteredMarkers.map((marker) => (                    
+      481 +        {/* Waste Report Markers — from API */}               
+      482 +        {filteredMarkers                                      
+      483 +          .filter((m) => m.latitude && m.longitude)           
+      484 +          .map((marker) => (                                  
+      485            <Marker
+      486              key={marker.id}
+      487              coordinate={{ latitude: marker.latitude, longitude
+           : marker.longitude }}
+  ⎿ API Error: 402 {"type":"error","error":{"type":"insufficient_credits","messa
+    ge":"Insufficient credits. Please top up your account to 
+    continue.","credits_remaining":0}}
+
+✻ Worked for 10m 52s
+╭─── Claude Code v2.1.19 ──────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting        │
+│                    Welcome back!                   │ started                 │
+│                                                    │ Run /init to create a … │
+│                       ▐▛███▜▌                      │ ─────────────────────── │
+│                      ▝▜█████▛▘                     │ Recent activity         │
+│                        ▘▘ ▝▝                       │ No recent activity      │
+│                                                    │                         │
+│        claude-opus-4.6 · API Usage Billing         │                         │
+│  ~/Public/Workspaces/uda/projects/EcoPick/ecopick  │                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+  /model to try Opus 4.5
+══════════════════ Conversation compacted · ctrl+o for history ═════════════════
+  ⎿  Referenced file src/app/(tabs)/report.tsx
+  ⎿  Referenced file src/i18n/locales/vi.json
+  ⎿  Read src/i18n/locales/en.json (386 lines)
+  ⎿  Read src/app/pick-location.tsx (466 lines)
+  ⎿  Read src/app/(tabs)/_layout.tsx (242 lines)
+  ⎿  Plan file referenced (~/.claude/plans/polymorphic-stargazing-volcano.md)
+
+● I'll continue with the API integration task. Let me first read all the current
+   screen files and API services to understand the current state, then
+  systematically wire everything up.
+
+● Explore(Read all API layer files)
+  ⎿  Done (10 tool uses · 36.0k tokens · 27s)
+
+● Explore(Read current UI screens)
+  ⎿  Done (19 tool uses · 68.8k tokens · 46s)
+
+● Now let me read the exact contents of the critical files I need to modify:
+
+● Read(src/app/(tabs)/report.tsx)
+  ⎿  Read 727 lines
+
+● Read(src/app/(tabs)/map.tsx)
+  ⎿  Read 730 lines
+
+● Read(src/app/(tabs)/events.tsx)
+  ⎿  Read 376 lines
+
+● Read(src/app/location/[id]/index.tsx)
+  ⎿  Read 197 lines
+
+● Read(src/app/events/[id]/index.tsx)
+  ⎿  Read 246 lines
+
+● Read(src/app/report-success/index.tsx)
+  ⎿  Read 169 lines
+
+● Now let me read the mock data and API services to understand the data models:
+
+● Read(src/data/mockData.ts)
+  ⎿  Read 213 lines
+
+● Read(src/api/services/reportService.ts)
+  ⎿  Read 91 lines
+
+● Read(src/hooks/useReportQueries.ts)
+  ⎿  Read 92 lines
+
+● Read(src/hooks/useEventQueries.ts)
+  ⎿  Read 88 lines
+
+● Read(src/api/services/eventService.ts)
+  ⎿  Read 139 lines
+
+● Read(src/stores/authStore.ts)
+  ⎿  Read 116 lines
+
+● Read(src/api/endpoints.ts)
+  ⎿  Read 98 lines
+
+● Read(src/components/ReportsBottomSheet.tsx)
+  ⎿  Error reading file
+
+● Search(pattern: "**/ReportsBottomSheet*", path: "src")
+  ⎿  Found 0 files
+
+● Search(pattern: "**/components/index.{ts,tsx}", path: "src")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+● Read(src/components/index.ts)
+  ⎿  Read 7 lines
+
+● Read(src/components/BottomSheet.tsx)
+  ⎿  Read 138 lines
+
+● Read(src/components/ReportCard.tsx)
+  ⎿  Read 135 lines
+
+● Now I have a complete picture. Let me create tasks and start the API
+  integration systematically.
+✔ Task #1 created: Wire up Report submission with API
+✔ Task #2 created: Replace mock data with real API on Map screen
+✔ Task #3 created: Replace mock data with real API on Events screen
+✔ Task #4 created: Wire up Create Event form with API submission
+✔ Task #5 created: Verify zero diagnostics
+
+● Now let me start with Task 1 — wiring up the Report submission:
+✔ Task #1 updated: status → in progress
+
+● Read(src/api/services/reportService.ts)
+  ⎿  Read 91 lines
+
+● First, let me update the reportService.ts to send FormData (matching the
+  backend API pattern like events):
+
+● Update(src/api/services/reportService.ts)
+  ⎿  Added 10 lines
+      28  }
+      29  
+      30  export interface CreateReportPayload {
+      31 +  reporter_id: string;                                         
+      32 +  title?: string;                                              
+      33 +  description?: string;                                        
+      34 +  location?: string;                                           
+      35 +  address?: string;                                            
+      36 +  latitude: number | string;                                   
+      37 +  longitude: number | string;                                  
+      38 +  severity?: string;                                           
+      39 +  status?: string;                                             
+      40 +  waste_types?: string;                                        
+      41    [key: string]: unknown;
+      42  }
+      43  
+
+● Now update the create method to send FormData:
+
+● Update(src/api/services/reportService.ts)
+  ⎿  Added 8 lines, removed 2 lines
+      58      return data;
+      59    },
+      60  
+      61 -  /** POST /api/report/reports/ */                             
+      61 +  /** POST /api/report/reports/ (formdata) */                  
+      62    create: async (payload: CreateReportPayload) => {
+      63 -    const { data } = await api.post<Report>(ENDPOINTS.REPORTS.L
+         -IST, payload);                                                 
+      63 +    const formData = new FormData();                           
+      64 +    Object.entries(payload).forEach(([key, value]) => {        
+      65 +      if (value !== undefined && value !== null) formData.appen
+         +d(key, String(value));                                         
+      66 +    });                                                        
+      67 +    const { data } = await api.post<Report>(ENDPOINTS.REPORTS.L
+         +IST, formData, {                                               
+      68 +      headers: { 'Content-Type': 'multipart/form-data' },      
+      69 +    });                                                        
+      70      return data;
+      71    },
+      72  
+
+● Now let me update report.tsx to wire up the API submission:
+
+● Update(src/app/(tabs)/report.tsx)
+  ⎿  Added 4 lines
+      10    Platform,
+      11    KeyboardAvoidingView,
+      12    Dimensions,
+      13 +  ActivityIndicator,                                           
+      14 +  Alert,                                                       
+      15    type ImageStyle,
+      16  } from 'react-native';
+      17  import { useLocalSearchParams, useRouter } from 'expo-router';
+     ...
+      30    clamp,
+      31  } from 'react-native-reanimated';
+      32  import { Gesture, GestureDetector } from 'react-native-gesture-
+          handler';
+      33 +import { useCreateReport, useUploadReportImage } from '../../ho
+         +oks/useReportQueries';                                         
+      34 +import { useAuthStore } from '../../stores/authStore';         
+      35  
+      36  const { height } = Dimensions.get('window');
+      37  
+
+● Now update the component to add API hooks and the submission logic:
+
+● Update(src/app/(tabs)/report.tsx)
+  ⎿  Added 6 lines
+      56      locationSource?: string;
+      57    }>();
+      58    const { t } = useTranslation();
+      59 +  const user = useAuthStore((s) => s.user);                    
+      60  
+      61 +  // ── API mutations ──                                       
+      62 +  const createReportMutation = useCreateReport();              
+      63 +  const uploadImageMutation = useUploadReportImage();          
+      64 +  const isSubmitting = createReportMutation.isPending || upload
+         +ImageMutation.isPending;                                       
+      65 +                                                               
+      66    const [image, setImage] = useState<string | null>(null);
+      67    const [description, setDescription] = useState('');
+      68    const [severityValue, setSeverityValue] = useState(0.6); // 0
+           to 1
+
+● Now replace the handleSubmit function with the API-integrated version:
+
+● Update(src/app/(tabs)/report.tsx)
+  ⎿  Added 66 lines, removed 14 lines
+      131      return t('severity.extreme');
+      132    };
+      133  
+      134 -  const handleSubmit = () => {                                
+      134 +  // Map slider value (0-1) to API severity string            
+      135 +  const getSeverityApiValue = (val: number): string => {      
+      136 +    if (val < 0.25) return 'low';                             
+      137 +    if (val < 0.5) return 'medium';                           
+      138 +    if (val < 0.75) return 'high';                            
+      139 +    return 'critical';                                        
+      140 +  };                                                          
+      141 +                                                              
+      142 +  const handleSubmit = async () => {                          
+      143      if (!image) {
+      144        alert(t('report.takePhotoFirst'));
+      145        return;
+      146      }
+      147  
+      140 -    // Clear the form                                         
+      141 -    setImage(null);                                           
+      142 -    setDescription('');                                       
+      143 -    setSeverityValue(0.6);                                    
+      144 -    setSelectedWasteTypes(new Set(['plastic']));              
+      148 +    try {                                                     
+      149 +      // 1. Create the report via API                         
+      150 +      const wasteTypesStr = Array.from(selectedWasteTypes).joi
+          +n(', ');                                                      
+      151 +      const severityApi = getSeverityApiValue(severityValue); 
+      152 +      const locationName = locationAddress || `${locationLat},
+          + ${locationLng}`;                                             
+      153  
+      146 -    // Navigate to Success Screen with location data          
+      147 -    router.replace({                                          
+      148 -      pathname: '/report-success',                            
+      149 -      params: {                                               
+      150 -        latitude: locationLat,                                
+      151 -        longitude: locationLng,                               
+      152 -      },                                                      
+      153 -    } as any);                                                
+      154 +      const report = await createReportMutation.mutateAsync({ 
+      155 +        reporter_id: user?.id || '',                          
+      156 +        title: locationName,                                  
+      157 +        description: description || undefined,                
+      158 +        location: locationName,                               
+      159 +        address: locationAddress || undefined,                
+      160 +        latitude: locationLat ? parseFloat(locationLat) : 0,  
+      161 +        longitude: locationLng ? parseFloat(locationLng) : 0, 
+      162 +        severity: severityApi,                                
+      163 +        status: 'pending',                                    
+      164 +        waste_types: wasteTypesStr,                           
+      165 +      });                                                     
+      166 +                                                              
+      167 +      // 2. Upload the image                                  
+      168 +      if (report?.id && image) {                              
+      169 +        try {                                                 
+      170 +          const imageFormData = new FormData();               
+      171 +          imageFormData.append('report_id', report.id);       
+      172 +          const fileExtension = image.split('.').pop() || 'jpg
+          +';                                                            
+      173 +          imageFormData.append('image', {                     
+      174 +            uri: image,                                       
+      175 +            name: `report_${report.id}.${fileExtension}`,     
+      176 +            type: `image/${fileExtension === 'png' ? 'png' : '
+          +jpeg'}`,                                                      
+      177 +          } as any);                                          
+      178 +          await uploadImageMutation.mutateAsync(imageFormData)
+          +;                                                             
+      179 +        } catch (imgErr) {                                    
+      180 +          console.warn('Image upload failed, report created:',
+          + imgErr);                                                     
+      181 +        }                                                     
+      182 +      }                                                       
+      183 +                                                              
+      184 +      // 3. Clear the form                                    
+      185 +      setImage(null);                                         
+      186 +      setDescription('');                                     
+      187 +      setSeverityValue(0.6);                                  
+      188 +      setSelectedWasteTypes(new Set(['plastic']));            
+      189 +                                                              
+      190 +      // 4. Navigate to Success Screen                        
+      191 +      router.replace({                                        
+      192 +        pathname: '/report-success',                          
+      193 +        params: {                                             
+      194 +          reportId: report?.id || '',                         
+      195 +          latitude: locationLat,                              
+      196 +          longitude: locationLng,                             
+      197 +        },                                                    
+      198 +      } as any);                                              
+      199 +    } catch (error: any) {                                    
+      200 +      console.error('Report submission error:', error);       
+      201 +      Alert.alert(                                            
+      202 +        t('common.error'),                                    
+      203 +        error?.response?.data?.detail || error?.message || 'Fa
+          +iled to submit report. Please try again.',                    
+      204 +      );                                                      
+      205 +    }                                                         
+      206    };
+      207  
+      208    // Navigate to pick-location to change/set location
+
+● Now update the submit button to show loading state:
+
+● Update(src/app/(tabs)/report.tsx)
+  ⎿  Added 10 lines, removed 4 lines
+      416          {/* ─── Fixed Bottom Submit Button ─── */}
+      417          <View style={styles.submitBarContainer}>
+      418            <TouchableOpacity
+      419 -            style={[styles.submitBtn, !image && styles.submitB
+          -tnDisabled]}                                                  
+      419 +            style={[styles.submitBtn, (!image || isSubmitting)
+          + && styles.submitBtnDisabled]}                                
+      420              onPress={handleSubmit}
+      421              activeOpacity={0.8}
+      422 -            disabled={!image}                                 
+      422 +            disabled={!image || isSubmitting}                 
+      423            >
+      424 -            <Ionicons name="cloud-upload-outline" size={18} co
+          -lor="#FFFFFF" />                                              
+      425 -            <Text style={styles.submitBtnText}>{t('report.subm
+          -itReport')}</Text>                                            
+      424 +            {isSubmitting ? (                                 
+      425 +              <ActivityIndicator size="small" color="#FFFFFF" 
+          +/>                                                            
+      426 +            ) : (                                             
+      427 +              <Ionicons name="cloud-upload-outline" size={18} 
+          +color="#FFFFFF" />                                            
+      428 +            )}                                                
+      429 +            <Text style={styles.submitBtnText}>               
+      430 +              {isSubmitting ? t('common.calculating') : t('rep
+          +ort.submitReport')}                                           
+      431 +            </Text>                                           
+      432            </TouchableOpacity>
+      433          </View>
+      434        </Animated.View>
+
+● Task 1 done. Now Task 2 — Map screen with real API data:
+✔ Task #1 updated: status → completed
+✔ Task #2 updated: status → in progress
+
+● Now I need to update the map screen to use useReports() instead of mock data.
+  The key challenge is transforming Report API data → WasteReport and MapMarker
+  types:
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 2 lines, removed 2 lines
+      14    ReportsBottomSheet,
+      15  } from '../../components';
+      16  import {
+      17 -  MOCK_REPORTS,                                                
+      18 -  MAP_MARKERS,                                                 
+      17    INITIAL_REGION,
+      18    SEVERITY_FILTERS,
+      19    SeverityLevel,
+     ...
+      22  import { getSeverityIcon } from '../../utils/severity';
+      23  import { formatDistanceInfo, formatRouteInfo } from '../../util
+          s/distance';
+      24  import { useTranslation } from 'react-i18next';
+      25 +import { useReports } from '../../hooks/useReportQueries';     
+      26 +import type { Report } from '../../api/services/reportService';
+      27  
+      28  // ─── Marker Design Config ───────────────────────────────────
+          ────────
+      29  const MARKER_THEMES: Record<SeverityLevel, { bg: string; border
+          : string; icon: string; glow: string }> = {
+
+● Now add the API severity mapping and transform function inside the component,
+  and replace MOCK_REPORTS usage:
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 21 lines
+      218    },
+      219  });
+      220  
+      221 +// ─── API severity → UI severity mapping ────────────────────
+          +─────────                                                     
+      222 +const API_SEVERITY_TO_UI: Record<string, SeverityLevel> = {   
+      223 +  low: 'light',                                               
+      224 +  medium: 'medium',                                           
+      225 +  high: 'heavy',                                              
+      226 +  critical: 'extreme',                                        
+      227 +};                                                            
+      228 +                                                              
+      229 +/** Transform API Report → UI WasteReport */                  
+      230 +function transformReportToWasteReport(r: Report): WasteReport 
+          +{                                                             
+      231 +  return {                                                    
+      232 +    id: r.id,                                                 
+      233 +    title: r.location || r.title || r.address || `Report #${r.
+          +id.slice(0, 6)}`,                                             
+      234 +    description: r.description || '',                         
+      235 +    severity: API_SEVERITY_TO_UI[r.severity || 'low'] || 'ligh
+          +t',                                                           
+      236 +    distance: '',                                             
+      237 +    latitude: r.latitude || 0,                                
+      238 +    longitude: r.longitude || 0,                              
+      239 +  };                                                          
+      240 +}                                                             
+      241 +                                                              
+      242  // ─── Main MapScreen ────────────────────────────────────────
+           ─────────
+      243  export default function MapScreen() {
+      244    const router = useRouter();
+
+● Now add the API query hook inside the component and replace the mock data
+  usage:
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 7 lines
+      251      new Set(['light', 'medium', 'heavy', 'extreme']),
+      252    );
+      253  
+      254 +  // ── Fetch reports from API ──                             
+      255 +  const { data: apiReports = [], isLoading: isLoadingReports }
+          + = useReports();                                              
+      256 +  const allReports: WasteReport[] = useMemo(                  
+      257 +    () => apiReports.map(transformReportToWasteReport),       
+      258 +    [apiReports],                                             
+      259 +  );                                                          
+      260 +                                                              
+      261    // Routing State
+      262    const [routeCoordinates, setRouteCoordinates] = useState<{ l
+           atitude: number; longitude: number }[]>([]);
+      263    const [isRouting, setIsRouting] = useState(false);
+
+● Now replace the MOCK_REPORTS references with allReports:
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 3 lines, removed 3 lines
+      269  
+      270    // Compute real distance + motorbike time for each report ba
+           sed on user location
+      271    const reportsWithDistance: WasteReport[] = useMemo(() => {
+      272 -    if (!userLocation) return MOCK_REPORTS;                   
+      272 +    if (!userLocation) return allReports;                     
+      273      const uLat = userLocation.coords.latitude;
+      274      const uLng = userLocation.coords.longitude;
+      275 -    return MOCK_REPORTS.map((r) => ({                         
+      275 +    return allReports.map((r) => ({                           
+      276        ...r,
+      277        distance: formatDistanceInfo(uLat, uLng, r.latitude, r.l
+           ongitude),
+      278      }));
+      279 -  }, [userLocation]);                                         
+      279 +  }, [userLocation, allReports]);                             
+      280  
+      281    useEffect(() => {
+      282      (async () => {
+
+● Now replace MAP_MARKERS with the filtered reports for map markers:
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 1 line, removed 1 line
+      378    }, []);
+      379  
+      380    const filteredReports = reportsWithDistance.filter((r) => ac
+           tiveFilters.has(r.severity));
+      381 -  const filteredMarkers = MAP_MARKERS.filter((m) => activeFilt
+          -ers.has(m.severity));                                         
+      381 +  const filteredMarkers = reportsWithDistance.filter((m) => ac
+          +tiveFilters.has(m.severity));                                 
+      382  
+      383    const handleMyLocation = useCallback(async () => {
+      384      try {
+
+● Now update the marker rendering to use the reports data (which has
+  latitude/longitude/severity/id):
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 12 lines, removed 15 lines
+      445    }, [router]);
+      446  
+      447    const handleMarkerClick = useCallback(
+      448 -    (marker: { id?: string }) => {                            
+      449 -      const report = reportsWithDistance.find((r) => r.id === 
+          -marker.id);                                                   
+      450 -      if (report) {                                           
+      451 -        if (mapRef.current) {                                 
+      452 -          mapRef.current.animateToRegion(                     
+      453 -            {                                                 
+      454 -              latitude: report.latitude,                      
+      455 -              longitude: report.longitude,                    
+      456 -              latitudeDelta: 0.015,                           
+      457 -              longitudeDelta: 0.015,                          
+      458 -            },                                                
+      459 -            800,                                              
+      460 -          );                                                  
+      461 -        }                                                     
+      462 -        router.push(`/location/${report.id}`);                
+      448 +    (marker: WasteReport) => {                                
+      449 +      if (mapRef.current) {                                   
+      450 +        mapRef.current.animateToRegion(                       
+      451 +          {                                                   
+      452 +            latitude: marker.latitude,                        
+      453 +            longitude: marker.longitude,                      
+      454 +            latitudeDelta: 0.015,                             
+      455 +            longitudeDelta: 0.015,                            
+      456 +          },                                                  
+      457 +          800,                                                
+      458 +        );                                                    
+      459        }
+      460 +      router.push(`/location/${marker.id}`);                  
+      461      },
+      462      [router],
+      463    );
+
+● Now update the markers rendering to handle the correct type:
+
+● Update(src/app/(tabs)/map.tsx)
+  ⎿  Added 4 lines, removed 2 lines
+      478          customMapStyle={CUSTOM_MAP_STYLE}
+      479          mapPadding={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      480        >
+      481 -        {/* Waste Report Markers — custom design */}          
+      482 -        {filteredMarkers.map((marker) => (                    
+      481 +        {/* Waste Report Markers — from API */}               
+      482 +        {filteredMarkers                                      
+      483 +          .filter((m) => m.latitude && m.longitude)           
+      484 +          .map((marker) => (                                  
+      485            <Marker
+      486              key={marker.id}
+      487              coordinate={{ latitude: marker.latitude, longitude
+           : marker.longitude }}
+  ⎿ API Error: 402 {"type":"error","error":{"type":"insufficient_credits","messa
+    ge":"Insufficient credits. Please top up your account to 
+    continue.","credits_remaining":0}}
+
+✻ Worked for 10m 52s

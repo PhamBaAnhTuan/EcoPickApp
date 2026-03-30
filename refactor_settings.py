@@ -1,38 +1,14 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-  Platform,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+import os
+import shutil
+
+base_dir = "/home/luanthnh/Public/Workspaces/uda/projects/EcoPick/ecopick/src/app/settings"
+components_dir = f"{base_dir}/components"
+os.makedirs(components_dir, exist_ok=True)
+
+toggle_row = """import React from 'react';
+import { View, Text, Switch, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import Toast from 'react-native-toast-message';
-import { Colors, Fonts, FontSizes, LineHeights, BorderRadius, Spacing } from '../constants';
-import { setLanguage } from '../i18n';
-import { useSignOut } from '@/hooks/useUserQueries';
-import ConfirmModal from '@/components/ConfirmModal';
-
-const APP_VERSION = '1.0.0';
-
-interface LanguageOption {
-  code: string;
-  flag: string;
-  label: string;
-}
-
-const LANGUAGES: LanguageOption[] = [
-  { code: 'en', flag: '\ud83c\uddec\ud83c\udde7', label: 'English' },
-  { code: 'vi', flag: '\ud83c\uddfb\ud83c\uddf3', label: 'Ti\u1ebfng Vi\u1ec7t' },
-];
-
-// ─── Reusable Components ───
+import { Colors, Fonts, FontSizes, LineHeights, BorderRadius, Spacing } from '../../../../constants';
 
 interface SettingToggleRowProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -44,7 +20,7 @@ interface SettingToggleRowProps {
   isLast?: boolean;
 }
 
-function SettingToggleRow({ icon, iconColor, iconBg, label, value, onToggle, isLast }: SettingToggleRowProps) {
+export default function SettingToggleRow({ icon, iconColor, iconBg, label, value, onToggle, isLast }: SettingToggleRowProps) {
   return (
     <View style={[styles.settingRow, !isLast && styles.settingRowBorder]}>
       <View style={styles.settingRowLeft}>
@@ -64,6 +40,46 @@ function SettingToggleRow({ icon, iconColor, iconBg, label, value, onToggle, isL
   );
 }
 
+const styles = StyleSheet.create({
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.base,
+    paddingVertical: 14,
+    minHeight: 52,
+  },
+  settingRowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
+  },
+  settingRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    flex: 1,
+  },
+  settingIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.sm + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingRowLabel: {
+    fontFamily: Fonts.medium,
+    fontSize: FontSizes.md,
+    lineHeight: LineHeights.md,
+    color: Colors.textPrimary,
+  },
+});
+"""
+
+nav_row = """import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, Fonts, FontSizes, LineHeights, BorderRadius, Spacing } from '../../../../constants';
+
 interface SettingNavRowProps {
   icon: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
@@ -76,7 +92,7 @@ interface SettingNavRowProps {
   subtitle?: string;
 }
 
-function SettingNavRow({ icon, iconColor, iconBg, label, value, onPress, isLast, destructive, subtitle }: SettingNavRowProps) {
+export default function SettingNavRow({ icon, iconColor, iconBg, label, value, onPress, isLast, destructive, subtitle }: SettingNavRowProps) {
   return (
     <TouchableOpacity
       style={[styles.settingRow, !isLast && styles.settingRowBorder]}
@@ -103,13 +119,77 @@ function SettingNavRow({ icon, iconColor, iconBg, label, value, onPress, isLast,
   );
 }
 
+const styles = StyleSheet.create({
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.base,
+    paddingVertical: 14,
+    minHeight: 52,
+  },
+  settingRowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
+  },
+  settingRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    flex: 1,
+  },
+  settingRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  settingIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.sm + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingRowLabel: {
+    fontFamily: Fonts.medium,
+    fontSize: FontSizes.md,
+    lineHeight: LineHeights.md,
+    color: Colors.textPrimary,
+  },
+  destructiveText: {
+    fontFamily: Fonts.medium,
+    fontSize: FontSizes.md,
+    lineHeight: LineHeights.md,
+    color: '#EF4444',
+  },
+  settingRowSubtitle: {
+    fontFamily: Fonts.regular,
+    fontSize: FontSizes.xs,
+    lineHeight: LineHeights.xs,
+    color: Colors.textSecondary,
+    marginTop: 1,
+  },
+  settingRowValue: {
+    fontFamily: Fonts.regular,
+    fontSize: FontSizes.sm,
+    lineHeight: LineHeights.sm,
+    color: Colors.textSecondary,
+  },
+});
+"""
+
+section_header = """import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, Fonts, FontSizes, LineHeights, Spacing } from '../../../../constants';
+
 interface SectionHeaderProps {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   description?: string;
 }
 
-function SectionHeader({ icon, title, description }: SectionHeaderProps) {
+export default function SectionHeader({ icon, title, description }: SectionHeaderProps) {
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.sectionHeaderRow}>
@@ -121,7 +201,76 @@ function SectionHeader({ icon, title, description }: SectionHeaderProps) {
   );
 }
 
-// ─── Main Screen ───
+const styles = StyleSheet.create({
+  sectionHeader: {
+    marginBottom: Spacing.md,
+    paddingLeft: Spacing.xs,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  sectionTitle: {
+    fontFamily: Fonts.bold,
+    fontSize: FontSizes.base,
+    lineHeight: LineHeights.base,
+    color: Colors.textPrimary,
+  },
+  sectionDesc: {
+    fontFamily: Fonts.regular,
+    fontSize: FontSizes.sm,
+    lineHeight: LineHeights.sm,
+    color: Colors.textSecondary,
+    marginTop: 2,
+    paddingLeft: 26,
+  },
+});
+"""
+
+with open(f"{components_dir}/SettingToggleRow.tsx", "w") as f:
+    f.write(toggle_row)
+with open(f"{components_dir}/SettingNavRow.tsx", "w") as f:
+    f.write(nav_row)
+with open(f"{components_dir}/SectionHeader.tsx", "w") as f:
+    f.write(section_header)
+
+index_file = """import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Platform,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import Toast from 'react-native-toast-message';
+import { Colors, Fonts, FontSizes, LineHeights, BorderRadius, Spacing } from '../../constants';
+import { setLanguage } from '../../i18n';
+import { useSignOut } from '@/hooks/useUserQueries';
+import ConfirmModal from '@/components/ConfirmModal';
+
+import SettingToggleRow from './components/SettingToggleRow';
+import SettingNavRow from './components/SettingNavRow';
+import SectionHeader from './components/SectionHeader';
+
+const APP_VERSION = '1.0.0';
+
+interface LanguageOption {
+  code: string;
+  flag: string;
+  label: string;
+}
+
+const LANGUAGES: LanguageOption[] = [
+  { code: 'en', flag: '🇬🇧', label: 'English' },
+  { code: 'vi', flag: '🇻🇳', label: 'Tiếng Việt' },
+];
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -140,7 +289,7 @@ export default function SettingsScreen() {
   const [shareActivity, setShareActivity] = useState(false);
   const [analytics, setAnalytics] = useState(true);
 
-  // ─── Modal states ───
+  // Modal states
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -403,7 +552,7 @@ export default function SettingsScreen() {
         {/* ═══ Footer ═══ */}
         <View style={styles.footer}>
           <Ionicons name="leaf" size={16} color={Colors.primary} />
-          <Text style={styles.footerText}>{t('settings.madeWith')} {'\ud83d\udc9a'}</Text>
+          <Text style={styles.footerText}>{t('settings.madeWith')} {'💚'}</Text>
         </View>
 
       </ScrollView>
@@ -438,15 +587,11 @@ export default function SettingsScreen() {
   );
 }
 
-// ─── Styles ───
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -475,42 +620,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-
   scrollContent: {
     paddingTop: Spacing.lg,
     paddingBottom: 120,
     paddingHorizontal: Spacing.base,
   },
-
-  // Sections
   section: {
     marginBottom: Spacing.lg,
   },
-  sectionHeader: {
-    marginBottom: Spacing.md,
-    paddingLeft: Spacing.xs,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  sectionTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: FontSizes.base,
-    lineHeight: LineHeights.base,
-    color: Colors.textPrimary,
-  },
-  sectionDesc: {
-    fontFamily: Fonts.regular,
-    fontSize: FontSizes.sm,
-    lineHeight: LineHeights.sm,
-    color: Colors.textSecondary,
-    marginTop: 2,
-    paddingLeft: 26,
-  },
-
-  // Card
   card: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.lg,
@@ -529,9 +646,7 @@ const styles = StyleSheet.create({
       },
     }),
   },
-
-  // Setting Row (shared)
-  settingRow: {
+  languageRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -542,53 +657,6 @@ const styles = StyleSheet.create({
   settingRowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.border,
-  },
-  settingRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    flex: 1,
-  },
-  settingRowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  settingIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: BorderRadius.sm + 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  settingRowLabel: {
-    fontFamily: Fonts.medium,
-    fontSize: FontSizes.md,
-    lineHeight: LineHeights.md,
-    color: Colors.textPrimary,
-  },
-  settingRowSubtitle: {
-    fontFamily: Fonts.regular,
-    fontSize: FontSizes.xs,
-    lineHeight: LineHeights.xs,
-    color: Colors.textSecondary,
-    marginTop: 1,
-  },
-  settingRowValue: {
-    fontFamily: Fonts.regular,
-    fontSize: FontSizes.sm,
-    lineHeight: LineHeights.sm,
-    color: Colors.textSecondary,
-  },
-
-  // Language rows
-  languageRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.base,
-    paddingVertical: 14,
-    minHeight: 52,
   },
   languageLeft: {
     flexDirection: 'row',
@@ -615,8 +683,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // About
   aboutRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -642,8 +708,6 @@ const styles = StyleSheet.create({
     lineHeight: LineHeights.sm,
     color: Colors.primary,
   },
-
-  // Danger / Delete
   dangerCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -667,6 +731,19 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  settingRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    flex: 1,
+  },
+  settingIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.sm + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   destructiveText: {
     fontFamily: Fonts.medium,
     fontSize: FontSizes.md,
@@ -680,8 +757,6 @@ const styles = StyleSheet.create({
     color: Colors.textPlaceholder,
     marginTop: 1,
   },
-
-  // Footer
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -697,3 +772,19 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
 });
+"""
+
+with open(f"{base_dir}/index.tsx", "w") as f:
+    f.write(index_file)
+
+import fileinput
+import sys
+
+# Remove settings.tsx
+app_dir = "/home/luanthnh/Public/Workspaces/uda/projects/EcoPick/ecopick/src/app"
+try:
+    os.remove(f"{app_dir}/settings.tsx")
+except OSError:
+    pass
+
+print("Refactored settings.tsx successfully")

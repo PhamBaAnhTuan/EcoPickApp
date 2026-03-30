@@ -14,8 +14,6 @@ import {
   ReportsBottomSheet,
 } from '../../components';
 import {
-  MOCK_REPORTS,
-  MAP_MARKERS,
   INITIAL_REGION,
   SEVERITY_FILTERS,
   SeverityLevel,
@@ -24,6 +22,8 @@ import {
 import { getSeverityIcon } from '../../utils/severity';
 import { formatDistanceInfo, formatRouteInfo } from '../../utils/distance';
 import { useTranslation } from 'react-i18next';
+import { useReports } from '../../hooks/useReportQueries';
+import type { Report } from '../../api/services/reportService';
 
 // ─── Marker Design Config ───────────────────────────────────────────
 const MARKER_THEMES: Record<SeverityLevel, { bg: string; border: string; icon: string; glow: string }> = {
@@ -218,6 +218,27 @@ const markerStyles = StyleSheet.create({
   },
 });
 
+// ─── API severity → UI severity mapping ─────────────────────────────
+const API_SEVERITY_TO_UI: Record<string, SeverityLevel> = {
+  low: 'light',
+  medium: 'medium',
+  high: 'heavy',
+  critical: 'extreme',
+};
+
+/** Transform API Report → UI WasteReport */
+function transformReportToWasteReport(r: Report): WasteReport {
+  return {
+    id: r.id,
+    title: r.location || r.title || r.address || `Report #${r.id.slice(0, 6)}`,
+    description: r.description || '',
+    severity: API_SEVERITY_TO_UI[r.severity || 'low'] || 'light',
+    distance: '',
+    latitude: r.latitude || 0,
+    longitude: r.longitude || 0,
+  };
+}
+
 // ─── Main MapScreen ─────────────────────────────────────────────────
 export default function MapScreen() {
   const router = useRouter();
@@ -228,6 +249,13 @@ export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Set<SeverityLevel>>(
     new Set(['light', 'medium', 'heavy', 'extreme']),
+  );
+
+  // ── Fetch reports from API ──
+  const { data: apiReports = [], isLoading: isLoadingReports } = useReports();
+  const allReports: WasteReport[] = useMemo(
+    () => apiReports.map(transformReportToWasteReport),
+    [apiReports],
   );
 
   // Routing State
@@ -241,14 +269,14 @@ export default function MapScreen() {
 
   // Compute real distance + motorbike time for each report based on user location
   const reportsWithDistance: WasteReport[] = useMemo(() => {
-    if (!userLocation) return MOCK_REPORTS;
+    if (!userLocation) return allReports;
     const uLat = userLocation.coords.latitude;
     const uLng = userLocation.coords.longitude;
-    return MOCK_REPORTS.map((r) => ({
+    return allReports.map((r) => ({
       ...r,
       distance: formatDistanceInfo(uLat, uLng, r.latitude, r.longitude),
     }));
-  }, [userLocation]);
+  }, [userLocation, allReports]);
 
   useEffect(() => {
     (async () => {
@@ -350,7 +378,7 @@ export default function MapScreen() {
   }, []);
 
   const filteredReports = reportsWithDistance.filter((r) => activeFilters.has(r.severity));
-  const filteredMarkers = MAP_MARKERS.filter((m) => activeFilters.has(m.severity));
+  const filteredMarkers = reportsWithDistance.filter((m) => activeFilters.has(m.severity));
 
   const handleMyLocation = useCallback(async () => {
     try {
@@ -417,22 +445,19 @@ export default function MapScreen() {
   }, [router]);
 
   const handleMarkerClick = useCallback(
-    (marker: { id?: string }) => {
-      const report = reportsWithDistance.find((r) => r.id === marker.id);
-      if (report) {
-        if (mapRef.current) {
-          mapRef.current.animateToRegion(
-            {
-              latitude: report.latitude,
-              longitude: report.longitude,
-              latitudeDelta: 0.015,
-              longitudeDelta: 0.015,
-            },
-            800,
-          );
-        }
-        router.push(`/location/${report.id}`);
+    (marker: WasteReport) => {
+      if (mapRef.current) {
+        mapRef.current.animateToRegion(
+          {
+            latitude: marker.latitude,
+            longitude: marker.longitude,
+            latitudeDelta: 0.015,
+            longitudeDelta: 0.015,
+          },
+          800,
+        );
       }
+      router.push(`/location/${marker.id}`);
     },
     [router],
   );
@@ -453,8 +478,10 @@ export default function MapScreen() {
         customMapStyle={CUSTOM_MAP_STYLE}
         mapPadding={{ top: 0, right: 0, bottom: 0, left: 0 }}
       >
-        {/* Waste Report Markers — custom design */}
-        {filteredMarkers.map((marker) => (
+        {/* Waste Report Markers — from API */}
+        {filteredMarkers
+          .filter((m) => m.latitude && m.longitude)
+          .map((marker) => (
           <Marker
             key={marker.id}
             coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
