@@ -374,7 +374,10 @@
       "date": "Ng\u00e0y",
       "time": "Gi\u1edd",
       "selectDate": "Ch\u1ecdn ng\u00e0y",
-      "selectTime": "Ch\u1ecdn gi\u1edd"
+      "selectTime": "Ch\u1ecdn gi\u1edd",
+      "days": "ng\u00e0y",
+      "hours": "gi\u1edd",
+      "mins": "ph\u00fat"
     },
     "settings": {
       "difficulty": "\u0110\u1ed9 kh\u00f3",
@@ -389,7 +392,13 @@
       "Pickers": "K\u1eb9p g\u1eafp r\u00e1c",
       "Water": "N\u01b0\u1edbc u\u1ed1ng",
       "Sunscreen": "Kem ch\u1ed1ng n\u1eafng",
-      "First aid kit": "B\u1ed9 s\u01a1 c\u1ee9u"
+      "First aid kit": "B\u1ed9 s\u01a1 c\u1ee9u",
+      "addCustom": "Th\u00eam",
+      "addTitle": "Th\u00eam d\u1ee5ng c\u1ee5",
+      "addBtn": "Th\u00eam",
+      "name": "T\u00ean",
+      "namePlaceholder": "VD: X\u00f4, D\u00e2y th\u1eebng...",
+      "icon": "Bi\u1ec3u t\u01b0\u1ee3ng"
     },
     "validation": {
       "endDateAfterStart": "Ng\u00e0y k\u1ebft th\u00fac ph\u1ea3i sau ng\u00e0y b\u1eaft \u0111\u1ea7u"

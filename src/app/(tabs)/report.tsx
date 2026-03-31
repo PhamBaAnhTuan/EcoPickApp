@@ -9,6 +9,7 @@ import {
   ScrollView,
   Platform,
   KeyboardAvoidingView,
+  Keyboard,
   Dimensions,
   ActivityIndicator,
   Alert,
@@ -78,6 +79,7 @@ export default function ReportScreen() {
   const sheetTranslateY = useSharedValue(0);
   const startY = useSharedValue(0);
   const scrollViewRef = useRef<ScrollView>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   // Sync image from params
   useEffect(() => {
@@ -93,6 +95,20 @@ export default function ReportScreen() {
     if (params.longitude) setLocationLng(params.longitude);
     if (params.locationSource === 'custom') setLocationCustom(true);
   }, [params.address, params.latitude, params.longitude, params.locationSource]);
+
+  // ─── Track keyboard visibility ───
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -301,7 +317,7 @@ export default function ReportScreen() {
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? SHEET_TOP + 28 : 0}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? SHEET_TOP + 28 : SHEET_TOP}
         >
           <ScrollView
             ref={scrollViewRef}
@@ -421,7 +437,10 @@ export default function ReportScreen() {
           </ScrollView>
 
           {/* ─── Fixed Bottom Submit Button ─── */}
-          <View style={styles.submitBarContainer}>
+          <View style={[
+            styles.submitBarContainer,
+            keyboardVisible && styles.submitBarCompact,
+          ]}>
             <TouchableOpacity
               style={[styles.submitBtn, (!image || isSubmitting) && styles.submitBtnDisabled]}
               onPress={handleSubmit}
@@ -552,7 +571,7 @@ const styles = StyleSheet.create({
     top: SHEET_TOP,
     left: 0,
     right: 0,
-    height: height - SHEET_TOP,
+    bottom: 0,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -772,6 +791,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 25,
     paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+  },
+  submitBarCompact: {
+    paddingTop: 10,
+    paddingBottom: 10,
   },
   submitBtn: {
     backgroundColor: '#2D5A3D',

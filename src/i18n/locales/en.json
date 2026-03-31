@@ -374,7 +374,10 @@
       "date": "Date",
       "time": "Time",
       "selectDate": "Select Date",
-      "selectTime": "Select Time"
+      "selectTime": "Select Time",
+      "days": "days",
+      "hours": "hrs",
+      "mins": "min"
     },
     "settings": {
       "difficulty": "Difficulty",
@@ -389,7 +392,13 @@
       "Pickers": "Pickers",
       "Water": "Water",
       "Sunscreen": "Sunscreen",
-      "First aid kit": "First aid kit"
+      "First aid kit": "First aid kit",
+      "addCustom": "Add",
+      "addTitle": "Add Equipment",
+      "addBtn": "Add",
+      "name": "Name",
+      "namePlaceholder": "e.g. Bucket, Rope...",
+      "icon": "Icon"
     },
     "validation": {
       "endDateAfterStart": "End date must be after start date"

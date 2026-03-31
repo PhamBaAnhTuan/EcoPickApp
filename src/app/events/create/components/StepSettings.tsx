@@ -1,5 +1,15 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Controller } from 'react-hook-form';
 
@@ -32,6 +42,21 @@ const EQUIP_ICONS: Record<string, string> = {
   'First aid kit': 'medkit-outline',
 };
 
+const ICON_CHOICES = [
+  'hammer-outline',
+  'flashlight-outline',
+  'shirt-outline',
+  'umbrella-outline',
+  'nutrition-outline',
+  'glasses-outline',
+  'thermometer-outline',
+  'bandage-outline',
+  'briefcase-outline',
+  'cut-outline',
+  'map-outline',
+  'megaphone-outline',
+] as const;
+
 export function StepSettings({
   t,
   control,
@@ -41,6 +66,23 @@ export function StepSettings({
   selectedEquipment,
   toggleEquipment,
 }: StepSettingsProps) {
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [customLabel, setCustomLabel] = useState('');
+  const [customIcon, setCustomIcon] = useState('hammer-outline');
+  const [customEquipItems, setCustomEquipItems] = useState<
+    { label: string; icon: string }[]
+  >([]);
+
+  const handleAddCustom = () => {
+    const trimmed = customLabel.trim();
+    if (!trimmed) return;
+    setCustomEquipItems((prev) => [...prev, { label: trimmed, icon: customIcon }]);
+    toggleEquipment(trimmed);
+    setCustomLabel('');
+    setCustomIcon('hammer-outline');
+    setShowAddModal(false);
+  };
+
   return (
     <View style={s.container}>
       {/* ─── Difficulty ─── */}
@@ -161,6 +203,43 @@ export function StepSettings({
               </TouchableOpacity>
             );
           })}
+
+          {/* Custom equipment items */}
+          {customEquipItems.map((item) => {
+            const isSel = selectedEquipment.has(item.label);
+            return (
+              <TouchableOpacity
+                key={item.label}
+                style={[s.equipChip, isSel && s.equipChipSel]}
+                onPress={() => toggleEquipment(item.label)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={item.icon as any}
+                  size={16}
+                  color={isSel ? '#fff' : '#64748B'}
+                />
+                <Text style={[s.equipText, isSel && s.equipTextSel]}>
+                  {item.label}
+                </Text>
+                {isSel && (
+                  <Ionicons name="checkmark-circle" size={14} color="rgba(255,255,255,0.8)" />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+
+          {/* Add custom button */}
+          <TouchableOpacity
+            style={s.addEquipBtn}
+            onPress={() => setShowAddModal(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add-circle-outline" size={16} color={Colors.primary} />
+            <Text style={s.addEquipText}>
+              {t('createEvent.equipment.addCustom', { defaultValue: 'Add' })}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -202,6 +281,101 @@ export function StepSettings({
           )}
         />
       </View>
+
+      {/* ─── Add Custom Equipment Modal ─── */}
+      <Modal
+        visible={showAddModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddModal(false)}
+      >
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <TouchableWithoutFeedback onPress={() => setShowAddModal(false)}>
+            <View style={s.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <View style={s.modalSheet}>
+                  {/* Handle bar */}
+                  <View style={s.modalHandle} />
+
+                  <Text style={s.modalTitle}>
+                    {t('createEvent.equipment.addTitle', { defaultValue: 'Add Equipment' })}
+                  </Text>
+
+                  {/* Label input */}
+                  <View style={s.modalBody}>
+                    <Text style={s.modalInputLabel}>
+                      {t('createEvent.equipment.name', { defaultValue: 'Name' })}
+                    </Text>
+                    <View style={s.modalInputWrap}>
+                      <Ionicons name={customIcon as any} size={18} color={Colors.primary} />
+                      <TextInput
+                        style={s.modalInput}
+                        placeholder={t('createEvent.equipment.namePlaceholder', {
+                          defaultValue: 'e.g. Bucket, Rope...',
+                        })}
+                        placeholderTextColor="#94A3B8"
+                        value={customLabel}
+                        onChangeText={setCustomLabel}
+                        autoFocus
+                        maxLength={24}
+                      />
+                    </View>
+
+                    {/* Icon picker */}
+                    <Text style={[s.modalInputLabel, { marginTop: 20 }]}>
+                      {t('createEvent.equipment.icon', { defaultValue: 'Icon' })}
+                    </Text>
+                    <View style={s.iconGrid}>
+                      {ICON_CHOICES.map((ico) => {
+                        const sel = customIcon === ico;
+                        return (
+                          <TouchableOpacity
+                            key={ico}
+                            style={[s.iconOption, sel && s.iconOptionSel]}
+                            onPress={() => setCustomIcon(ico)}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons
+                              name={ico as any}
+                              size={20}
+                              color={sel ? '#fff' : '#64748B'}
+                            />
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+
+                    {/* Action buttons */}
+                    <View style={s.modalActions}>
+                      <TouchableOpacity
+                        style={s.modalCancelBtn}
+                        onPress={() => setShowAddModal(false)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={s.modalCancelText}>{t('common.cancel')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[s.modalAddBtn, !customLabel.trim() && { opacity: 0.4 }]}
+                        onPress={handleAddCustom}
+                        activeOpacity={0.8}
+                        disabled={!customLabel.trim()}
+                      >
+                        <Ionicons name="add" size={18} color="#fff" />
+                        <Text style={s.modalAddText}>
+                          {t('createEvent.equipment.addBtn', { defaultValue: 'Add' })}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -335,6 +509,25 @@ const s = StyleSheet.create({
     fontFamily: Fonts.semiBold,
   },
 
+  // ─── Add custom button ───
+  addEquipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(32,105,58,0.04)',
+  },
+  addEquipText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+    color: Colors.primary,
+  },
+
   // ─── Eco Points ───
   ecoWrap: {
     flexDirection: 'row',
@@ -354,5 +547,115 @@ const s = StyleSheet.create({
     backgroundColor: '#FEF9C3',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // ─── Modal ───
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E2E8F0',
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontFamily: Fonts.bold,
+    fontSize: 18,
+    color: '#1E293B',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  modalBody: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  modalInputLabel: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  modalInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E8ECF0',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  modalInput: {
+    flex: 1,
+    fontFamily: Fonts.medium,
+    fontSize: 15,
+    color: '#1E293B',
+    paddingVertical: 14,
+  },
+  iconGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  iconOption: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E8ECF0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconOptionSel: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+  },
+  modalCancelText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 15,
+    color: '#64748B',
+  },
+  modalAddBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
+  },
+  modalAddText: {
+    fontFamily: Fonts.bold,
+    fontSize: 15,
+    color: '#fff',
   },
 });

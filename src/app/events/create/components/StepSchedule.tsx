@@ -84,18 +84,12 @@ export function StepSchedule({
       ? startDate
       : new Date();
 
-  // Build duration text: "2 days 3h 15m" or "3h 15m" or "45m"
+  // Build duration text
   const parts: string[] = [];
-  if (durationDays > 0) {
-    parts.push(t('duration.days', { count: durationDays }));
-  }
-  if (durationHrs > 0) {
-    parts.push(`${durationHrs}h`);
-  }
-  if (durationMins > 0) {
-    parts.push(`${durationMins}m`);
-  }
-  const durationText = parts.length > 0 ? parts.join(' ') : '0m';
+  if (durationDays > 0) parts.push(`${durationDays} ${t('createEvent.schedule.days', { defaultValue: 'days' })}`);
+  if (durationHrs > 0) parts.push(`${durationHrs} ${t('createEvent.schedule.hours', { defaultValue: 'hrs' })}`);
+  if (durationMins > 0) parts.push(`${durationMins} ${t('createEvent.schedule.mins', { defaultValue: 'min' })}`);
+  const durationText = parts.length > 0 ? parts.join(' ') : `0 ${t('createEvent.schedule.mins', { defaultValue: 'min' })}`;
 
   return (
     <View style={s.container}>
@@ -116,9 +110,7 @@ export function StepSchedule({
           >
             <Ionicons name="calendar-outline" size={18} color={Colors.primary} />
             <View>
-              <Text style={s.btnLabel}>
-                {t('createEvent.schedule.date')}
-              </Text>
+              <Text style={s.btnLabel}>{t('createEvent.schedule.date')}</Text>
               <Text style={s.btnValue}>{dayjs(startDate).format('ddd, MMM D')}</Text>
             </View>
           </TouchableOpacity>
@@ -130,23 +122,21 @@ export function StepSchedule({
           >
             <Ionicons name="time-outline" size={18} color={Colors.primary} />
             <View>
-              <Text style={s.btnLabel}>
-                {t('createEvent.schedule.time')}
-              </Text>
+              <Text style={s.btnLabel}>{t('createEvent.schedule.time')}</Text>
               <Text style={s.btnValue}>{dayjs(startDate).format('hh:mm A')}</Text>
             </View>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* ─── Connector ─── */}
-      <View style={s.connector}>
-        <View style={s.connectorLine} />
+      {/* ─── Duration badge ─── */}
+      <View style={s.durationRow}>
+        <View style={s.durationLine} />
         <View style={s.durationBadge}>
-          <Ionicons name="timer-outline" size={14} color={Colors.primary} />
-          <Text style={s.durationBadgeText}>{durationText}</Text>
+          <Ionicons name="hourglass-outline" size={14} color={Colors.primary} />
+          <Text style={s.durationText}>{durationText}</Text>
         </View>
-        <View style={s.connectorLine} />
+        <View style={s.durationLine} />
       </View>
 
       {/* ─── End ─── */}
@@ -166,9 +156,7 @@ export function StepSchedule({
           >
             <Ionicons name="calendar-outline" size={18} color="#EF4444" />
             <View>
-              <Text style={s.btnLabel}>
-                {t('createEvent.schedule.date')}
-              </Text>
+              <Text style={s.btnLabel}>{t('createEvent.schedule.date')}</Text>
               <Text style={s.btnValue}>{dayjs(endDate).format('ddd, MMM D')}</Text>
             </View>
           </TouchableOpacity>
@@ -180,9 +168,7 @@ export function StepSchedule({
           >
             <Ionicons name="time-outline" size={18} color="#EF4444" />
             <View>
-              <Text style={s.btnLabel}>
-                {t('createEvent.schedule.time')}
-              </Text>
+              <Text style={s.btnLabel}>{t('createEvent.schedule.time')}</Text>
               <Text style={s.btnValue}>{dayjs(endDate).format('hh:mm A')}</Text>
             </View>
           </TouchableOpacity>
@@ -192,7 +178,7 @@ export function StepSchedule({
       {/* ─── Duration Summary ─── */}
       <View style={s.summary}>
         <View style={s.summaryIcon}>
-          <Ionicons name="hourglass-outline" size={20} color={Colors.primary} />
+          <Ionicons name="timer-outline" size={20} color={Colors.primary} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={s.summaryLabel}>
@@ -211,9 +197,7 @@ export function StepSchedule({
                 <View style={s.modalSheet}>
                   <View style={s.modalHeader}>
                     <TouchableOpacity onPress={() => setShowPicker(null)}>
-                      <Text style={s.modalCancel}>
-                        {t('common.cancel')}
-                      </Text>
+                      <Text style={s.modalCancel}>{t('common.cancel')}</Text>
                     </TouchableOpacity>
                     <Text style={s.modalTitle}>
                       {pickerMode === 'date'
@@ -226,14 +210,18 @@ export function StepSchedule({
                       </Text>
                     </TouchableOpacity>
                   </View>
-                  <DateTimePicker
-                    value={tempDate}
-                    mode={pickerMode as 'date' | 'time'}
-                    display="spinner"
-                    onChange={handleIOSChange}
-                    minimumDate={minimumDate}
-                    style={{ height: 200 }}
-                  />
+                  <View style={s.pickerContainer}>
+                    <DateTimePicker
+                      value={tempDate}
+                      mode={pickerMode as 'date' | 'time'}
+                      display="spinner"
+                      themeVariant="light"
+                      textColor="#000000"
+                      onChange={handleIOSChange}
+                      minimumDate={minimumDate}
+                      style={{ height: 200, width: '100%' }}
+                    />
+                  </View>
                 </View>
               </TouchableWithoutFeedback>
             </View>
@@ -315,14 +303,14 @@ const s = StyleSheet.create({
     marginTop: 1,
   },
 
-  // ─── Connector ───
-  connector: {
+  // ─── Duration badge (between cards) ───
+  durationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 4,
     paddingHorizontal: 20,
   },
-  connectorLine: {
+  durationLine: {
     flex: 1,
     height: 1,
     backgroundColor: '#E2E8F0',
@@ -339,7 +327,7 @@ const s = StyleSheet.create({
     borderColor: '#DCFCE7',
     marginHorizontal: 8,
   },
-  durationBadgeText: {
+  durationText: {
     fontFamily: Fonts.bold,
     fontSize: 12,
     color: Colors.primary,
@@ -375,7 +363,7 @@ const s = StyleSheet.create({
   },
   summaryValue: {
     fontFamily: Fonts.bold,
-    fontSize: 22,
+    fontSize: 20,
     color: Colors.primary,
   },
 
@@ -414,5 +402,10 @@ const s = StyleSheet.create({
     fontFamily: Fonts.bold,
     fontSize: 15,
     color: Colors.primary,
+  },
+  pickerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
   },
 });
