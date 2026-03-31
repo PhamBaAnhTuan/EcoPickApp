@@ -32,15 +32,20 @@ export interface CreateEventPayload {
   organizer_id: string;
   title: string;
   type: string;
-  address: string;
   location: string;
-  latitude: string;
-  longitude: string;
+  latitude: number | string;
+  longitude: number | string;
   start_date: string;
   end_date: string;
+  address?: string;
   description?: string;
   equipment?: string;
   difficulty?: string;
+  cover_image_url?: string;
+  max_paticipants?: number;
+  current_paticipants?: number;
+  eco_point_reward?: number;
+  status?: string;
 }
 
 export interface EventParticipant {

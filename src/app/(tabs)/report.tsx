@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,15 @@ import {
   ScrollView,
   Platform,
   KeyboardAvoidingView,
+  Keyboard,
   Dimensions,
+  ActivityIndicator,
+  Alert,
   type ImageStyle,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts, FontSizes, Spacing, BorderRadius } from '../../constants';
+import { Fonts } from '../../constants';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -28,8 +31,10 @@ import Animated, {
   clamp,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useCreateReport, useUploadReportImage } from '../../hooks/useReportQueries';
+import { useAuthStore } from '../../stores/authStore';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 const WASTE_TYPE_KEYS = ['plastic', 'paper', 'glass', 'organic', 'metal'] as const;
 
@@ -43,23 +48,67 @@ const RETAKE_BTN_TOP = SHEET_TOP - 44;
 
 export default function ReportScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ imageUri?: string }>();
+  const params = useLocalSearchParams<{
+    imageUri?: string;
+    latitude?: string;
+    longitude?: string;
+    address?: string;
+    source?: string;
+    locationSource?: string;
+  }>();
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
+
+  // ── API mutations ──
+  const createReportMutation = useCreateReport();
+  const uploadImageMutation = useUploadReportImage();
+  const isSubmitting = createReportMutation.isPending || uploadImageMutation.isPending;
 
   const [image, setImage] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [severityValue, setSeverityValue] = useState(0.6); // 0 to 1
   const [selectedWasteTypes, setSelectedWasteTypes] = useState<Set<string>>(new Set(['plastic']));
 
+  // ── Location state ──
+  const [locationAddress, setLocationAddress] = useState('');
+  const [locationLat, setLocationLat] = useState('');
+  const [locationLng, setLocationLng] = useState('');
+  const [locationCustom, setLocationCustom] = useState(false);
+
   // ─── Animation shared values ───
   const sheetTranslateY = useSharedValue(0);
   const startY = useSharedValue(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
+  // Sync image from params
   useEffect(() => {
     if (params.imageUri) {
       setImage(params.imageUri);
     }
   }, [params.imageUri]);
+
+  // Sync location from params
+  useEffect(() => {
+    if (params.address) setLocationAddress(params.address);
+    if (params.latitude) setLocationLat(params.latitude);
+    if (params.longitude) setLocationLng(params.longitude);
+    if (params.locationSource === 'custom') setLocationCustom(true);
+  }, [params.address, params.latitude, params.longitude, params.locationSource]);
+
+  // ─── Track keyboard visibility ───
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -99,20 +148,91 @@ export default function ReportScreen() {
     return t('severity.extreme');
   };
 
-  const handleSubmit = () => {
+  // Map slider value (0-1) to API severity string
+  const getSeverityApiValue = (val: number): string => {
+    if (val < 0.25) return 'low';
+    if (val < 0.5) return 'medium';
+    if (val < 0.75) return 'high';
+    return 'critical';
+  };
+
+  const handleSubmit = async () => {
     if (!image) {
       alert(t('report.takePhotoFirst'));
       return;
     }
 
-    // Clear the form
-    setImage(null);
-    setDescription('');
-    setSeverityValue(0.6);
-    setSelectedWasteTypes(new Set(['plastic']));
+    try {
+      // 1. Create the report via API
+      const wasteTypesStr = Array.from(selectedWasteTypes).join(', ');
+      const severityApi = getSeverityApiValue(severityValue);
+      const locationName = locationAddress || `${locationLat}, ${locationLng}`;
 
-    // Navigate to Success Screen
-    router.replace('/report-success');
+      const report = await createReportMutation.mutateAsync({
+        reporter_id: user?.id || '',
+        title: locationName,
+        description: description || undefined,
+        location: locationName,
+        address: locationAddress || undefined,
+        latitude: locationLat ? parseFloat(locationLat) : 0,
+        longitude: locationLng ? parseFloat(locationLng) : 0,
+        severity: severityApi,
+        status: 'pending',
+        waste_types: wasteTypesStr,
+      });
+
+      // 2. Upload the image
+      if (report?.id && image) {
+        try {
+          const imageFormData = new FormData();
+          imageFormData.append('report_id', report.id);
+          const fileExtension = image.split('.').pop() || 'jpg';
+          imageFormData.append('image', {
+            uri: image,
+            name: `report_${report.id}.${fileExtension}`,
+            type: `image/${fileExtension === 'png' ? 'png' : 'jpeg'}`,
+          } as any);
+          await uploadImageMutation.mutateAsync(imageFormData);
+        } catch (imgErr) {
+          console.warn('Image upload failed, report created:', imgErr);
+        }
+      }
+
+      // 3. Clear the form
+      setImage(null);
+      setDescription('');
+      setSeverityValue(0.6);
+      setSelectedWasteTypes(new Set(['plastic']));
+
+      // 4. Navigate to Success Screen
+      router.replace({
+        pathname: '/report-success',
+        params: {
+          reportId: report?.id || '',
+          latitude: locationLat,
+          longitude: locationLng,
+        },
+      } as any);
+    } catch (error: any) {
+      console.error('Report submission error:', error);
+      Alert.alert(
+        t('common.error'),
+        error?.response?.data?.detail || error?.message || 'Failed to submit report. Please try again.',
+      );
+    }
+  };
+
+  // Navigate to pick-location to change/set location
+  const handleChangeLocation = () => {
+    router.push({
+      pathname: '/pick-location',
+      params: {
+        initialLat: locationLat || '',
+        initialLng: locationLng || '',
+        returnTo: 'report',
+        imageUri: image || '',
+      },
+    } as any);
   };
 
   // ─── Pan Gesture (attached to drag handle only) ───
@@ -139,6 +259,12 @@ export default function ReportScreen() {
   const animatedSheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: sheetTranslateY.value }],
   }));
+
+  // Parse location display
+  const addressParts = locationAddress ? locationAddress.split(', ') : [];
+  const addressLine1 = addressParts.length > 0 ? addressParts[0] : '';
+  const addressLine2 = addressParts.length > 1 ? addressParts.slice(1).join(', ') : '';
+  const hasLocation = !!(locationLat && locationLng);
 
   return (
     <View style={styles.container}>
@@ -190,24 +316,52 @@ export default function ReportScreen() {
 
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? SHEET_TOP + 28 : SHEET_TOP}
         >
           <ScrollView
+            ref={scrollViewRef}
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
           >
-            {/* ─── Location Section ─── */}
-            <View style={styles.section}>
-              <View style={styles.locationLabelRow}>
-                <Ionicons name="location" size={15} color="#20693A" />
-                <Text style={styles.locationLabel}>{t('report.detectedLocation')}</Text>
+            {/* ─── Location Section (Tappable) ─── */}
+            <TouchableOpacity
+              style={styles.locationCard}
+              onPress={handleChangeLocation}
+              activeOpacity={0.7}
+            >
+              <View style={styles.locationIconWrap}>
+                <Ionicons name="location" size={20} color="#20693A" />
               </View>
-              <Text style={styles.locationTitle}>123 Nguyen Hue Street</Text>
-              <Text style={styles.locationSubtitle}>Ho Chi Minh City, Vietnam</Text>
-            </View>
+              <View style={styles.locationContent}>
+                <View style={styles.locationLabelRow}>
+                  <Text style={styles.locationLabel}>{t('report.detectedLocation')}</Text>
+                  {locationCustom && (
+                    <View style={styles.customBadge}>
+                      <Text style={styles.customBadgeText}>{t('report.customLocation')}</Text>
+                    </View>
+                  )}
+                </View>
+                {hasLocation ? (
+                  <>
+                    <Text style={styles.locationTitle} numberOfLines={1}>
+                      {addressLine1 || `${parseFloat(locationLat).toFixed(4)}, ${parseFloat(locationLng).toFixed(4)}`}
+                    </Text>
+                    {addressLine2 ? (
+                      <Text style={styles.locationSubtitle} numberOfLines={1}>{addressLine2}</Text>
+                    ) : null}
+                  </>
+                ) : (
+                  <Text style={styles.locationPlaceholder}>{t('report.tapToSetLocation')}</Text>
+                )}
+              </View>
+              <View style={styles.locationChevron}>
+                <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+              </View>
+            </TouchableOpacity>
 
             {/* ─── Severity Slider Section ─── */}
             <View style={styles.section}>
@@ -251,7 +405,7 @@ export default function ReportScreen() {
                       activeOpacity={0.7}
                     >
                       <Text style={[styles.wasteChipText, isSelected && styles.wasteChipTextSelected]}>
-                        {t(`report.${typeKey}`)}
+                        {t(`report.${typeKey}` as any)}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -272,24 +426,38 @@ export default function ReportScreen() {
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
+                  onFocus={() => {
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 300);
+                  }}
                 />
               </View>
             </View>
           </ScrollView>
-        </KeyboardAvoidingView>
 
-        {/* ─── Fixed Bottom Submit Button ─── */}
-        <View style={styles.submitBarContainer}>
-          <TouchableOpacity
-            style={[styles.submitBtn, !image && styles.submitBtnDisabled]}
-            onPress={handleSubmit}
-            activeOpacity={0.8}
-            disabled={!image}
-          >
-            <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.submitBtnText}>{t('report.submitReport')}</Text>
-          </TouchableOpacity>
-        </View>
+          {/* ─── Fixed Bottom Submit Button ─── */}
+          <View style={[
+            styles.submitBarContainer,
+            keyboardVisible && styles.submitBarCompact,
+          ]}>
+            <TouchableOpacity
+              style={[styles.submitBtn, (!image || isSubmitting) && styles.submitBtnDisabled]}
+              onPress={handleSubmit}
+              activeOpacity={0.8}
+              disabled={!image || isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" />
+              )}
+              <Text style={styles.submitBtnText}>
+                {isSubmitting ? t('common.calculating') : t('report.submitReport')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
       </Animated.View>
     </View>
   );
@@ -385,10 +553,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...Platform.select({
-      ios: {},
-      android: {},
-    }),
   },
   headerTitle: {
     fontFamily: Fonts.bold,
@@ -407,7 +571,7 @@ const styles = StyleSheet.create({
     top: SHEET_TOP,
     left: 0,
     right: 0,
-    height: height - SHEET_TOP,
+    bottom: 0,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -436,7 +600,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 40,
   },
 
   // ─── Sections ───
@@ -447,31 +611,80 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  // ─── Location ───
+  // ─── Location Card (Tappable) ───
+  locationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAF9',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E8F0EC',
+    gap: 12,
+  },
+  locationIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(32, 105, 58, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  locationContent: {
+    flex: 1,
+  },
   locationLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   locationLabel: {
     fontFamily: Fonts.bold,
-    fontSize: 12,
+    fontSize: 11,
     color: '#2D5A3D',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
+  customBadge: {
+    backgroundColor: '#DBEAFE',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  customBadgeText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 9,
+    color: '#3B82F6',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
   locationTitle: {
     fontFamily: Fonts.semiBold,
-    fontSize: 18,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 22,
     color: '#1E293B',
   },
   locationSubtitle: {
     fontFamily: Fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
     color: '#64748B',
+    marginTop: 1,
+  },
+  locationPlaceholder: {
+    fontFamily: Fonts.medium,
+    fontSize: 14,
+    color: '#94A3B8',
+  },
+  locationChevron: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // ─── Severity ───
@@ -578,6 +791,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 25,
     paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+  },
+  submitBarCompact: {
+    paddingTop: 10,
+    paddingBottom: 10,
   },
   submitBtn: {
     backgroundColor: '#2D5A3D',

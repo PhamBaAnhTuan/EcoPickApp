@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Switch,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -14,10 +13,14 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
-import { Colors, Fonts, FontSizes, LineHeights, BorderRadius, Spacing } from '../constants';
-import { setLanguage } from '../i18n';
+import { Colors, Fonts, FontSizes, LineHeights, BorderRadius, Spacing } from '../../constants';
+import { setLanguage } from '../../i18n';
 import { useSignOut } from '@/hooks/useUserQueries';
 import ConfirmModal from '@/components/ConfirmModal';
+
+import SettingToggleRow from './components/SettingToggleRow';
+import SettingNavRow from './components/SettingNavRow';
+import SectionHeader from './components/SectionHeader';
 
 const APP_VERSION = '1.0.0';
 
@@ -28,100 +31,9 @@ interface LanguageOption {
 }
 
 const LANGUAGES: LanguageOption[] = [
-  { code: 'en', flag: '\ud83c\uddec\ud83c\udde7', label: 'English' },
-  { code: 'vi', flag: '\ud83c\uddfb\ud83c\uddf3', label: 'Ti\u1ebfng Vi\u1ec7t' },
+  { code: 'en', flag: '🇬🇧', label: 'English' },
+  { code: 'vi', flag: '🇻🇳', label: 'Tiếng Việt' },
 ];
-
-// ─── Reusable Components ───
-
-interface SettingToggleRowProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  iconColor?: string;
-  iconBg?: string;
-  label: string;
-  value: boolean;
-  onToggle: (val: boolean) => void;
-  isLast?: boolean;
-}
-
-function SettingToggleRow({ icon, iconColor, iconBg, label, value, onToggle, isLast }: SettingToggleRowProps) {
-  return (
-    <View style={[styles.settingRow, !isLast && styles.settingRowBorder]}>
-      <View style={styles.settingRowLeft}>
-        <View style={[styles.settingIconBox, { backgroundColor: iconBg || Colors.primaryLight }]}>
-          <Ionicons name={icon} size={16} color={iconColor || Colors.primary} />
-        </View>
-        <Text style={styles.settingRowLabel}>{label}</Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        trackColor={{ false: '#E2E8F0', true: 'rgba(32,105,58,0.35)' }}
-        thumbColor={value ? Colors.primary : '#F1F5F9'}
-        ios_backgroundColor="#E2E8F0"
-      />
-    </View>
-  );
-}
-
-interface SettingNavRowProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  iconColor?: string;
-  iconBg?: string;
-  label: string;
-  value?: string;
-  onPress: () => void;
-  isLast?: boolean;
-  destructive?: boolean;
-  subtitle?: string;
-}
-
-function SettingNavRow({ icon, iconColor, iconBg, label, value, onPress, isLast, destructive, subtitle }: SettingNavRowProps) {
-  return (
-    <TouchableOpacity
-      style={[styles.settingRow, !isLast && styles.settingRowBorder]}
-      onPress={onPress}
-      activeOpacity={0.6}
-    >
-      <View style={styles.settingRowLeft}>
-        <View style={[
-          styles.settingIconBox,
-          { backgroundColor: destructive ? 'rgba(239,68,68,0.1)' : (iconBg || Colors.primaryLight) },
-        ]}>
-          <Ionicons name={icon} size={16} color={destructive ? '#EF4444' : (iconColor || Colors.primary)} />
-        </View>
-        <View>
-          <Text style={[styles.settingRowLabel, destructive && styles.destructiveText]}>{label}</Text>
-          {subtitle ? <Text style={styles.settingRowSubtitle}>{subtitle}</Text> : null}
-        </View>
-      </View>
-      <View style={styles.settingRowRight}>
-        {value ? <Text style={styles.settingRowValue}>{value}</Text> : null}
-        <Ionicons name="chevron-forward" size={16} color={Colors.textPlaceholder} />
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-interface SectionHeaderProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  description?: string;
-}
-
-function SectionHeader({ icon, title, description }: SectionHeaderProps) {
-  return (
-    <View style={styles.sectionHeader}>
-      <View style={styles.sectionHeaderRow}>
-        <Ionicons name={icon} size={18} color={Colors.primary} />
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-      {description ? <Text style={styles.sectionDesc}>{description}</Text> : null}
-    </View>
-  );
-}
-
-// ─── Main Screen ───
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -140,7 +52,7 @@ export default function SettingsScreen() {
   const [shareActivity, setShareActivity] = useState(false);
   const [analytics, setAnalytics] = useState(true);
 
-  // ─── Modal states ───
+  // Modal states
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -403,7 +315,7 @@ export default function SettingsScreen() {
         {/* ═══ Footer ═══ */}
         <View style={styles.footer}>
           <Ionicons name="leaf" size={16} color={Colors.primary} />
-          <Text style={styles.footerText}>{t('settings.madeWith')} {'\ud83d\udc9a'}</Text>
+          <Text style={styles.footerText}>{t('settings.madeWith')} {'💚'}</Text>
         </View>
 
       </ScrollView>
@@ -438,15 +350,11 @@ export default function SettingsScreen() {
   );
 }
 
-// ─── Styles ───
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -475,42 +383,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-
   scrollContent: {
     paddingTop: Spacing.lg,
     paddingBottom: 120,
     paddingHorizontal: Spacing.base,
   },
-
-  // Sections
   section: {
     marginBottom: Spacing.lg,
   },
-  sectionHeader: {
-    marginBottom: Spacing.md,
-    paddingLeft: Spacing.xs,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  sectionTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: FontSizes.base,
-    lineHeight: LineHeights.base,
-    color: Colors.textPrimary,
-  },
-  sectionDesc: {
-    fontFamily: Fonts.regular,
-    fontSize: FontSizes.sm,
-    lineHeight: LineHeights.sm,
-    color: Colors.textSecondary,
-    marginTop: 2,
-    paddingLeft: 26,
-  },
-
-  // Card
   card: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.lg,
@@ -529,9 +409,7 @@ const styles = StyleSheet.create({
       },
     }),
   },
-
-  // Setting Row (shared)
-  settingRow: {
+  languageRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -542,53 +420,6 @@ const styles = StyleSheet.create({
   settingRowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.border,
-  },
-  settingRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    flex: 1,
-  },
-  settingRowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  settingIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: BorderRadius.sm + 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  settingRowLabel: {
-    fontFamily: Fonts.medium,
-    fontSize: FontSizes.md,
-    lineHeight: LineHeights.md,
-    color: Colors.textPrimary,
-  },
-  settingRowSubtitle: {
-    fontFamily: Fonts.regular,
-    fontSize: FontSizes.xs,
-    lineHeight: LineHeights.xs,
-    color: Colors.textSecondary,
-    marginTop: 1,
-  },
-  settingRowValue: {
-    fontFamily: Fonts.regular,
-    fontSize: FontSizes.sm,
-    lineHeight: LineHeights.sm,
-    color: Colors.textSecondary,
-  },
-
-  // Language rows
-  languageRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.base,
-    paddingVertical: 14,
-    minHeight: 52,
   },
   languageLeft: {
     flexDirection: 'row',
@@ -615,8 +446,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // About
   aboutRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -642,8 +471,6 @@ const styles = StyleSheet.create({
     lineHeight: LineHeights.sm,
     color: Colors.primary,
   },
-
-  // Danger / Delete
   dangerCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -667,6 +494,19 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  settingRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    flex: 1,
+  },
+  settingIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.sm + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   destructiveText: {
     fontFamily: Fonts.medium,
     fontSize: FontSizes.md,
@@ -680,8 +520,6 @@ const styles = StyleSheet.create({
     color: Colors.textPlaceholder,
     marginTop: 1,
   },
-
-  // Footer
   footer: {
     flexDirection: 'row',
     alignItems: 'center',

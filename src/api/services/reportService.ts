@@ -28,6 +28,16 @@ export interface ReportImage {
 }
 
 export interface CreateReportPayload {
+  reporter_id: string;
+  title?: string;
+  description?: string;
+  location?: string;
+  address?: string;
+  latitude: number | string;
+  longitude: number | string;
+  severity?: string;
+  status?: string;
+  waste_types?: string;
   [key: string]: unknown;
 }
 
@@ -48,9 +58,15 @@ export const reportService = {
     return data;
   },
 
-  /** POST /api/report/reports/ */
+  /** POST /api/report/reports/ (formdata) */
   create: async (payload: CreateReportPayload) => {
-    const { data } = await api.post<Report>(ENDPOINTS.REPORTS.LIST, payload);
+    const formData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) formData.append(key, String(value));
+    });
+    const { data } = await api.post<Report>(ENDPOINTS.REPORTS.LIST, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return data;
   },
 
