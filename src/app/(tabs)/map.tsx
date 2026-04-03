@@ -8,6 +8,7 @@ import MapView, { Marker, Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTranslation } from 'react-i18next';
+import Toast from 'react-native-toast-message';
 import type { Report } from '../../api/services/reportService';
 import { ReportsBottomSheet, SearchBar, SeverityChip } from '../../components';
 import { BorderRadius, Colors, Fonts, FontSizes, Spacing } from '../../constants';
@@ -408,7 +409,10 @@ export default function MapScreen() {
   }, [userLocation]);
 
   const handleFilterPress = useCallback(() => {
-    Alert.alert(t('map.filtersTitle'), t('map.filtersMessage'), [{ text: t('common.ok') }]);
+    Toast.show({
+      type: 'info',
+      text1: t('map.filtersMessage')
+    })
   }, []);
 
   const handleNavigateReport = useCallback(

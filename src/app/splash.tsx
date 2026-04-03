@@ -1,17 +1,17 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { useAuthStore } from '@/stores/authStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useRef } from 'react';
+import { Image, StyleSheet, View } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  runOnJS,
   Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
-import { useAuthStore } from '@/stores/authStore';
 
 // Logo dimensions from Figma: 195x264 centered
 const LOGO_WIDTH = 195;
@@ -51,7 +51,7 @@ export default function SplashScreenView() {
       const onboardingDone = await AsyncStorage.getItem(ONBOARDING_KEY);
       if (onboardingDone === 'true') {
         // Đã xem onboarding → vào màn welcome/login
-        router.replace('/auth/welcome');
+        router.replace('/auth/login');
       } else {
         // Chưa xem onboarding → show onboarding
         router.replace('/onboarding');

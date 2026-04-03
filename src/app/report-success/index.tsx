@@ -1,15 +1,15 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Fonts, Spacing } from '../../constants';
 
-import SuccessGraphic from './components/SuccessGraphic';
 import PointsCard from './components/PointsCard';
 import SuccessActions from './components/SuccessActions';
+import SuccessGraphic from './components/SuccessGraphic';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -34,7 +34,7 @@ export default function ReportSuccessScreen() {
   };
 
   const handleContinueExploring = () => {
-    router.replace('/home');
+    router.replace('/map');
   };
 
   const handleClose = () => {
@@ -44,13 +44,13 @@ export default function ReportSuccessScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <LinearGradient 
-        colors={['#1F7155', '#094B73']} 
+      <LinearGradient
+        colors={['#1F7155', '#094B73']}
         style={StyleSheet.absoluteFillObject}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
       />
-      
+
       {/* Background Graphic Waves */}
       <View style={styles.waveOverlay}>
         <View style={styles.waveCircle1} />
@@ -78,9 +78,9 @@ export default function ReportSuccessScreen() {
 
           <PointsCard />
 
-          <SuccessActions 
-            onViewMap={handleViewOnMap} 
-            onExplore={handleContinueExploring} 
+          <SuccessActions
+            onViewMap={handleViewOnMap}
+            onExplore={handleContinueExploring}
           />
         </View>
       </SafeAreaView>

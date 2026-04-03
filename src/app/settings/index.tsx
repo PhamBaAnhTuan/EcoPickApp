@@ -1,26 +1,26 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Platform,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import Toast from 'react-native-toast-message';
-import { Colors, Fonts, FontSizes, LineHeights, BorderRadius, Spacing } from '../../constants';
-import { setLanguage } from '../../i18n';
-import { useSignOut } from '@/hooks/useUserQueries';
 import ConfirmModal from '@/components/ConfirmModal';
+import { useSignOut } from '@/hooks/useUserQueries';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
+import { BorderRadius, Colors, Fonts, FontSizes, LineHeights, Spacing } from '../../constants';
+import { setLanguage } from '../../i18n';
 
-import SettingToggleRow from './components/SettingToggleRow';
-import SettingNavRow from './components/SettingNavRow';
 import SectionHeader from './components/SectionHeader';
+import SettingNavRow from './components/SettingNavRow';
+import SettingToggleRow from './components/SettingToggleRow';
 
 const APP_VERSION = '1.0.0';
 
@@ -75,9 +75,6 @@ export default function SettingsScreen() {
           text1: t('settings.signOutSuccess'),
           text2: t('settings.signOutSuccessDesc'),
         });
-        setTimeout(() => {
-          router.replace('/auth/welcome');
-        }, 600);
       },
     });
   };
@@ -237,22 +234,22 @@ export default function SettingsScreen() {
             <SettingNavRow
               icon="chatbubble-ellipses-outline"
               label={t('settings.faq')}
-              onPress={() => {}}
+              onPress={() => { }}
             />
             <SettingNavRow
               icon="mail-open-outline"
               label={t('settings.contactUs')}
-              onPress={() => {}}
+              onPress={() => { }}
             />
             <SettingNavRow
               icon="bug-outline"
               label={t('settings.reportBug')}
-              onPress={() => {}}
+              onPress={() => { }}
             />
             <SettingNavRow
               icon="star-outline"
               label={t('settings.rateApp')}
-              onPress={() => {}}
+              onPress={() => { }}
               isLast
             />
           </View>
@@ -269,12 +266,12 @@ export default function SettingsScreen() {
             <SettingNavRow
               icon="create-outline"
               label={t('settings.editProfile')}
-              onPress={() => {}}
+              onPress={() => { }}
             />
             <SettingNavRow
               icon="lock-closed-outline"
               label={t('settings.changePassword')}
-              onPress={() => {}}
+              onPress={() => { }}
             />
             <SettingNavRow
               icon="log-out-outline"
@@ -360,7 +357,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.base,
+    // paddingVertical: Spacing.base,
     backgroundColor: 'rgba(246,248,247,0.95)',
     borderBottomWidth: 1,
     borderBottomColor: Colors.primaryBorder,
@@ -385,8 +382,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: Spacing.lg,
-    paddingBottom: 120,
-    paddingHorizontal: Spacing.base,
+    // paddingBottom: 120,
+    paddingHorizontal: Spacing.md,
   },
   section: {
     marginBottom: Spacing.lg,

@@ -1,34 +1,83 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  SafeAreaView,
-  ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { Colors, Fonts } from '../../constants';
+import { useUserBadges } from '@/hooks';
+import { useUpdateUser, useUserInfo } from '@/hooks/useUserQueries';
 import { useAuthStore } from '@/stores/authStore';
-import { useUserInfo } from '@/hooks/useUserQueries';
+import { useCommonStore } from '@/stores/commonStore';
+import { Entypo, Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  ActivityIndicator,
+  Image,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
+import { Colors, Fonts } from '../../constants';
+import { pickImage, type PickedImage } from '../../utils/pickImage';
 
-const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?u=ecopick_default';
+const DEFAULT_AVATAR = 'https://bizweb.dktcdn.net/100/324/808/files/san-pham-co-nguon-goc-thien-nhien.jpg?v=1702028320944'
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const updateUserMutation = useUpdateUser();
 
   // Auth & user data
   const storeUser = useAuthStore((s) => s.user);
-  const { data: apiUser, isPending: isLoadingUser } = useUserInfo();
-
-  // Ưu tiên data từ API (mới nhất), fallback về store
+  const { data: apiUser, isPending: isLoadingUser, isRefetching, refetch } = useUserInfo();
   const user = apiUser ?? storeUser;
+  // console.log('User data:', user);
+
+  const { data: userBadges } = useUserBadges({ user_id: user?.id, limit: 100 });
+  // console.log('User badges', userBadges);
+  const { rememberedEmail, rememberedPassword } = useCommonStore();
+  // console.log('===rememberedEmail:', rememberedEmail, 'rememberedPassword:', rememberedPassword);
+
+  // Avatar selection state
+  const [pendingAvatar, setPendingAvatar] = useState<PickedImage | null>(null);
+
+  const handleSelectGallery = useCallback(async () => {
+    const result = await pickImage({
+      allowsMultipleSelection: false,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+
+    if (!result.success) {
+      if (result.reason === 'permission_denied') {
+        Toast.show({ type: 'error', text1: t('report.galleryPermissionRequired') });
+      } else if (result.reason === 'error') {
+        // console.error('pickImage error:', result.error);
+        Toast.show({ type: 'error', text1: t('permissions.cameraError') });
+      }
+      // 'cancelled' → do nothing
+      return;
+    }
+
+    const picked = result.images[0];
+    setPendingAvatar(picked);
+
+    try {
+      await updateUserMutation.mutateAsync({
+        id: user?.id!,
+        payload: { avatar: picked.file }, // file object → FormData → server
+      });
+      refetch();
+      Toast.show({ type: 'success', text1: 'Cập nhật ảnh đại diện thành công!' });
+    } catch (error) {
+      // console.error('ERROR update avatar:', error);
+      Toast.show({ type: 'error', text1: t('common.error') });
+    }
+  }, [t, user?.id, refetch]);
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -48,7 +97,18 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={Colors.primary}
+            colors={[Colors.primary]}
+          />
+        }
+      >
         {/* ─── Profile Info Section ─── */}
         <View style={styles.profileSection}>
           <View style={styles.avatarWrapper}>
@@ -62,9 +122,9 @@ export default function ProfileScreen() {
                 />
               )}
             </View>
-            <View style={styles.avatarBadge}>
-              <Ionicons name="leaf" size={10.5} color={Colors.white} />
-            </View>
+            <TouchableOpacity style={styles.avatarBadge} onPress={handleSelectGallery}>
+              <Entypo name="pencil" size={13} color={Colors.white} />
+            </TouchableOpacity>
           </View>
 
           <View style={styles.profileInfo}>
@@ -86,7 +146,7 @@ export default function ProfileScreen() {
             {user?.is_verified && (
               <View style={styles.verifiedBadge}>
                 <Ionicons name="checkmark-circle" size={14} color="#2D5A3D" />
-                <Text style={styles.verifiedText}>Đã xác minh</Text>
+                <Text style={styles.verifiedText}>{t('profile.isVerified')}</Text>
               </View>
             )}
           </View>
@@ -189,44 +249,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* ─── Achievements (placeholder – giữ UI cũ) ─── */}
-        <View style={styles.achievementsMargin}>
-          <View style={styles.achievementsSection}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t('profile.achievements')}</Text>
-              <TouchableOpacity>
-                <Text style={styles.viewAllText}>{t('common.viewAll')}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.badgesRow}>
-              <View style={styles.badgeItem}>
-                <View style={[styles.badgeCircle, { backgroundColor: '#FEF9C3' }]}>
-                  <Ionicons name="ribbon" size={20} color="#EAB308" />
-                </View>
-                <Text style={styles.badgeText}>{t('profile.firstClean')}</Text>
-              </View>
-              <View style={styles.badgeItem}>
-                <View style={[styles.badgeCircle, { backgroundColor: 'rgba(32,105,58,0.2)' }]}>
-                  <Ionicons name="leaf" size={23.75} color={Colors.primary} />
-                </View>
-                <Text style={styles.badgeText}>{t('profile.soilHero')}</Text>
-              </View>
-              <View style={styles.badgeItem}>
-                <View style={[styles.badgeCircle, { backgroundColor: '#F1F5F9' }]}>
-                  <Ionicons name="water-outline" size={20} color="#94A3B8" />
-                </View>
-                <Text style={styles.badgeTextLight}>{t('profile.locked')}</Text>
-              </View>
-              <View style={styles.badgeItem}>
-                <View style={[styles.badgeCircle, { backgroundColor: '#F1F5F9' }]}>
-                  <Ionicons name="people-outline" size={20} color="#94A3B8" />
-                </View>
-                <Text style={styles.badgeTextLight}>{t('profile.locked')}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -305,15 +327,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -8,
     right: -8,
-    width: 40,
-    height: 40,
+    // width: 40,
+    // height: 40,
     borderRadius: 9999,
     backgroundColor: '#20693A',
     borderWidth: 4,
     borderColor: '#F6F8F7',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    padding: 10,
   },
   profileInfo: {
     alignItems: 'center',
@@ -456,6 +478,7 @@ const styles = StyleSheet.create({
 
   // ─── Bio ───
   bioSection: {
+    height: 'auto',
     paddingHorizontal: 16,
     paddingTop: 24,
     gap: 12,

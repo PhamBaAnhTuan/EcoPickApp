@@ -1,9 +1,9 @@
 
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts } from '../../../../constants';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Fonts } from '../../../../constants';
 import { PARTICIPANT_AVATARS } from '../constants';
 
 interface EventParticipantsProps {
@@ -11,7 +11,7 @@ interface EventParticipantsProps {
   maxParticipants: number | null | undefined;
 }
 
-export function EventParticipants({ participantsCount, maxParticipants }: EventParticipantsProps) {
+export default function EventParticipants({ participantsCount, maxParticipants }: EventParticipantsProps) {
   const { t } = useTranslation();
 
   return (

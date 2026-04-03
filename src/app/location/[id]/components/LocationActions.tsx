@@ -10,7 +10,7 @@ interface LocationActionsProps {
   onCreateEvent: () => void;
 }
 
-export function LocationActions({ onNavigate, onCreateEvent }: LocationActionsProps) {
+const LocationActions = ({ onNavigate, onCreateEvent }: LocationActionsProps) => {
   const { t } = useTranslation();
 
   return (
@@ -26,6 +26,8 @@ export function LocationActions({ onNavigate, onCreateEvent }: LocationActionsPr
     </View>
   );
 }
+
+export default LocationActions;
 
 const s = StyleSheet.create({
   actionRow: { flexDirection: 'row', paddingHorizontal: Spacing.base, gap: Spacing.sm, marginBottom: 32 },

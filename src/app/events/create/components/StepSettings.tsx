@@ -57,7 +57,7 @@ const ICON_CHOICES = [
   'megaphone-outline',
 ] as const;
 
-export function StepSettings({
+const StepSettings =({
   t,
   control,
   errors,
@@ -65,7 +65,7 @@ export function StepSettings({
   setDifficulty,
   selectedEquipment,
   toggleEquipment,
-}: StepSettingsProps) {
+}: StepSettingsProps)=> {
   const [showAddModal, setShowAddModal] = useState(false);
   const [customLabel, setCustomLabel] = useState('');
   const [customIcon, setCustomIcon] = useState('hammer-outline');
@@ -379,7 +379,7 @@ export function StepSettings({
     </View>
   );
 }
-
+export default StepSettings;
 const s = StyleSheet.create({
   container: {
     padding: 20,

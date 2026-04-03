@@ -1,3 +1,5 @@
+import { useSignIn, useSignUp } from '@/hooks/useUserQueries';
+import { registerSchema, type RegisterFormData } from '@/lib/validations/auth';
 import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,8 +24,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import LanguageToggle from '../../components/LanguageToggle';
 import { AuthColors, authStyles, Fonts } from '../../constants';
-import { useSignUp, useSignIn } from '@/hooks/useUserQueries';
-import { registerSchema, type RegisterFormData } from '@/lib/validations/auth';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -110,9 +110,9 @@ export default function RegisterScreen() {
       {/* Header */}
       <View style={[authStyles.headerBar, { paddingTop: insets.top, height: 64 + insets.top }]}>
         <View style={authStyles.headerLeft}>
-          <TouchableOpacity style={authStyles.headerBackBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          {/* <TouchableOpacity style={authStyles.headerBackBtn} onPress={() => router.dismissTo('/auth/login')} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={20} color={AuthColors.brandAccent} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <Text style={authStyles.headerTitle}>{t('auth.signUp')}</Text>
         </View>
         <View style={authStyles.headerRight}>

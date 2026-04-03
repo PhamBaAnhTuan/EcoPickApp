@@ -1,39 +1,40 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import Slider from '@react-native-community/slider';
+import * as ImagePicker from 'expo-image-picker';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  View,
-  Text,
-  StyleSheet,
+  ActivityIndicator,
+  Dimensions,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  Platform,
-  KeyboardAvoidingView,
-  Keyboard,
-  Dimensions,
-  ActivityIndicator,
-  Alert,
-  type ImageStyle,
+  View,
+  type ImageStyle
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { Fonts } from '../../constants';
-import * as ImagePicker from 'expo-image-picker';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import Slider from '@react-native-community/slider';
-import { useTranslation } from 'react-i18next';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  interpolate,
-  clamp,
-} from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  clamp,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Fonts } from '../../constants';
 import { useCreateReport, useUploadReportImage } from '../../hooks/useReportQueries';
 import { useAuthStore } from '../../stores/authStore';
-
+// 
+import * as ImageManipulator from 'expo-image-manipulator';
+import Toast from 'react-native-toast-message';
 const { height } = Dimensions.get('window');
 
 const WASTE_TYPE_KEYS = ['plastic', 'paper', 'glass', 'organic', 'metal'] as const;
@@ -94,6 +95,7 @@ export default function ReportScreen() {
     if (params.latitude) setLocationLat(params.latitude);
     if (params.longitude) setLocationLng(params.longitude);
     if (params.locationSource === 'custom') setLocationCustom(true);
+    // console.log('Location params:', params.latitude, params.longitude, params.address, params.locationSource);
   }, [params.address, params.latitude, params.longitude, params.locationSource]);
 
   // ─── Track keyboard visibility ───
@@ -138,6 +140,7 @@ export default function ReportScreen() {
       }
       return next;
     });
+    console.log('Selected waste types:', Array.from(selectedWasteTypes));
   };
 
   const getSeverityLabel = (val: number): string => {
@@ -163,48 +166,66 @@ export default function ReportScreen() {
     }
 
     try {
-      // 1. Create the report via API
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+        image,
+        [],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      if (!manipulatedImage.uri) {
+        throw new Error('Image processing failed: URI is empty');
+      }
+
+      // 2. Lấy đúng extension & MIME type từ URI đã được manipulate
+      //    URI từ ImageManipulator luôn kết thúc bằng .jpg khi dùng SaveFormat.JPEG
+      const uriParts = manipulatedImage.uri.split('.');
+      const fileExt = uriParts[uriParts.length - 1]?.toLowerCase() || 'jpg';
+      const mimeType = fileExt === 'jpg' || fileExt === 'jpeg' ? 'image/jpeg'
+        : fileExt === 'png' ? 'image/png'
+          : 'image/jpeg'; // fallback
+
+      // 3. Tạo FormData — build một lần duy nhất ở đây, truyền thẳng xuống service
+      const formData = new FormData();
+
       const wasteTypesStr = Array.from(selectedWasteTypes).join(', ');
       const severityApi = getSeverityApiValue(severityValue);
       const locationName = locationAddress || `${locationLat}, ${locationLng}`;
 
-      const report = await createReportMutation.mutateAsync({
-        reporter_id: user?.id || '',
-        title: locationName,
-        description: description || undefined,
-        location: locationName,
-        address: locationAddress || undefined,
-        latitude: locationLat ? parseFloat(locationLat) : 0,
-        longitude: locationLng ? parseFloat(locationLng) : 0,
-        severity: severityApi,
-        status: 'pending',
-        waste_types: wasteTypesStr,
-      });
+      formData.append('reporter_id', user?.id || '');
+      formData.append('title', locationName);
+      if (description) formData.append('description', description);
+      formData.append('location', locationName);
+      if (locationAddress) formData.append('address', locationAddress);
+      formData.append('latitude', String(locationLat ? parseFloat(locationLat) : 0));
+      formData.append('longitude', String(locationLng ? parseFloat(locationLng) : 0));
+      formData.append('severity', severityApi);
+      formData.append('status', 'pending');
+      formData.append('waste_type', wasteTypesStr);
 
-      // 2. Upload the image
-      if (report?.id && image) {
-        try {
-          const imageFormData = new FormData();
-          imageFormData.append('report_id', report.id);
-          const fileExtension = image.split('.').pop() || 'jpg';
-          imageFormData.append('image', {
-            uri: image,
-            name: `report_${report.id}.${fileExtension}`,
-            type: `image/${fileExtension === 'png' ? 'png' : 'jpeg'}`,
-          } as any);
-          await uploadImageMutation.mutateAsync(imageFormData);
-        } catch (imgErr) {
-          console.warn('Image upload failed, report created:', imgErr);
+      // 4. Append file ảnh — giữ nguyên object {uri, name, type}, không dùng String()
+      formData.append('report_img', {
+        uri: manipulatedImage.uri,
+        name: `report_${Date.now()}.${fileExt}`,
+        type: mimeType,
+      } as any);
+
+      if (__DEV__) {
+        console.log('[handleSubmit] FormData parts:');
+        for (const [key, val] of (formData as any)._parts) {
+          console.log(`  ${key}:`, typeof val === 'object' ? JSON.stringify(val) : val);
         }
       }
 
-      // 3. Clear the form
+      // 5. Gửi request
+      const report = await createReportMutation.mutateAsync(formData);
+
+      // 6. Reset form
       setImage(null);
       setDescription('');
       setSeverityValue(0.6);
       setSelectedWasteTypes(new Set(['plastic']));
 
-      // 4. Navigate to Success Screen
+      // 7. Điều hướng tới màn hình thành công
       router.replace({
         pathname: '/report-success',
         params: {
@@ -214,11 +235,11 @@ export default function ReportScreen() {
         },
       } as any);
     } catch (error: any) {
-      console.error('Report submission error:', error);
-      Alert.alert(
-        t('common.error'),
-        error?.response?.data?.detail || error?.message || 'Failed to submit report. Please try again.',
-      );
+      Toast.show({
+        type: 'error',
+        text1: t('common.error'),
+        text2: error?.response?.data?.detail || error?.message || 'Failed to submit report. Please try again.',
+      });
     }
   };
 
@@ -453,7 +474,7 @@ export default function ReportScreen() {
                 <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" />
               )}
               <Text style={styles.submitBtnText}>
-                {isSubmitting ? t('common.calculating') : t('report.submitReport')}
+                {isSubmitting ? t('common.loading') : t('report.submitReport')}
               </Text>
             </TouchableOpacity>
           </View>

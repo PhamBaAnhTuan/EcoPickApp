@@ -1,10 +1,11 @@
+import { useLayout } from '@/hooks/use-layout';
 import BottomSheetLib, { BottomSheetFlatList, BottomSheetView } from '@gorhom/bottom-sheet';
 import React, { useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { BorderRadius, Colors, Fonts, FontSizes, LineHeights, Spacing } from '../constants';
 import { WasteReport } from '../data/mockData';
 import { ReportCard } from './ReportCard';
-import { useTranslation } from 'react-i18next';
 
 interface BottomSheetProps {
   reports: WasteReport[];
@@ -14,6 +15,7 @@ interface BottomSheetProps {
 }
 
 export function ReportsBottomSheet({ reports, totalCount, onNavigateReport, onViewReport }: BottomSheetProps) {
+  const { insets, bottomTabHeight } = useLayout();
   const sheetRef = useRef<BottomSheetLib>(null);
   const { t } = useTranslation();
 
@@ -36,7 +38,7 @@ export function ReportsBottomSheet({ reports, totalCount, onNavigateReport, onVi
       enablePanDownToClose={false}
       enableOverDrag={false}
       animateOnMount={true}
-      style={styles.sheetZ}
+      style={[styles.sheetZ, { paddingBottom: 200 + insets.bottom }]}
       backgroundStyle={styles.sheetBackground}
       handleIndicatorStyle={styles.handle}
     >
@@ -53,7 +55,7 @@ export function ReportsBottomSheet({ reports, totalCount, onNavigateReport, onVi
           data={reports}
           renderItem={renderReport}
           keyExtractor={keyExtractor}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: bottomTabHeight + insets.bottom }]}
           showsVerticalScrollIndicator={false}
           ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
         />

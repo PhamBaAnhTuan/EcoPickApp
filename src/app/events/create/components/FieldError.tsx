@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Fonts } from '../../../../constants';
 
-export function FieldError({ message }: { message?: string }) {
+const FieldError = ({ message }: { message?: string }) => {
   if (!message) return null;
   return (
     <View style={s.errorRow}>
@@ -12,6 +12,8 @@ export function FieldError({ message }: { message?: string }) {
     </View>
   );
 }
+
+export default FieldError;
 
 const s = StyleSheet.create({
   errorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },

@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,12 +20,13 @@ import { useReport } from '../../../hooks/useReportQueries';
 import { formatDistanceInfo } from '../../../utils/distance';
 import { getSeverityTheme } from '../../../utils/severity';
 
-import { LocationHero } from './components/LocationHero';
-import { LocationTitle } from './components/LocationTitle';
-import { LocationActions } from './components/LocationActions';
-import { LocationHistory } from './components/LocationHistory';
-import { LocationDescription } from './components/LocationDescription';
-import { LocationComments } from './components/LocationComments';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import LocationActions from './components/LocationActions';
+import LocationComments from './components/LocationComments';
+import LocationDescription from './components/LocationDescription';
+import LocationHero from './components/LocationHero';
+import LocationHistory from './components/LocationHistory';
+import LocationTitle from './components/LocationTitle';
 
 const API_SEVERITY_TO_UI: Record<string, SeverityLevel> = {
   low: 'light',
@@ -41,6 +41,7 @@ export default function LocationDetailScreen() {
   const { t } = useTranslation();
 
   const { data: report, isLoading, isError } = useReport(id as string);
+  // console.log('Report data:', report);
 
   const severity: SeverityLevel = API_SEVERITY_TO_UI[report?.severity || 'low'] || 'light';
   const severityTheme = getSeverityTheme(severity);
@@ -77,7 +78,7 @@ export default function LocationDetailScreen() {
     const destLng = report.longitude;
     const destTitle = reportTitle;
 
-    router.push({
+    router.dismissTo({
       pathname: '/(tabs)/map',
       params: {
         destLat: destLat.toString(),
@@ -147,24 +148,29 @@ export default function LocationDetailScreen() {
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-          <LocationHero />
-          
-          <LocationTitle 
-            reportTitle={reportTitle} 
-            severityLabel={severityLabel} 
-            severityTheme={severityTheme} 
-            distanceText={distanceText} 
+          <LocationHero
+            imageUrl={report?.report_img}
+          // title={reportTitle}
           />
-          
-          <LocationActions 
-            onNavigate={handleNavigate} 
-            onCreateEvent={handleCreateEvent} 
+
+          <LocationTitle
+            reportTitle={reportTitle}
+            severityLabel={severityLabel}
+            severityTheme={severityTheme}
+            distanceText={distanceText}
           />
-          
-          <LocationHistory />
-          
+
+          <LocationActions
+            onNavigate={handleNavigate}
+            onCreateEvent={handleCreateEvent}
+          />
+
+          <LocationHistory
+            reporter={report.reporter?.email}
+          />
+
           <LocationDescription description={report.description} />
-          
+
           <LocationComments />
         </ScrollView>
       </KeyboardAvoidingView>

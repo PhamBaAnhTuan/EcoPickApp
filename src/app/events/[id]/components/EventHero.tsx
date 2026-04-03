@@ -10,7 +10,7 @@ interface EventHeroProps {
   onOpenMaps: () => void;
 }
 
-export function EventHero({ event, onOpenMaps }: EventHeroProps) {
+export default function EventHero({ event, onOpenMaps }: EventHeroProps) {
   const { t } = useTranslation();
 
   return (

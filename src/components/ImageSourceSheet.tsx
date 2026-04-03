@@ -1,22 +1,22 @@
+import { useLayout } from '@/hooks/use-layout';
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   Modal,
   Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { Fonts } from '../constants';
-
 interface ImageSourceSheetProps {
   visible: boolean;
   onClose: () => void;
@@ -30,6 +30,7 @@ export function ImageSourceSheet({
   onSelectCamera,
   onSelectGallery,
 }: ImageSourceSheetProps) {
+  const { insets, bottomTabHeight } = useLayout();
   const { t } = useTranslation();
   const translateY = useSharedValue(300);
   const backdropOpacity = useSharedValue(0);

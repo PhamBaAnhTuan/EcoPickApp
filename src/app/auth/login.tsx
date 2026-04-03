@@ -1,5 +1,6 @@
 import { useSignIn } from '@/hooks/useUserQueries';
 import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
+import { useCommonStore } from '@/stores';
 import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,7 +32,9 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const { rememberedEmail, rememberedPassword, setRememberedCredentials, clearRememberedCredentials } = useCommonStore();
+  // console.log('===rememberedEmail:', rememberedEmail, 'rememberedPassword:', rememberedPassword);
+  const [rememberMe, setRememberMe] = useState(!!rememberedEmail);
 
   const signIn = useSignIn();
 
@@ -39,14 +42,25 @@ export default function LoginScreen() {
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: rememberedEmail || '',
+      password: rememberedPassword || '',
     },
   });
+
+  React.useEffect(() => {
+    if (rememberedEmail) {
+      setValue('email', rememberedEmail);
+      setRememberMe(true);
+    }
+    if (rememberedPassword) {
+      setValue('password', rememberedPassword);
+    }
+  }, [rememberedEmail, rememberedPassword, setValue]);
 
   // ─── Submit handler ────────────────────────────────────────
   const onSubmit = (data: LoginFormData) => {
@@ -56,24 +70,27 @@ export default function LoginScreen() {
         onSuccess: (result) => {
           Toast.show({
             type: 'success',
-            text1: 'Đăng nhập thành công!',
-            text2: `Chào mừng ${result.user.fullname || result.user.email}`,
+            text1: t('auth.loginSuccess'),
+            text2: t('auth.loginSuccessDesc'),
           });
-          // Delay nhẹ để toast hiện trước khi navigate
-          setTimeout(() => {
-            router.replace('/(tabs)/map');
-          }, 800);
+          // Xử lý Remember Me
+          if (rememberMe) {
+            setRememberedCredentials(data.email.trim(), data.password);
+          } else {
+            clearRememberedCredentials();
+          }
         },
         onError: (error: any) => {
-          const message =
+          const errorMsg =
             error?.response?.data?.detail ||
             error?.response?.data?.error ||
             error?.message ||
             'Đăng nhập thất bại. Vui lòng kiểm tra lại.';
+          console.log('LOGIN ERROR:', errorMsg);
           Toast.show({
             type: 'error',
-            text1: 'Đăng nhập thất bại',
-            text2: message,
+            text1: t('auth.loginFailedTitle'),
+            text2: t('auth.loginFailed'),
           });
         },
       },
@@ -91,9 +108,9 @@ export default function LoginScreen() {
       {/* Header */}
       <View style={[authStyles.headerBar, { paddingTop: insets.top, height: 64 + insets.top }]}>
         <View style={authStyles.headerLeft}>
-          <TouchableOpacity style={authStyles.headerBackBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          {/* <TouchableOpacity style={authStyles.headerBackBtn} onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={20} color={AuthColors.brandAccent} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <Text style={authStyles.headerTitle}>{t('auth.logIn')}</Text>
         </View>
         <View style={authStyles.headerRight}>
@@ -218,7 +235,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={styles.rememberRow}
                 onPress={() => setRememberMe(!rememberMe)}
-                activeOpacity={0.7}
+              // activeOpacity={0.7}
               >
                 <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
                   {rememberMe && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}

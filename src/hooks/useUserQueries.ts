@@ -22,44 +22,20 @@ export const useSignIn = () => {
       // 1. Đăng nhập lấy token
       const authResponse = await authService.signIn(payload);
 
-      // 2. Lưu token tạm để axios interceptor gắn vào header
-      useAuthStore.getState().setAuth(
-        authResponse.access_token,
-        authResponse.refresh_token,
-        {
-          // Placeholder cho đến khi fetch userInfo
-          id: '',
-          role: { id: '', name: '' },
-          fullname: null,
-          email: payload.email,
-          phone_number: null,
-          address: null,
-          date_of_birth: null,
-          avatar: null,
-          bio: null,
-          level: 0,
-          eco_points: 0,
-          total_reports: 0,
-          total_events: 0,
-          total_trees: 0,
-          followers_count: 0,
-          following_count: 0,
-          is_verified: false,
-          is_staff: false,
-        }
-      );
+      // 2. Lưu token tạm để axios interceptor gắn vào header mà CHƯA kích hoạt isAuthenticated
+      useAuthStore.getState().setToken(authResponse.access_token, authResponse.refresh_token);
 
-      // 3. Fetch userInfo đầy đủ
+      // 3. Fetch userInfo đầy đủ (bây giờ axios đã có token)
       const userInfo = await userService.getUserInfo();
 
-      // 4. Cập nhật lại user trong store
-      useAuthStore.getState().setUser(userInfo);
+      // 4. Kích hoạt auth chính thức (sẽ set isAuthenticated = true và trigger NavigationGuard)
+      useAuthStore.getState().setAuth(authResponse.access_token, authResponse.refresh_token, userInfo);
 
       return { auth: authResponse, user: userInfo };
     },
     onSuccess: () => {
-      // Invalidate toàn bộ cache khi login
-      queryClient.clear();
+      // Invalidate toàn bộ cache thay vì clear hoàn toàn
+      queryClient.invalidateQueries();
     },
   });
 };
