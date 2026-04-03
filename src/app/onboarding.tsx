@@ -1,4 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dimensions,
   FlatList,
@@ -12,10 +17,6 @@ import {
   View,
   ViewToken,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -26,9 +27,8 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import { Fonts } from '../constants';
 import LanguageToggle from '../components/LanguageToggle';
+import { Fonts } from '../constants';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const ONBOARDING_KEY = '@ecopick_onboarding_complete';
@@ -325,8 +325,8 @@ export default function OnboardingScreen() {
   const completeOnboarding = useCallback(async () => {
     try {
       await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    } catch {}
-    router.replace('/auth/welcome');
+    } catch { }
+    router.replace('/auth/login');
   }, [router]);
 
   const handleNext = useCallback(() => {
@@ -411,7 +411,7 @@ export default function OnboardingScreen() {
                       <Text style={styles.loginText}>
                         {t('onboarding.alreadyHaveAccount')}{' '}
                       </Text>
-                      <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/auth/welcome')}>
+                      <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/auth/login')}>
                         <Text style={styles.loginLink}>{t('onboarding.logIn')}</Text>
                       </TouchableOpacity>
                     </View>

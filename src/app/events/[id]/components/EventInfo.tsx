@@ -1,24 +1,24 @@
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts } from '../../../../constants';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatEventType, formatDate, formatTime } from '../constants';
+import { StyleSheet, Text, View } from 'react-native';
+import { Colors, Fonts } from '../../../../constants';
+import { formatEventType } from '../constants';
 
 interface EventInfoProps {
   event: any;
 }
 
-export function EventInfo({ event }: EventInfoProps) {
+export default function EventInfo({ event }: EventInfoProps) {
   const { t } = useTranslation();
-
+  // console.log('EventInfo event data:', event);
   return (
     <View style={s.container}>
       {/* Type & Title */}
       <View style={s.titleBlock}>
         <View style={s.typeRow}>
-          <Ionicons name="home-outline" size={11.667} color={Colors.primary} />
+          <Ionicons name="leaf-sharp" size={21} color={Colors.primary} />
           <Text style={s.typeText}>
             {formatEventType(event.type) || t('eventDetail.communityEvent')}
           </Text>
@@ -29,7 +29,7 @@ export function EventInfo({ event }: EventInfoProps) {
         </Text>
         {event.address && (
           <View style={s.addressRow}>
-            <Ionicons name="location-outline" size={14} color="#64748B" />
+            <Ionicons name="location-sharp" size={21} color='#ff0000' />
             <Text style={s.addressText}>{event.address}</Text>
           </View>
         )}
@@ -41,14 +41,14 @@ export function EventInfo({ event }: EventInfoProps) {
           <Ionicons name="calendar-outline" size={18} color={Colors.primary} />
           <View>
             <Text style={s.dateTimeLabel}>{t('eventDetail.date')}</Text>
-            <Text style={s.dateTimeValue}>{formatDate(event.start_date)}</Text>
+            <Text style={s.dateTimeValue}>{event.start_date.split(' ')[0]}</Text>
           </View>
         </View>
         <View style={s.dateTimeBox}>
           <Ionicons name="time-outline" size={20} color={Colors.primary} />
           <View>
             <Text style={s.dateTimeLabel}>{t('eventDetail.time')}</Text>
-            <Text style={s.dateTimeValue}>{formatTime(event.start_date)}</Text>
+            <Text style={s.dateTimeValue}>{event.start_date.split(' ')[1]}</Text>
           </View>
         </View>
       </View>

@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, FontSizes, Spacing } from '../../../../constants';
 import { useTranslation } from 'react-i18next';
 
-export function LocationComments() {
+const LocationComments = () => {
   const { t } = useTranslation();
 
   return (
@@ -46,6 +46,8 @@ export function LocationComments() {
     </View>
   );
 }
+
+export default LocationComments;
 
 const s = StyleSheet.create({
   section: { paddingHorizontal: Spacing.base, marginBottom: 32 },

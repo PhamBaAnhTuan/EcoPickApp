@@ -28,7 +28,7 @@ interface StepScheduleProps {
   durationMins: number;
 }
 
-export function StepSchedule({
+const  StepSchedule=({
   t,
   startDate,
   endDate,
@@ -38,7 +38,7 @@ export function StepSchedule({
   durationDays,
   durationHrs,
   durationMins,
-}: StepScheduleProps) {
+}: StepScheduleProps)=> {
   const [tempDate, setTempDate] = useState<Date>(new Date());
 
   const openPicker = (type: string) => {
@@ -231,7 +231,7 @@ export function StepSchedule({
     </View>
   );
 }
-
+export default StepSchedule;
 const s = StyleSheet.create({
   container: {
     padding: 20,

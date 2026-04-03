@@ -1,30 +1,30 @@
 
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-  SafeAreaView,
-  KeyboardAvoidingView,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
-import { Colors, Fonts } from '../../../constants';
-import { useTranslation } from 'react-i18next';
-import { useEvent, useJoinEvent, useEventParticipants } from '@/hooks/useEventQueries';
+import { useEvent, useEventParticipants, useJoinEvent } from '@/hooks/useEventQueries';
 import { useAuthStore } from '@/stores/authStore';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
+import { Colors, Fonts } from '../../../constants';
+import EventChat from './components/EventChat';
+import EventEquipment from './components/EventEquipment';
+import EventHero from './components/EventHero';
+import EventInfo from './components/EventInfo';
+import EventParticipants from './components/EventParticipants';
 import { parseEquipment } from './constants';
-import { EventHero } from './components/EventHero';
-import { EventInfo } from './components/EventInfo';
-import { EventParticipants } from './components/EventParticipants';
-import { EventEquipment } from './components/EventEquipment';
-import { EventChat } from './components/EventChat';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -63,11 +63,13 @@ export default function EventDetailScreen() {
       });
       setJoined(true);
     } catch (error: any) {
-      Alert.alert(
-        t('common.error', { defaultValue: 'Error' }),
-        error?.response?.data?.detail ||
+      console.log('Error creating event:', error?.response?.data || error);
+      Toast.show({
+        type: 'error',
+        text1: t('common.error', { defaultValue: 'Error' }),
+        text2: error?.response?.data?.detail ||
           t('eventDetail.joinError', { defaultValue: 'Could not join event. Please try again.' }),
-      );
+      })
     }
   }, [event, user?.id, joined, joinMutation, t]);
 
@@ -133,16 +135,16 @@ export default function EventDetailScreen() {
 
   return (
     <SafeAreaView style={s.safeArea}>
-      <StatusBar style="dark" />
+      {/* <StatusBar style="dark" /> */}
 
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity style={s.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={16} color="#0F172A" />
         </TouchableOpacity>
-        <Text style={s.headerTitle} numberOfLines={1}>
+        {/* <Text style={s.headerTitle} numberOfLines={1}>
           {event.title}
-        </Text>
+        </Text> */}
         <TouchableOpacity style={s.headerBtn} activeOpacity={0.7}>
           <Ionicons name="share-social-outline" size={18} color="#0F172A" />
         </TouchableOpacity>
@@ -185,8 +187,8 @@ export default function EventDetailScreen() {
                 isEventEnded
                   ? 'close-circle'
                   : joined
-                  ? 'checkmark-circle'
-                  : 'person-add-outline'
+                    ? 'checkmark-circle'
+                    : 'person-add-outline'
               }
               size={16.4}
               color={Colors.white}
@@ -196,8 +198,8 @@ export default function EventDetailScreen() {
             {isEventEnded
               ? t('eventDetail.eventEnded', { defaultValue: 'Event Ended' })
               : joined
-              ? t('eventDetail.joined')
-              : t('eventDetail.joinEvent')}
+                ? t('eventDetail.joined')
+                : t('eventDetail.joinEvent')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -212,7 +214,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    // paddingVertical: 12,
     backgroundColor: 'rgba(246,248,247,0.8)',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(32,105,58,0.1)',

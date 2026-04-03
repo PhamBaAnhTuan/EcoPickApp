@@ -4,23 +4,30 @@ import { View, Image, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Spacing } from '../../../../constants';
 
-export function LocationHero() {
+interface LocationHeroProps {
+  imageUrl?: string;
+  title?: string;
+}
+
+const LocationHero = ({imageUrl, title}: LocationHeroProps) => {
   return (
     <View style={s.heroContainer}>
       <Image
         source={{
-          uri: 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=800',
+          uri: imageUrl || 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=800',
         }}
         style={s.heroImage}
         resizeMode="cover"
       />
       <View style={s.imageOverlay}>
         <Ionicons name="location-outline" size={16} color={Colors.white} />
-        <Text style={s.imageOverlayText}>Riverside Recreation Trail</Text>
+        <Text style={s.imageOverlayText}>{title || 'Riverside Recreation Trail'}</Text>
       </View>
     </View>
   );
 }
+
+export default LocationHero;
 
 const s = StyleSheet.create({
   heroContainer: {

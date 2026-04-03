@@ -1,9 +1,9 @@
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts, FontSizes, Spacing } from '../../../../constants';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet, Text, View } from 'react-native';
+import { Colors, Fonts, FontSizes, Spacing } from '../../../../constants';
 
 interface LocationTitleProps {
   reportTitle: string;
@@ -12,7 +12,7 @@ interface LocationTitleProps {
   distanceText: string;
 }
 
-export function LocationTitle({ reportTitle, severityLabel, severityTheme, distanceText }: LocationTitleProps) {
+const LocationTitle = ({ reportTitle, severityLabel, severityTheme, distanceText }: LocationTitleProps) => {
   const { t } = useTranslation();
 
   return (
@@ -45,6 +45,7 @@ export function LocationTitle({ reportTitle, severityLabel, severityTheme, dista
     </View>
   );
 }
+export default LocationTitle;
 
 const s = StyleSheet.create({
   titleSection: { paddingHorizontal: Spacing.base, marginBottom: Spacing.lg },

@@ -1,33 +1,36 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Text,
-  KeyboardAvoidingView,
-  ScrollView,
-  Animated,
-  Keyboard,
-  Platform,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as ImagePicker from 'expo-image-picker';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors, Fonts } from '../../../constants';
-import { useAuthStore } from '@/stores/authStore';
 import { useCreateEvent } from '@/hooks/useEventQueries';
-import { createEventSchema, STEPS, CreateEventFormData } from './constants';
-import { StepDetails } from './components/StepDetails';
-import { StepSchedule } from './components/StepSchedule';
-import { StepSettings } from './components/StepSettings';
+import { useAuthStore } from '@/stores/authStore';
+import { formatDateTime } from '@/utils/formatDatetime';
+import Toast from 'react-native-toast-message';
+import { Colors, Fonts } from '../../../constants';
+import  StepDetails  from './components/StepDetails';
+import  StepSchedule  from './components/StepSchedule';
+import  StepSettings  from './components/StepSettings';
+import { CreateEventFormData, createEventSchema, STEPS } from './constants';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 export default function CreateEventScreen() {
   const router = useRouter();
@@ -71,6 +74,7 @@ export default function CreateEventScreen() {
     if (params.address) setAddress(params.address);
     if (params.latitude) setLatitude(parseFloat(params.latitude));
     if (params.longitude) setLongitude(parseFloat(params.longitude));
+    console.log('Received location params:', params)
   }, [params.address, params.latitude, params.longitude]);
 
   const [selectedEquipment, setSelectedEquipment] = useState<Set<string>>(
@@ -169,22 +173,45 @@ export default function CreateEventScreen() {
 
   const onSubmit = async (data: CreateEventFormData) => {
     if (!user?.id) {
-      Alert.alert(t('common.error'), t('createEvent.loginRequired'));
+      Toast.show({
+        type: 'error',
+        text1: t('common.error'),
+        text2: t('createEvent.loginRequired'),
+      })
       return;
     }
     if (endDate <= startDate) {
-      Alert.alert(t('common.error'), t('createEvent.validation.endDateAfterStart'));
+      Toast.show({
+        type: 'error',
+        text1: t('common.error'),
+        text2: t('createEvent.validation.endDateAfterStart'),
+      })
       return;
     }
 
     try {
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+              coverImage,
+              [],
+              { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+            );
+      
+            if (!manipulatedImage.uri) {
+              throw new Error('Image processing failed: URI is empty');
+            }
+            const uriParts = manipulatedImage.uri.split('.');
+            const fileExt = uriParts[uriParts.length - 1]?.toLowerCase() || 'jpg';
+            const mimeType = fileExt === 'jpg' || fileExt === 'jpeg' ? 'image/jpeg'
+              : fileExt === 'png' ? 'image/png'
+                : 'image/jpeg'; // fallback
+
       const event = await createEvent.mutateAsync({
         organizer_id: user.id,
         title: data.title.trim(),
         description: data.description?.trim() || undefined,
         type: eventType,
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
+        start_date: formatDateTime(startDate),
+        end_date: formatDateTime(endDate),
         latitude,
         longitude,
         location: data.location.trim(),
@@ -193,15 +220,21 @@ export default function CreateEventScreen() {
         equipment: Array.from(selectedEquipment).join(',') || undefined,
         difficulty,
         eco_point_reward: data.ecoPointReward || 0,
-        cover_image_url: coverImage || undefined,
+        cover_image_url: {
+          uri: manipulatedImage.uri,
+          name: `event_${Date.now()}.${fileExt}`,
+          type: mimeType,
+        } as any,
         status: 'upcoming',
       });
       router.replace(`/events/${event.id}`);
     } catch (error: any) {
-      Alert.alert(
-        t('common.error'),
-        error?.response?.data?.detail || t('createEvent.createError'),
-      );
+      console.log('Error creating event:', error?.response?.data || error);
+      Toast.show({
+        type: 'error',
+        text1: t('common.error'),
+        text2: error?.response?.data?.detail || t('createEvent.createError'),
+      })
     }
   };
 

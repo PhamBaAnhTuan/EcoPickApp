@@ -1,11 +1,15 @@
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts, FontSizes, Spacing } from '../../../../constants';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet, Text, View } from 'react-native';
+import { Colors, Fonts, FontSizes, Spacing } from '../../../../constants';
 
-export function LocationHistory() {
+interface LocationHistoryProps {
+  reporter: string | null
+}
+
+const LocationHistory = ({ reporter }: LocationHistoryProps) => {
   const { t } = useTranslation();
 
   return (
@@ -20,7 +24,7 @@ export function LocationHistory() {
           </View>
           <View style={s.timelineContent}>
             <Text style={s.timelineTitle}>{t('location.reported')}</Text>
-            <Text style={s.timelineDesc}>{t('location.reportedDesc')}</Text>
+            <Text style={s.timelineDesc}>{t('location.reportedDesc', { reporter })}</Text>
           </View>
         </View>
 
@@ -48,6 +52,7 @@ export function LocationHistory() {
   );
 }
 
+export default LocationHistory;
 const s = StyleSheet.create({
   section: { paddingHorizontal: Spacing.base, marginBottom: 32 },
   sectionTitle: { fontFamily: Fonts.bold, fontSize: 18, color: Colors.textPrimary, marginBottom: 16 },

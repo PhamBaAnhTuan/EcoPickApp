@@ -39,7 +39,7 @@ interface StepDetailsProps {
   params: any;
 }
 
-export function StepDetails({
+const StepDetails =({
   control,
   errors,
   t,
@@ -51,7 +51,7 @@ export function StepDetails({
   longitude,
   address,
   params,
-}: StepDetailsProps) {
+}: StepDetailsProps)=> {
   const router = useRouter();
 
   const openLocationPicker = () => {
@@ -239,7 +239,7 @@ export function StepDetails({
     </View>
   );
 }
-
+export default StepDetails;
 const s = StyleSheet.create({
   stepBody: {
     padding: 20,

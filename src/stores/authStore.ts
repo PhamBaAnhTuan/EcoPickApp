@@ -16,6 +16,7 @@ interface AuthState {
 
   // Actions
   setAuth: (token: string, refreshToken: string, user: UserInfo) => void;
+  setToken: (token: string, refreshToken: string) => void;
   setUser: (user: UserInfo) => void;
   logout: () => void;
   loadStoredAuth: () => Promise<void>;
@@ -48,6 +49,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       console.error('[AuthStore] Lỗi lưu auth:', error);
     }
+  },
+
+  // Lưu token tạm thời để gọi các API cần auth
+  setToken: (token: string, refreshToken: string) => {
+    set({ token, refreshToken });
   },
 
   // Cập nhật user info (sau khi fetch userinfo)

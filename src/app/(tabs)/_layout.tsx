@@ -1,14 +1,18 @@
-import React, { useState, useCallback } from 'react';
-import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet, Platform, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { Colors, Fonts, FontSizes } from '../../constants';
+import { Tabs, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import { ImageSourceSheet } from '../../components/ImageSourceSheet';
+import { Colors, Fonts, FontSizes } from '../../constants';
+
+import { useLayout } from '../../hooks/use-layout';
+import Toast from 'react-native-toast-message';
 
 export default function TabLayout() {
+  const { insets, bottomTabHeight, topTabHeight } = useLayout();
   const router = useRouter();
   const { t } = useTranslation();
   const [showSheet, setShowSheet] = useState(false);
@@ -76,7 +80,8 @@ export default function TabLayout() {
       }
     } catch (error) {
       console.error('Error opening camera:', error);
-      Alert.alert(t('common.error'), t('permissions.cameraError'));
+      // Alert.alert(t('common.error'), t('permissions.cameraError'));
+      Toast.show({ type: 'error', text1: t('permissions.cameraError') });
     }
   }, [router, t]);
 
@@ -84,7 +89,8 @@ export default function TabLayout() {
   const handleSelectGallery = useCallback(async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(t('common.error'), t('report.galleryPermissionRequired'));
+      // Alert.alert(t('common.error'), t('report.galleryPermissionRequired'));
+      Toast.show({ type: 'error', text1: t('report.galleryPermissionRequired') });
       return;
     }
 
@@ -105,7 +111,8 @@ export default function TabLayout() {
       }
     } catch (error) {
       console.error('Error opening gallery:', error);
-      Alert.alert(t('common.error'), t('permissions.cameraError'));
+      // Alert.alert(t('common.error'), t('permissions.cameraError'));
+      Toast.show({ type: 'error', text1: t('permissions.cameraError') });
     }
   }, [router, t]);
 
@@ -114,10 +121,10 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarStyle: styles.tabBar,
+          tabBarStyle: [styles.tabBar, { height: bottomTabHeight }],
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: Colors.textInactive,
-          tabBarLabelStyle: styles.tabBarLabel,
+          tabBarLabelStyle: styles.tabBarLabel
         }}
       >
         <Tabs.Screen
@@ -209,7 +216,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: Platform.OS === 'ios' ? 85 : 70,
+    // height: Platform.OS === 'ios' ? 85 : 70,
     paddingTop: 13,
     paddingBottom: Platform.OS === 'ios' ? 32 : 12,
     shadowColor: '#000',

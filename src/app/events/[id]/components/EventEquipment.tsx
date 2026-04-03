@@ -9,7 +9,7 @@ interface EventEquipmentProps {
   equipmentList: { name: string; status: 'BRING OWN' | 'PROVIDED' }[];
 }
 
-export function EventEquipment({ equipmentList }: EventEquipmentProps) {
+export default function EventEquipment({ equipmentList }: EventEquipmentProps) {
   const { t } = useTranslation();
 
   if (equipmentList.length === 0) return null;

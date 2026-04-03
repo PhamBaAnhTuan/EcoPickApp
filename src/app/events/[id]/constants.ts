@@ -53,3 +53,8 @@ export const parseEquipment = (
       status: i % 2 === 0 ? ('BRING OWN' as const) : ('PROVIDED' as const),
     }));
 };
+export default {
+  PARTICIPANT_AVATARS,
+  CHAT_AVATAR,
+  formatDate,
+}

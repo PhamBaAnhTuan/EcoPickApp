@@ -6,7 +6,7 @@ import { Colors, Fonts } from '../../../../constants';
 import { useTranslation } from 'react-i18next';
 import { CHAT_AVATAR } from '../constants';
 
-export function EventChat() {
+export default function EventChat() {
   const { t } = useTranslation();
 
   return (

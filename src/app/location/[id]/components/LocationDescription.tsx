@@ -1,26 +1,26 @@
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Fonts, FontSizes, Spacing } from '../../../../constants';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet, Text, View } from 'react-native';
+import { Colors, Fonts, FontSizes, Spacing } from '../../../../constants';
 
 interface LocationDescriptionProps {
   description?: string;
 }
 
-export function LocationDescription({ description }: LocationDescriptionProps) {
+const LocationDescription = ({ description }: LocationDescriptionProps) => {
   const { t } = useTranslation();
 
   return (
     <View style={s.section}>
       <Text style={s.sectionTitle}>{t('location.description')}</Text>
       <Text style={s.description}>
-        {description}. {t('location.descriptionExtra')}
+        {description ? description : t('location.noDescription')}
       </Text>
     </View>
   );
 }
-
+export default LocationDescription;
 const s = StyleSheet.create({
   section: { paddingHorizontal: Spacing.base, marginBottom: 32 },
   sectionTitle: { fontFamily: Fonts.bold, fontSize: 18, color: Colors.textPrimary, marginBottom: 16 },
