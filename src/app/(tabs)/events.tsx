@@ -1,13 +1,23 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Platform, Animated, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts } from '../../constants';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  Animated,
+  FlatList,
+  Image,
+  Platform,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { Event } from '../../api/services/eventService';
+import { Colors, Fonts } from '../../constants';
 import { useEvents } from '../../hooks/useEventQueries';
 import { useAuthStore } from '../../stores/authStore';
-import type { Event } from '../../api/services/eventService';
 
 const TAB_KEYS = ['upcoming', 'myEvents', 'past'] as const;
 
@@ -90,10 +100,7 @@ function EventSkeleton() {
               {[0, 1, 2].map((idx) => (
                 <Animated.View
                   key={idx}
-                  style={[
-                    skeletonStyles.avatar,
-                    { marginLeft: idx > 0 ? -8 : 0, opacity: shimmer },
-                  ]}
+                  style={[skeletonStyles.avatar, { marginLeft: idx > 0 ? -8 : 0, opacity: shimmer }]}
                 />
               ))}
             </View>
@@ -129,23 +136,29 @@ export default function EventsScreen() {
     return apiEvents;
   }, [activeTab, apiEvents, user?.id]);
 
-  const handleJoinEvent = useCallback((event: Event) => {
-    router.push(`/events/${event.id}`);
-  }, [router]);
+  const handleJoinEvent = useCallback(
+    (event: Event) => {
+      router.push(`/events/${event.id}`);
+    },
+    [router],
+  );
 
-  const handlePressCard = useCallback((event: Event) => {
-    router.push(`/events/${event.id}`);
-  }, [router]);
+  const handlePressCard = useCallback(
+    (event: Event) => {
+      router.push(`/events/${event.id}`);
+    },
+    [router],
+  );
 
   const renderEvent = useCallback(
     ({ item }: { item: Event }) => (
-      <TouchableOpacity
-        style={styles.eventCard}
-        onPress={() => handlePressCard(item)}
-        activeOpacity={0.9}
-      >
+      <TouchableOpacity style={styles.eventCard} onPress={() => handlePressCard(item)} activeOpacity={0.9}>
         <View style={styles.imageContainer}>
-          <Image source={{ uri: item.cover_image_url || DEFAULT_EVENT_IMAGE }} style={styles.eventImage} resizeMode="cover" />
+          <Image
+            source={{ uri: item.cover_image_url || DEFAULT_EVENT_IMAGE }}
+            style={styles.eventImage}
+            resizeMode="cover"
+          />
           {item.organizer_id === user?.id && (
             <View style={styles.organizerBadge}>
               <Text style={styles.organizerText}>{t('common.organizer').toUpperCase()}</Text>
@@ -154,7 +167,9 @@ export default function EventsScreen() {
         </View>
         <View style={styles.eventContent}>
           <View style={styles.textContent}>
-            <Text style={styles.eventTitle} numberOfLines={2}>{item.title}</Text>
+            <Text style={styles.eventTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
             <View style={styles.eventDateContainer}>
               <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
               <Text style={styles.eventDateText}>
@@ -168,24 +183,14 @@ export default function EventsScreen() {
               <View style={styles.avatarsSection}>
                 <View style={styles.avatarsStack}>
                   {AVATAR_IMAGES.map((uri, idx) => (
-                    <View
-                      key={idx}
-                      style={[
-                        styles.avatar,
-                        { zIndex: 3 - idx, marginLeft: idx > 0 ? -8 : 0 },
-                      ]}
-                    >
+                    <View key={idx} style={[styles.avatar, { zIndex: 3 - idx, marginLeft: idx > 0 ? -8 : 0 }]}>
                       <Image source={{ uri }} style={styles.avatarImage} />
                     </View>
                   ))}
                 </View>
                 <Text style={styles.othersText}>{t('events.others', { count: item.current_paticipants || 0 })}</Text>
               </View>
-              <TouchableOpacity
-                style={styles.joinButton}
-                onPress={() => handleJoinEvent(item)}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={styles.joinButton} onPress={() => handleJoinEvent(item)} activeOpacity={0.8}>
                 <Text style={styles.joinButtonText}>{t('events.join')}</Text>
               </TouchableOpacity>
             </View>
@@ -193,7 +198,7 @@ export default function EventsScreen() {
         </View>
       </TouchableOpacity>
     ),
-    [handleJoinEvent, handlePressCard, user?.id, t]
+    [handleJoinEvent, handlePressCard, user?.id, t],
   );
 
   return (
@@ -201,10 +206,7 @@ export default function EventsScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'android' ? 16 : 0) }]}>
         <View style={styles.logoContainer}>
-          <Image
-            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3234/3234123.png' }}
-            style={styles.logo}
-          />
+          <Image source={require('../../assets/logo.png')} style={styles.logo} />
         </View>
         <Text style={styles.headerTitle}>{t('events.headerTitle')}</Text>
         <View style={styles.searchContainer}>

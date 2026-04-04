@@ -1,15 +1,17 @@
 import { useUserBadges } from '@/hooks';
 import { useUpdateUser, useUserInfo } from '@/hooks/useUserQueries';
 import { useAuthStore } from '@/stores/authStore';
-import { useCommonStore } from '@/stores/commonStore';
-import { Entypo, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
+  Animated,
+  Dimensions,
   Image,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -17,33 +19,218 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { Colors, Fonts } from '../../constants';
+import { BorderRadius, Colors, Fonts, FontSizes, Spacing } from '../../constants';
 import { pickImage, type PickedImage } from '../../utils/pickImage';
 
-const DEFAULT_AVATAR = 'https://bizweb.dktcdn.net/100/324/808/files/san-pham-co-nguon-goc-thien-nhien.jpg?v=1702028320944'
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const BANNER_HEIGHT = 200;
+const AVATAR_SIZE = 96;
+const AVATAR_BORDER = 4;
 
+const DEFAULT_AVATAR =
+  'https://bizweb.dktcdn.net/100/324/808/files/san-pham-co-nguon-goc-thien-nhien.jpg?v=1702028320944';
+const DEFAULT_BANNER = 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80';
+
+// ─── Animated Counter Component ───
+function AnimatedCounter({ value, style }: { value: number; style?: any }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    animatedValue.setValue(0);
+    Animated.timing(animatedValue, {
+      toValue: value,
+      duration: 1200,
+      useNativeDriver: false,
+    }).start();
+
+    const listener = animatedValue.addListener(({ value: v }) => {
+      setDisplayValue(Math.round(v));
+    });
+
+    return () => animatedValue.removeListener(listener);
+  }, [value]);
+
+  return <Text style={style}>{displayValue.toLocaleString()}</Text>;
+}
+
+// ─── Skeleton Placeholder ───
+function SkeletonBox({
+  width,
+  height,
+  borderRadius = 8,
+  style,
+}: {
+  width: number | string;
+  height: number;
+  borderRadius?: number;
+  style?: any;
+}) {
+  const shimmer = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, { toValue: 1, duration: 1000, useNativeDriver: true }),
+        Animated.timing(shimmer, { toValue: 0, duration: 1000, useNativeDriver: true }),
+      ]),
+    ).start();
+  }, []);
+
+  const opacity = shimmer.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width: width as any,
+          height,
+          borderRadius,
+          backgroundColor: '#E2E8F0',
+          opacity,
+        },
+        style,
+      ]}
+    />
+  );
+}
+
+// ─── Profile Skeleton Loading ───
+function ProfileSkeleton() {
+  return (
+    <View>
+      <SkeletonBox width={SCREEN_WIDTH} height={BANNER_HEIGHT} borderRadius={0} />
+      <View style={{ alignItems: 'center', marginTop: -(AVATAR_SIZE / 2) }}>
+        <SkeletonBox width={AVATAR_SIZE} height={AVATAR_SIZE} borderRadius={AVATAR_SIZE / 2} />
+      </View>
+      <View style={{ alignItems: 'center', paddingTop: 16, gap: 8 }}>
+        <SkeletonBox width={160} height={24} borderRadius={12} />
+        <SkeletonBox width={120} height={16} borderRadius={8} />
+        <SkeletonBox width={200} height={14} borderRadius={8} />
+      </View>
+      <View style={{ flexDirection: 'row', paddingHorizontal: 16, gap: 12, marginTop: 24 }}>
+        <SkeletonBox width={'100%' as any} height={90} borderRadius={20} style={{ flex: 1 }} />
+        <SkeletonBox width={'100%' as any} height={90} borderRadius={20} style={{ flex: 1 }} />
+      </View>
+    </View>
+  );
+}
+
+// ─── Badge Item Component ───
+function BadgeItem({ badge, onPress }: { badge: any; onPress?: () => void }) {
+  const isUnlocked = badge.is_unlocked !== false;
+  return (
+    <TouchableOpacity style={styles.badgeItem} activeOpacity={0.7} onPress={onPress}>
+      <View
+        style={[
+          styles.badgeCircle,
+          {
+            backgroundColor: isUnlocked ? 'rgba(32,105,58,0.1)' : 'rgba(148,163,184,0.1)',
+          },
+        ]}
+      >
+        {badge.icon ? (
+          <Image source={{ uri: badge.icon }} style={{ width: 28, height: 28 }} />
+        ) : (
+          <Ionicons
+            name={isUnlocked ? 'trophy' : 'lock-closed'}
+            size={24}
+            color={isUnlocked ? Colors.primary : '#94A3B8'}
+          />
+        )}
+      </View>
+      <Text style={[styles.badgeText, !isUnlocked && styles.badgeTextLocked]} numberOfLines={2}>
+        {badge.name || badge.title || 'Badge'}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Stat Card Component ───
+function StatCard({
+  icon,
+  iconColor,
+  label,
+  value,
+  bgColor,
+}: {
+  icon: string;
+  iconColor: string;
+  label: string;
+  value: number;
+  bgColor: string;
+}) {
+  return (
+    <View style={styles.statCard}>
+      <View style={[styles.statIconContainer, { backgroundColor: bgColor }]}>
+        <Ionicons name={icon as any} size={18} color={iconColor} />
+      </View>
+      <AnimatedCounter value={value} style={styles.statValue} />
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+// ─── Activity Item ───
+function ActivityItem({ activity }: { activity: any }) {
+  const iconMap: Record<string, { icon: string; color: string; bg: string }> = {
+    report: { icon: 'flag', color: '#16A34A', bg: 'rgba(22,163,74,0.1)' },
+    event: { icon: 'calendar', color: '#F97316', bg: 'rgba(249,115,22,0.1)' },
+    badge: { icon: 'trophy', color: '#EAB308', bg: 'rgba(234,179,8,0.1)' },
+    tree: { icon: 'leaf', color: '#20693A', bg: 'rgba(32,105,58,0.1)' },
+  };
+  const config = iconMap[activity.type] || iconMap.report;
+
+  return (
+    <View style={styles.activityItem}>
+      <View style={[styles.activityIcon, { backgroundColor: config.bg }]}>
+        <Ionicons name={config.icon as any} size={18} color={config.color} />
+      </View>
+      <View style={styles.activityContent}>
+        <Text style={styles.activityTitle}>{activity.title}</Text>
+        <Text style={styles.activityTime}>{activity.time}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={16} color="#CBD5E1" />
+    </View>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN PROFILE SCREEN
+// ═══════════════════════════════════════════════════════════════
 export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const updateUserMutation = useUpdateUser();
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   // Auth & user data
   const storeUser = useAuthStore((s) => s.user);
   const { data: apiUser, isPending: isLoadingUser, isRefetching, refetch } = useUserInfo();
   const user = apiUser ?? storeUser;
-  // console.log('User data:', user);
 
   const { data: userBadges } = useUserBadges({ user_id: user?.id, limit: 100 });
-  // console.log('User badges', userBadges);
-  const { rememberedEmail, rememberedPassword } = useCommonStore();
-  // console.log('===rememberedEmail:', rememberedEmail, 'rememberedPassword:', rememberedPassword);
 
-  // Avatar selection state
+  // Avatar & Banner state
   const [pendingAvatar, setPendingAvatar] = useState<PickedImage | null>(null);
+  const [pendingBanner, setPendingBanner] = useState<PickedImage | null>(null);
 
-  const handleSelectGallery = useCallback(async () => {
+  // Mock activities (will be replaced with real API data)
+  const mockActivities = [
+    { id: '1', type: 'report', title: 'Reported waste at Central Park', time: '2 hours ago' },
+    { id: '2', type: 'event', title: 'Joined Beach Cleanup Event', time: '1 day ago' },
+    { id: '3', type: 'badge', title: 'Earned "First Report" badge', time: '3 days ago' },
+    { id: '4', type: 'tree', title: 'Planted a tree at Community Garden', time: '1 week ago' },
+  ];
+
+  // ── Handlers ──
+  const handleSelectAvatar = useCallback(async () => {
     const result = await pickImage({
       allowsMultipleSelection: false,
       allowsEditing: true,
@@ -55,10 +242,8 @@ export default function ProfileScreen() {
       if (result.reason === 'permission_denied') {
         Toast.show({ type: 'error', text1: t('report.galleryPermissionRequired') });
       } else if (result.reason === 'error') {
-        // console.error('pickImage error:', result.error);
         Toast.show({ type: 'error', text1: t('permissions.cameraError') });
       }
-      // 'cancelled' → do nothing
       return;
     }
 
@@ -68,523 +253,815 @@ export default function ProfileScreen() {
     try {
       await updateUserMutation.mutateAsync({
         id: user?.id!,
-        payload: { avatar: picked.file }, // file object → FormData → server
+        payload: { avatar: picked.file },
       });
       refetch();
-      Toast.show({ type: 'success', text1: 'Cập nhật ảnh đại diện thành công!' });
-    } catch (error) {
-      // console.error('ERROR update avatar:', error);
+      Toast.show({ type: 'success', text1: t('profile.avatarUpdated') });
+    } catch {
+      setPendingAvatar(null);
       Toast.show({ type: 'error', text1: t('common.error') });
     }
-  }, [t, user?.id, refetch]);
+  }, [t, user?.id, refetch, updateUserMutation]);
 
+  const handleSelectBanner = useCallback(async () => {
+    const result = await pickImage({
+      allowsMultipleSelection: false,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.success) {
+      if (result.reason === 'permission_denied') {
+        Toast.show({ type: 'error', text1: t('report.galleryPermissionRequired') });
+      }
+      return;
+    }
+
+    const picked = result.images[0];
+    setPendingBanner(picked);
+    Toast.show({ type: 'success', text1: t('profile.bannerUpdated') });
+    // TODO: API call to update banner when backend supports it
+  }, [t]);
+
+  // ── Animated header opacity ──
+  const headerBgOpacity = scrollY.interpolate({
+    inputRange: [0, BANNER_HEIGHT - 80],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  // Settings button: white on banner → primary when floating header visible
+  const settingsBtnBg = scrollY.interpolate({
+    inputRange: [0, BANNER_HEIGHT - 80],
+    outputRange: ['rgba(0,0,0,0.3)', 'rgba(32,105,58,0.1)'],
+    extrapolate: 'clamp',
+  });
+  const settingsIconColor = scrollY.interpolate({
+    inputRange: [0, BANNER_HEIGHT - 80],
+    outputRange: ['#FFFFFF', Colors.primary],
+    extrapolate: 'clamp',
+  });
+
+  // ── Loading state ──
+  if (isLoadingUser && !storeUser) {
+    return (
+      <View style={styles.safeArea}>
+        <StatusBar style="light" />
+        <ProfileSkeleton />
+      </View>
+    );
+  }
+
+  const avatarUri = pendingAvatar?.uri || user?.avatar || DEFAULT_AVATAR;
+  const bannerUri = pendingBanner?.uri || DEFAULT_BANNER;
+  const displayName = user?.fullname || user?.email?.split('@')[0] || 'User';
+  const username = user?.email?.split('@')[0] || 'user';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
+    <View style={styles.safeArea}>
+      <StatusBar style="light" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('profile.title')}</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={styles.headerSettingsBtn}
-            activeOpacity={0.7}
-            onPress={() => router.push('/settings')}
-          >
-            <Ionicons name="settings-outline" size={20} color={Colors.primary} />
+      {/* ─── Floating Header (appears on scroll) ─── */}
+      <Animated.View
+        style={[
+          styles.floatingHeader,
+          {
+            paddingTop: insets.top,
+            opacity: headerBgOpacity,
+          },
+        ]}
+      >
+        <View style={styles.floatingHeaderInner}>
+          <Text style={styles.floatingHeaderTitle} numberOfLines={1}>
+            {displayName}
+          </Text>
+        </View>
+      </Animated.View>
+
+      {/* ─── Top Action Buttons (always visible) ─── */}
+      <View style={[styles.topActions, { top: insets.top }]}>
+        <View style={styles.topActionSpacer} />
+        <View style={styles.topActionsRight}>
+          <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/settings')}>
+            <Animated.View style={[styles.topActionBtn, { backgroundColor: settingsBtnBg }]}>
+              <Animated.Text style={{ color: settingsIconColor }}>
+                <Ionicons name="settings-outline" size={20} />
+              </Animated.Text>
+            </Animated.View>
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView
+      <Animated.ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={refetch}
-            tintColor={Colors.primary}
+            tintColor={Colors.white}
             colors={[Colors.primary]}
+            progressViewOffset={BANNER_HEIGHT}
           />
         }
       >
-        {/* ─── Profile Info Section ─── */}
-        <View style={styles.profileSection}>
-          <View style={styles.avatarWrapper}>
-            <View style={styles.avatarBorder}>
-              {isLoadingUser ? (
-                <ActivityIndicator size="small" color={Colors.primary} />
-              ) : (
-                <Image
-                  source={{ uri: user?.avatar || DEFAULT_AVATAR }}
-                  style={styles.avatarImage}
-                />
-              )}
-            </View>
-            <TouchableOpacity style={styles.avatarBadge} onPress={handleSelectGallery}>
-              <Entypo name="pencil" size={13} color={Colors.white} />
+        {/* ═══════════════════════════════════════════════════ */}
+        {/* BANNER SECTION                                     */}
+        {/* ═══════════════════════════════════════════════════ */}
+        <TouchableOpacity activeOpacity={0.9} onPress={handleSelectBanner} style={styles.bannerContainer}>
+          <Image source={{ uri: bannerUri }} style={styles.bannerImage} />
+          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={styles.bannerGradient} />
+          {/* Banner edit hint */}
+          <View style={styles.bannerEditHint}>
+            <Ionicons name="camera-outline" size={14} color="rgba(255,255,255,0.8)" />
+          </View>
+        </TouchableOpacity>
+
+        {/* ═══════════════════════════════════════════════════ */}
+        {/* AVATAR + USER INFO                                 */}
+        {/* ═══════════════════════════════════════════════════ */}
+        <View style={styles.profileInfoSection}>
+          {/* Avatar floating over banner */}
+          <View style={styles.avatarContainer}>
+            <TouchableOpacity style={styles.avatarWrapper} activeOpacity={0.8} onPress={handleSelectAvatar}>
+              <View style={styles.avatarBorder}>
+                <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+              </View>
+              <View style={styles.avatarEditBadge}>
+                <Ionicons name="camera" size={12} color={Colors.white} />
+              </View>
+            </TouchableOpacity>
+
+            {/* Edit Profile Button */}
+            <TouchableOpacity
+              style={styles.editProfileBtn}
+              activeOpacity={0.7}
+              onPress={() => router.push('/profile/edit-profile')}
+            >
+              <Ionicons name="create-outline" size={16} color={Colors.primary} />
+              <Text style={styles.editProfileBtnText}>{t('profile.editProfile')}</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>
-              {user?.fullname || user?.email?.split('@')[0] || 'User'}
-            </Text>
-            <View style={styles.emailRow}>
-              <Ionicons name="mail-outline" size={14} color="#64748B" />
-              <Text style={styles.emailText}>{user?.email || '—'}</Text>
+          {/* User Info */}
+          <View style={styles.userInfo}>
+            <View style={styles.nameRow}>
+              <Text style={styles.userName}>{displayName}</Text>
+              {user?.is_verified && <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />}
             </View>
-            <View style={styles.roleBadgeMargin}>
-              <View style={styles.roleBadge}>
-                <Ionicons name="shield-checkmark" size={14.667} color={Colors.primary} />
-                <Text style={styles.roleText}>
-                  {user?.role?.name ?? 'user'}
-                </Text>
-              </View>
-            </View>
-            {user?.is_verified && (
-              <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={14} color="#2D5A3D" />
-                <Text style={styles.verifiedText}>{t('profile.isVerified')}</Text>
-              </View>
-            )}
-          </View>
-        </View>
+            <Text style={styles.userHandle}>@{username}</Text>
 
-        {/* ─── Stats Grid (from real API data) ─── */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <View style={styles.statIconRow}>
-                <Ionicons name="flag-outline" size={12.75} color={Colors.primary} />
-                <Text style={styles.statLabel}>{t('profile.reports')}</Text>
-              </View>
-              <Text style={styles.statValue}>{user?.total_reports ?? 0}</Text>
-            </View>
-            <View style={styles.statCard}>
-              <View style={styles.statIconRow}>
-                <Ionicons name="calendar-outline" size={16.5} color={Colors.primary} />
-                <Text style={styles.statLabel}>{t('profile.cleanups') || 'Events'}</Text>
-              </View>
-              <Text style={styles.statValue}>{user?.total_events ?? 0}</Text>
-            </View>
-          </View>
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <View style={styles.statIconRow}>
-                <Ionicons name="star-outline" size={15} color={Colors.primary} />
-                <Text style={styles.statLabel}>{t('profile.ecoPoints')}</Text>
-              </View>
-              <Text style={styles.statValue}>{user?.eco_points ?? 0}</Text>
-            </View>
-            <View style={styles.statCard}>
-              <View style={styles.statIconRow}>
-                <Ionicons name="leaf-outline" size={12.747} color={Colors.primary} />
-                <Text style={styles.statLabel}>Level</Text>
-              </View>
-              <Text style={styles.statValue}>{user?.level ?? 1}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ─── Social Stats ─── */}
-        <View style={styles.socialStatsCard}>
-          <View style={styles.socialStatItem}>
-            <Text style={styles.socialStatValue}>{user?.followers_count ?? 0}</Text>
-            <Text style={styles.socialStatLabel}>Followers</Text>
-          </View>
-          <View style={styles.socialStatDivider} />
-          <View style={styles.socialStatItem}>
-            <Text style={styles.socialStatValue}>{user?.following_count ?? 0}</Text>
-            <Text style={styles.socialStatLabel}>Following</Text>
-          </View>
-          <View style={styles.socialStatDivider} />
-          <View style={styles.socialStatItem}>
-            <Text style={styles.socialStatValue}>{user?.total_trees ?? 0}</Text>
-            <Text style={styles.socialStatLabel}>Trees</Text>
-          </View>
-        </View>
-
-        {/* ─── Bio ─── */}
-        {user?.bio ? (
-          <View style={styles.bioSection}>
-            <Text style={styles.sectionTitle}>Bio</Text>
-            <View style={styles.bioCard}>
-              <Text style={styles.bioText}>{user.bio}</Text>
-            </View>
-          </View>
-        ) : null}
-
-        {/* ─── User Details ─── */}
-        <View style={styles.detailsSection}>
-          <Text style={styles.sectionTitle}>{t('profile.details') || 'Thông tin'}</Text>
-          <View style={styles.detailsCard}>
-            {user?.phone_number ? (
-              <View style={styles.detailRow}>
-                <Ionicons name="call-outline" size={16} color="#64748B" />
-                <Text style={styles.detailText}>{user.phone_number}</Text>
-              </View>
+            {user?.bio ? (
+              <Text style={styles.userBio} numberOfLines={3}>
+                {user.bio}
+              </Text>
             ) : null}
-            {user?.address ? (
-              <View style={styles.detailRow}>
-                <Ionicons name="location-outline" size={16} color="#64748B" />
-                <Text style={styles.detailText}>{user.address}</Text>
+
+            <View style={styles.userMetaRow}>
+              {user?.address ? (
+                <View style={styles.metaItem}>
+                  <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
+                  <Text style={styles.metaText} numberOfLines={1}>
+                    {user.address}
+                  </Text>
+                </View>
+              ) : null}
+              <View style={styles.metaItem}>
+                <Ionicons name="leaf-outline" size={14} color={Colors.primary} />
+                <Text style={[styles.metaText, { color: Colors.primary }]}>{t('profile.level', { level: user?.level ?? 1 })}</Text>
               </View>
-            ) : null}
-            {user?.date_of_birth ? (
-              <View style={styles.detailRow}>
-                <Ionicons name="calendar-outline" size={16} color="#64748B" />
-                <Text style={styles.detailText}>{user.date_of_birth}</Text>
-              </View>
-            ) : null}
-            {!user?.phone_number && !user?.address && !user?.date_of_birth && (
-              <View style={styles.detailRow}>
-                <Ionicons name="information-circle-outline" size={16} color="#94A3B8" />
-                <Text style={[styles.detailText, { color: '#94A3B8' }]}>
-                  Chưa cập nhật thông tin chi tiết
-                </Text>
-              </View>
-            )}
+            </View>
+          </View>
+
+          {/* ─── Social Stats Bar ─── */}
+          <View style={styles.socialStatsBar}>
+            <TouchableOpacity style={styles.socialStatItem} activeOpacity={0.6}>
+              <Text style={styles.socialStatValue}>{user?.followers_count ?? 0}</Text>
+              <Text style={styles.socialStatLabel}>{t('profile.followers')}</Text>
+            </TouchableOpacity>
+            <View style={styles.socialStatDivider} />
+            <TouchableOpacity style={styles.socialStatItem} activeOpacity={0.6}>
+              <Text style={styles.socialStatValue}>{user?.following_count ?? 0}</Text>
+              <Text style={styles.socialStatLabel}>{t('profile.following')}</Text>
+            </TouchableOpacity>
+            <View style={styles.socialStatDivider} />
+            <TouchableOpacity style={styles.socialStatItem} activeOpacity={0.6}>
+              <Text style={styles.socialStatValue}>{user?.total_trees ?? 0}</Text>
+              <Text style={styles.socialStatLabel}>{t('profile.trees')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-      </ScrollView>
-    </SafeAreaView>
+        {/* ═══════════════════════════════════════════════════ */}
+        {/* STATS GRID                                         */}
+        {/* ═══════════════════════════════════════════════════ */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>{t('profile.impactStats')}</Text>
+          <View style={styles.statsGrid}>
+            <StatCard
+              icon="flag-outline"
+              iconColor="#16A34A"
+              label={t('profile.reports')}
+              value={user?.total_reports ?? 0}
+              bgColor="rgba(22,163,74,0.1)"
+            />
+            <StatCard
+              icon="calendar-outline"
+              iconColor="#F97316"
+              label={t('profile.events')}
+              value={user?.total_events ?? 0}
+              bgColor="rgba(249,115,22,0.1)"
+            />
+            <StatCard
+              icon="leaf-outline"
+              iconColor="#20693A"
+              label={t('profile.trees')}
+              value={user?.total_trees ?? 0}
+              bgColor="rgba(32,105,58,0.1)"
+            />
+            <StatCard
+              icon="star-outline"
+              iconColor="#EAB308"
+              label={t('profile.ecoPoints')}
+              value={user?.eco_points ?? 0}
+              bgColor="rgba(234,179,8,0.1)"
+            />
+          </View>
+        </View>
+
+        {/* ═══════════════════════════════════════════════════ */}
+        {/* BADGES / ACHIEVEMENTS                              */}
+        {/* ═══════════════════════════════════════════════════ */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('profile.achievements')}</Text>
+            <TouchableOpacity activeOpacity={0.6} onPress={() => router.push('/(tabs)/badges')}>
+              <Text style={styles.viewAllText}>{t('profile.viewAll')}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {userBadges && userBadges.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.badgesScrollContent}
+            >
+              {userBadges.slice(0, 8).map((badge: any, index: number) => (
+                <BadgeItem
+                  key={badge.id || index}
+                  badge={badge}
+                  onPress={() => {
+                    if (badge.id) router.push(`/badges/${badge.id}`);
+                  }}
+                />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.emptyBadgesCard}>
+              <Ionicons name="trophy-outline" size={32} color="#CBD5E1" />
+              <Text style={styles.emptyBadgesText}>{t('profile.emptyBadges')}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* ═══════════════════════════════════════════════════ */}
+        {/* USER ACTIVITY MAP PREVIEW                          */}
+        {/* ═══════════════════════════════════════════════════ */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('profile.myActivityMap')}</Text>
+            <TouchableOpacity activeOpacity={0.6} onPress={() => router.push('/(tabs)/map')}>
+              <Text style={styles.viewAllText}>{t('profile.viewOnMap')}</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.mapPreviewCard}
+            activeOpacity={0.8}
+            onPress={() => router.push('/(tabs)/map')}
+          >
+            <View style={styles.mapPreviewPlaceholder}>
+              <Ionicons name="map-outline" size={40} color={Colors.primary} />
+              <Text style={styles.mapPreviewText}>
+                {(user?.total_reports ?? 0) > 0
+                  ? t('profile.reportsOnMap', { count: user?.total_reports })
+                  : t('profile.noReportsYet')}
+              </Text>
+            </View>
+            <View style={styles.mapPreviewOverlay}>
+              <View style={styles.mapPreviewBtn}>
+                <Ionicons name="navigate-outline" size={16} color={Colors.white} />
+                <Text style={styles.mapPreviewBtnText}>{t('profile.openMap')}</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* ═══════════════════════════════════════════════════ */}
+        {/* ACTIVITY FEED                                      */}
+        {/* ═══════════════════════════════════════════════════ */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('profile.recentActivity')}</Text>
+          </View>
+          <View style={styles.activityCard}>
+            {mockActivities.map((activity, index) => (
+              <React.Fragment key={activity.id}>
+                <ActivityItem activity={activity} />
+                {index < mockActivities.length - 1 && <View style={styles.activityDivider} />}
+              </React.Fragment>
+            ))}
+          </View>
+        </View>
+
+        {/* ─── Bottom Spacer ─── */}
+        <View style={{ height: 120 }} />
+      </Animated.ScrollView>
+    </View>
   );
 }
 
+// ═══════════════════════════════════════════════════════════════
+// STYLES
+// ═══════════════════════════════════════════════════════════════
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F6F8F7',
+    backgroundColor: Colors.background,
   },
 
-  // ─── Header ───
-  header: {
+  // ─── Floating Header ───
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.primaryBorder,
+  },
+  floatingHeaderInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: 'rgba(246,248,247,0.8)',
-    zIndex: 10,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.base,
+    paddingVertical: 12,
   },
-  headerTitle: {
+  floatingHeaderTitle: {
     fontFamily: Fonts.bold,
-    fontSize: 20,
-    lineHeight: 25,
-    color: '#0F172A',
+    fontSize: FontSizes.lg,
+    color: Colors.textPrimary,
     letterSpacing: -0.5,
   },
-  headerRight: {
-    width: 48,
-    alignItems: 'flex-end',
+
+  // ─── Top Actions (over banner) ───
+  topActions: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 101,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.base,
   },
-  headerSettingsBtn: {
+  topActionSpacer: {
+    width: 40,
+  },
+  topActionsRight: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  topActionBtn: {
     width: 40,
     height: 40,
-    borderRadius: 24,
-    backgroundColor: 'rgba(32,105,58,0.1)',
+    borderRadius: BorderRadius.full,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: { elevation: 4 },
+    }),
+  },
+
+  scrollContent: {
+    paddingBottom: 0,
+  },
+
+  // ─── Banner ───
+  bannerContainer: {
+    width: SCREEN_WIDTH,
+    height: BANNER_HEIGHT,
+    overflow: 'hidden',
+  },
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  bannerGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: BANNER_HEIGHT * 0.6,
+  },
+  bannerEditHint: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.full,
+    backgroundColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scrollContent: {
-    paddingBottom: 120,
+
+  // ─── Profile Info Section ───
+  profileInfoSection: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: BorderRadius.lg,
+    borderTopRightRadius: BorderRadius.lg,
+    marginTop: -24,
+    paddingBottom: Spacing.lg,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 },
+    }),
   },
 
-  // ─── Profile Section ───
-  profileSection: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    gap: 16,
+  // ─── Avatar ───
+  avatarContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.base + 4,
+    marginTop: -(AVATAR_SIZE / 2),
   },
   avatarWrapper: {
     position: 'relative',
   },
   avatarBorder: {
-    width: 128,
-    height: 128,
-    borderRadius: 9999,
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    borderWidth: AVATAR_BORDER,
+    borderColor: Colors.white,
+    backgroundColor: Colors.white,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.1,
-    shadowRadius: 25,
-    elevation: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+      },
+      android: { elevation: 6 },
+    }),
   },
   avatarImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  avatarBadge: {
+  avatarEditBadge: {
     position: 'absolute',
-    bottom: -8,
-    right: -8,
-    // width: 40,
-    // height: 40,
-    borderRadius: 9999,
-    backgroundColor: '#20693A',
-    borderWidth: 4,
-    borderColor: '#F6F8F7',
+    bottom: 0,
+    right: -2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
+    borderWidth: 3,
+    borderColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 10,
-  },
-  profileInfo: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  profileName: {
-    fontFamily: Fonts.bold,
-    fontSize: 24,
-    lineHeight: 32,
-    color: '#0F172A',
-    letterSpacing: -0.6,
-    textAlign: 'center',
-  },
-  emailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 2,
-  },
-  emailText: {
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#64748B',
-  },
-  roleBadgeMargin: {
-    paddingTop: 4,
-  },
-  roleBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(32,105,58,0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 9999,
-  },
-  roleText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#20693A',
-    textAlign: 'center',
-    textTransform: 'capitalize',
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-  },
-  verifiedText: {
-    fontFamily: Fonts.medium,
-    fontSize: 12,
-    color: '#2D5A3D',
   },
 
-  // ─── Stats Grid ───
-  statsGrid: {
+  // ─── Edit Profile Button ───
+  editProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 16,
-    gap: 14,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 14,
-  },
-  statCard: {
-    flex: 1,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
     backgroundColor: Colors.white,
-    borderRadius: 24,
-    padding: 17,
-    borderWidth: 1,
-    borderColor: 'rgba(32,105,58,0.05)',
-    gap: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    marginBottom: 4,
   },
-  statIconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statLabel: {
-    fontFamily: Fonts.medium,
-    fontSize: 12,
-    lineHeight: 16,
-    color: '#20693A',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  statValue: {
-    fontFamily: Fonts.bold,
-    fontSize: 24,
-    lineHeight: 32,
-    color: '#0F172A',
+  editProfileBtnText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: FontSizes.sm,
+    color: Colors.primary,
   },
 
-  // ─── Social Stats ───
-  socialStatsCard: {
-    marginHorizontal: 16,
-    marginTop: 14,
-    backgroundColor: Colors.white,
-    borderRadius: 24,
-    padding: 20,
+  // ─── User Info ───
+  userInfo: {
+    paddingHorizontal: Spacing.base + 4,
+    paddingTop: 16,
+    gap: 4,
+  },
+  nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(32,105,58,0.05)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    gap: 6,
+  },
+  userName: {
+    fontFamily: Fonts.bold,
+    fontSize: 22,
+    lineHeight: 28,
+    color: Colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  userHandle: {
+    fontFamily: Fonts.regular,
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+  },
+  userBio: {
+    fontFamily: Fonts.regular,
+    fontSize: FontSizes.md,
+    lineHeight: 22,
+    color: '#475569',
+    marginTop: 8,
+  },
+  userMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginTop: 10,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontFamily: Fonts.regular,
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+  },
+
+  // ─── Social Stats Bar ───
+  socialStatsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: Spacing.base + 4,
+    marginTop: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   socialStatItem: {
     flex: 1,
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   socialStatValue: {
     fontFamily: Fonts.bold,
-    fontSize: 20,
-    lineHeight: 28,
-    color: '#0F172A',
+    fontSize: FontSizes.lg,
+    lineHeight: 24,
+    color: Colors.textPrimary,
   },
   socialStatLabel: {
-    fontFamily: Fonts.medium,
-    fontSize: 12,
-    lineHeight: 16,
-    color: '#64748B',
+    fontFamily: Fonts.regular,
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   socialStatDivider: {
     width: 1,
-    height: 32,
-    backgroundColor: 'rgba(32,105,58,0.1)',
+    height: 28,
+    backgroundColor: Colors.border,
   },
 
-  // ─── Bio ───
-  bioSection: {
-    height: 'auto',
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    gap: 12,
-  },
-  bioCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(32,105,58,0.05)',
-  },
-  bioText: {
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    lineHeight: 22,
-    color: '#334155',
-  },
-
-  // ─── Details ───
-  detailsSection: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    gap: 12,
-  },
-  detailsCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 16,
-    gap: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(32,105,58,0.05)',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  detailText: {
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#334155',
-    flex: 1,
-  },
-
-  // ─── Achievements ───
-  achievementsMargin: {
-    paddingTop: 24,
-  },
-  achievementsSection: {
-    paddingHorizontal: 16,
-    gap: 16,
+  // ─── Section Common ───
+  sectionContainer: {
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.lg,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 14,
   },
   sectionTitle: {
     fontFamily: Fonts.bold,
-    fontSize: 18,
-    lineHeight: 28,
-    color: '#0F172A',
-    letterSpacing: -0.45,
+    fontSize: FontSizes.lg,
+    lineHeight: 24,
+    color: Colors.textPrimary,
+    letterSpacing: -0.3,
   },
   viewAllText: {
     fontFamily: Fonts.semiBold,
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#20693A',
-    textAlign: 'center',
+    fontSize: FontSizes.sm,
+    color: Colors.primary,
   },
-  badgesRow: {
+
+  // ─── Stats Grid ───
+  statsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 2,
+  },
+  statCard: {
+    width: (SCREEN_WIDTH - 32 - 12) / 2,
     backgroundColor: Colors.white,
-    borderRadius: 24,
-    padding: 17,
-    borderWidth: 1,
-    borderColor: 'rgba(32,105,58,0.05)',
-    gap: 16,
+    borderRadius: BorderRadius.md,
+    padding: 16,
+    gap: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 },
+    }),
+  },
+  statIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statValue: {
+    fontFamily: Fonts.bold,
+    fontSize: FontSizes.xxl,
+    lineHeight: 30,
+    color: Colors.textPrimary,
+  },
+  statLabel: {
+    fontFamily: Fonts.medium,
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // ─── Badges ───
+  badgesScrollContent: {
+    paddingRight: Spacing.base,
+    gap: 12,
   },
   badgeItem: {
-    flex: 1,
+    width: 80,
     alignItems: 'center',
     gap: 8,
   },
   badgeCircle: {
     width: 56,
     height: 56,
-    borderRadius: 9999,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Fonts.medium,
     fontSize: 10,
-    lineHeight: 10,
-    color: '#0F172A',
+    lineHeight: 14,
+    color: Colors.textPrimary,
     textAlign: 'center',
   },
-  badgeTextLight: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 10,
-    lineHeight: 10,
-    color: '#94A3B8',
+  badgeTextLocked: {
+    color: Colors.textPlaceholder,
+  },
+  emptyBadgesCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.lg,
+    alignItems: 'center',
+    gap: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 },
+    }),
+  },
+  emptyBadgesText: {
+    fontFamily: Fonts.regular,
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
     textAlign: 'center',
+  },
+
+  // ─── Map Preview ───
+  mapPreviewCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 },
+    }),
+  },
+  mapPreviewPlaceholder: {
+    height: 140,
+    backgroundColor: 'rgba(32,105,58,0.04)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  mapPreviewText: {
+    fontFamily: Fonts.regular,
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+  },
+  mapPreviewOverlay: {
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  mapPreviewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.sm,
+    paddingVertical: 10,
+  },
+  mapPreviewBtnText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: FontSizes.sm,
+    color: Colors.white,
+  },
+
+  // ─── Activity Feed ───
+  activityCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 },
+    }),
+  },
+  activityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 12,
+  },
+  activityIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityContent: {
+    flex: 1,
+    gap: 2,
+  },
+  activityTitle: {
+    fontFamily: Fonts.medium,
+    fontSize: FontSizes.md,
+    color: Colors.textPrimary,
+  },
+  activityTime: {
+    fontFamily: Fonts.regular,
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+  },
+  activityDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginLeft: 64,
   },
 });

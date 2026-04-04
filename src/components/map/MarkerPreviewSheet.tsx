@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import BottomSheetLib, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react';
-import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BorderRadius, Colors, Fonts, FontSizes, LineHeights, Spacing } from '../../constants';
 import type { SeverityLevel, WasteReport } from '../../data/mockData';
 import { getWasteTypeConfig } from '../../data/mockData';
@@ -27,6 +27,9 @@ const SEVERITY_LABELS: Record<SeverityLevel, string> = {
   heavy: 'Heavy',
   extreme: 'Extreme',
 };
+
+const DEFAULT_IMAGE =
+  'https://bizweb.dktcdn.net/100/324/808/files/san-pham-co-nguon-goc-thien-nhien.jpg?v=1702028320944';
 
 export const MarkerPreviewSheet = forwardRef<MarkerPreviewSheetRef, MarkerPreviewSheetProps>(
   ({ onViewDetails, onGetDirections }, ref) => {
@@ -55,13 +58,7 @@ export const MarkerPreviewSheet = forwardRef<MarkerPreviewSheetRef, MarkerPrevie
 
     const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
-        <BottomSheetBackdrop
-          {...props}
-          disappearsOnIndex={-1}
-          appearsOnIndex={0}
-          opacity={0.2}
-          pressBehavior="close"
-        />
+        <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.2} pressBehavior="close" />
       ),
       [],
     );
@@ -71,18 +68,21 @@ export const MarkerPreviewSheet = forwardRef<MarkerPreviewSheetRef, MarkerPrevie
     const isExpanded = sheetIndex >= 1;
 
     // Format relative time
-    const getTimeAgo = useCallback((dateStr: string) => {
-      const now = new Date();
-      const date = new Date(dateStr);
-      const diffMs = now.getTime() - date.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHrs = Math.floor(diffMins / 60);
-      const diffDays = Math.floor(diffHrs / 24);
+    const getTimeAgo = useCallback(
+      (dateStr: string) => {
+        const now = new Date();
+        const date = new Date(dateStr);
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHrs = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHrs / 24);
 
-      if (diffDays > 0) return `${diffDays} ${t('time.daysAgo', 'ngày trước')}`;
-      if (diffHrs > 0) return `${diffHrs} ${t('time.hoursAgo', 'giờ trước')}`;
-      return `${diffMins} ${t('time.minsAgo', 'phút trước')}`;
-    }, [t]);
+        if (diffDays > 0) return `${diffDays} ${t('time.daysAgo', 'ngày trước')}`;
+        if (diffHrs > 0) return `${diffHrs} ${t('time.hoursAgo', 'giờ trước')}`;
+        return `${diffMins} ${t('time.minsAgo', 'phút trước')}`;
+      },
+      [t],
+    );
 
     return (
       <BottomSheetLib
@@ -107,17 +107,9 @@ export const MarkerPreviewSheet = forwardRef<MarkerPreviewSheetRef, MarkerPrevie
               <View style={styles.previewRow}>
                 {/* Thumbnail */}
                 <View style={styles.thumbWrapper}>
-                  <Image
-                    source={{ uri: report.image }}
-                    style={styles.thumbnail}
-                    resizeMode="cover"
-                  />
+                  <Image source={{ uri: report?.image || DEFAULT_IMAGE }} style={styles.thumbnail} resizeMode="cover" />
                   <View style={[styles.thumbBadge, { backgroundColor: theme.dotColor }]}>
-                    <Ionicons
-                      name={icon.name as keyof typeof Ionicons.glyphMap}
-                      size={12}
-                      color="#FFF"
-                    />
+                    <Ionicons name={icon.name as keyof typeof Ionicons.glyphMap} size={12} color="#FFF" />
                   </View>
                 </View>
 
@@ -132,25 +124,18 @@ export const MarkerPreviewSheet = forwardRef<MarkerPreviewSheetRef, MarkerPrevie
                     {report.wasteTypes.slice(0, 3).map((wt) => {
                       const wtConfig = getWasteTypeConfig(wt);
                       return (
-                        <View
-                          key={wt}
-                          style={[styles.miniChip, { backgroundColor: `${wtConfig.color}12` }]}
-                        >
+                        <View key={wt} style={[styles.miniChip, { backgroundColor: `${wtConfig.color}12` }]}>
                           <Ionicons
                             name={wtConfig.icon as keyof typeof Ionicons.glyphMap}
                             size={10}
                             color={wtConfig.color}
                           />
-                          <Text style={[styles.miniChipText, { color: wtConfig.color }]}>
-                            {wtConfig.label}
-                          </Text>
+                          <Text style={[styles.miniChipText, { color: wtConfig.color }]}>{wtConfig.label}</Text>
                         </View>
                       );
                     })}
                     {report.wasteTypes.length > 3 && (
-                      <Text style={styles.moreChipText}>
-                        +{report.wasteTypes.length - 3}
-                      </Text>
+                      <Text style={styles.moreChipText}>+{report.wasteTypes.length - 3}</Text>
                     )}
                   </View>
 
@@ -196,7 +181,7 @@ export const MarkerPreviewSheet = forwardRef<MarkerPreviewSheetRef, MarkerPrevie
                   {/* Large image */}
                   <View style={styles.imageWrapper}>
                     <Image
-                      source={{ uri: report.image }}
+                      source={{ uri: report?.image || DEFAULT_IMAGE }}
                       style={styles.largeImage}
                       resizeMode="cover"
                     />
@@ -228,25 +213,24 @@ export const MarkerPreviewSheet = forwardRef<MarkerPreviewSheetRef, MarkerPrevie
 
                   {/* All waste types */}
                   <View style={styles.wasteSection}>
-                    <Text style={styles.wasteSectionLabel}>
-                      {t('marker.wasteTypes', 'Waste Types')}
-                    </Text>
+                    <Text style={styles.wasteSectionLabel}>{t('marker.wasteTypes', 'Waste Types')}</Text>
                     <View style={styles.wasteFullRow}>
                       {report.wasteTypes.map((wt) => {
                         const wtConfig = getWasteTypeConfig(wt);
                         return (
                           <View
                             key={wt}
-                            style={[styles.wasteFullChip, { backgroundColor: `${wtConfig.color}10`, borderColor: `${wtConfig.color}25` }]}
+                            style={[
+                              styles.wasteFullChip,
+                              { backgroundColor: `${wtConfig.color}10`, borderColor: `${wtConfig.color}25` },
+                            ]}
                           >
                             <Ionicons
                               name={wtConfig.icon as keyof typeof Ionicons.glyphMap}
                               size={14}
                               color={wtConfig.color}
                             />
-                            <Text style={[styles.wasteFullLabel, { color: wtConfig.color }]}>
-                              {wtConfig.label}
-                            </Text>
+                            <Text style={[styles.wasteFullLabel, { color: wtConfig.color }]}>{wtConfig.label}</Text>
                           </View>
                         );
                       })}
@@ -263,9 +247,7 @@ export const MarkerPreviewSheet = forwardRef<MarkerPreviewSheetRef, MarkerPrevie
                   activeOpacity={0.8}
                 >
                   <Ionicons name="document-text-outline" size={18} color={Colors.primary} />
-                  <Text style={styles.secondaryBtnText}>
-                    {t('marker.viewDetails', 'View Details')}
-                  </Text>
+                  <Text style={styles.secondaryBtnText}>{t('marker.viewDetails', 'View Details')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.primaryBtn}
@@ -273,9 +255,7 @@ export const MarkerPreviewSheet = forwardRef<MarkerPreviewSheetRef, MarkerPrevie
                   activeOpacity={0.8}
                 >
                   <Ionicons name="navigate" size={18} color={Colors.white} />
-                  <Text style={styles.primaryBtnText}>
-                    {t('marker.getDirections', 'Directions')}
-                  </Text>
+                  <Text style={styles.primaryBtnText}>{t('marker.getDirections', 'Directions')}</Text>
                 </TouchableOpacity>
               </View>
             </>
