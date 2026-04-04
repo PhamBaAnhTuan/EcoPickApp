@@ -101,6 +101,7 @@ export default function RootLayout() {
                 <Stack.Screen name="events/[id]/index" options={{ presentation: 'card' }} />
                 <Stack.Screen name="badges/[id]/index" options={{ headerShown: false, presentation: 'card' }} />
                 <Stack.Screen name="settings/index" options={{ headerShown: false, presentation: 'card' }} />
+                <Stack.Screen name="profile/edit-profile" options={{ headerShown: false, presentation: 'card', animation: 'slide_from_right' }} />
               </Stack>
             </View>
             {/* Guard phải nằm bên trong Stack để có thể dùng useRouter/useSegments */}

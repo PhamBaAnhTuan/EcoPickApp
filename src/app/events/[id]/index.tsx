@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { Colors, Fonts } from '../../../constants';
 import EventChat from './components/EventChat';
+import EventDetailSkeleton from './components/EventDetailSkeleton';
 import EventEquipment from './components/EventEquipment';
 import EventHero from './components/EventHero';
 import EventInfo from './components/EventInfo';
@@ -93,12 +94,15 @@ export default function EventDetailScreen() {
           <TouchableOpacity style={s.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={16} color="#0F172A" />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>{t('common.loading', { defaultValue: 'Loading...' })}</Text>
           <View style={s.headerBtn} />
         </View>
-        <View style={s.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-        </View>
+        <ScrollView
+          style={s.scrollContainer}
+          contentContainerStyle={s.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <EventDetailSkeleton />
+        </ScrollView>
       </SafeAreaView>
     );
   }

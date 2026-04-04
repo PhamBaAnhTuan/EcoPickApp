@@ -20,7 +20,7 @@ export function ReportsBottomSheet({ reports, totalCount, onNavigateReport, onVi
   const { t } = useTranslation();
 
   // Snap points: Peek (25%), Half (50%), Max (92% — covers search bar)
-  const snapPoints = useMemo(() => ['25%', '50%', '92%'], []);
+  const snapPoints = useMemo(() => ['30%', '45%', '92%'], []);
 
   const renderReport = useCallback(
     ({ item }: { item: WasteReport }) => (
@@ -42,14 +42,14 @@ export function ReportsBottomSheet({ reports, totalCount, onNavigateReport, onVi
       backgroundStyle={styles.sheetBackground}
       handleIndicatorStyle={styles.handle}
     >
-      <BottomSheetView style={styles.headerRow}>
+      <View style={styles.headerRow}>
         <Text style={styles.title}>{t('bottomSheet.nearbyReports')}</Text>
         <View style={styles.headerRight}>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{t('bottomSheet.found', { count: totalCount })}</Text>
           </View>
         </View>
-      </BottomSheetView>
+      </View>
       {reports && reports.length > 0 ? (
         <BottomSheetFlatList
           data={reports}

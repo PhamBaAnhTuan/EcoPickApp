@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,9 +11,12 @@ import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import type { Report } from '../../api/services/reportService';
 import { ReportsBottomSheet, SearchBar, SeverityChip } from '../../components';
+import type { MarkerPreviewSheetRef } from '../../components/map';
+import { FilterSheet, MarkerPreviewSheet, SearchOverlay } from '../../components/map';
 import { BorderRadius, Colors, Fonts, FontSizes, Spacing } from '../../constants';
-import { INITIAL_REGION, SEVERITY_FILTERS, SeverityLevel, WasteReport } from '../../data/mockData';
+import { INITIAL_REGION, SEVERITY_FILTERS, type SeverityLevel, type WasteReport } from '../../data/mockData';
 import { useReports } from '../../hooks/useReportQueries';
+import { useMapStore } from '../../stores/mapStore';
 import { formatDistanceInfo, formatRouteInfo } from '../../utils/distance';
 
 // ─── Marker Design Config ───────────────────────────────────────────
@@ -44,67 +47,27 @@ const MARKER_THEMES: Record<SeverityLevel, { bg: string; border: string; icon: s
   },
 };
 
-// ─── Clean Map Style — hide everything except project markers ───────
+// ─── Clean Map Style ────────────────────────────────────────────────
 const CUSTOM_MAP_STYLE = [
-  // Hide all POI icons and labels
-  {
-    featureType: 'poi',
-    stylers: [{ visibility: 'off' }],
-  },
-  // Hide transit icons and labels
-  {
-    featureType: 'transit',
-    stylers: [{ visibility: 'off' }],
-  },
-  // Hide road icons (keep road lines and text labels)
-  {
-    featureType: 'road',
-    elementType: 'labels.icon',
-    stylers: [{ visibility: 'off' }],
-  },
-  // Hide business labels
-  {
-    featureType: 'poi.business',
-    stylers: [{ visibility: 'off' }],
-  },
-  // Hide government labels
-  {
-    featureType: 'poi.government',
-    stylers: [{ visibility: 'off' }],
-  },
-  // Hide medical labels
-  {
-    featureType: 'poi.medical',
-    stylers: [{ visibility: 'off' }],
-  },
-  // Hide school labels
-  {
-    featureType: 'poi.school',
-    stylers: [{ visibility: 'off' }],
-  },
-  // Hide sports complex labels
-  {
-    featureType: 'poi.sports_complex',
-    stylers: [{ visibility: 'off' }],
-  },
-  // Hide place of worship
-  {
-    featureType: 'poi.place_of_worship',
-    stylers: [{ visibility: 'off' }],
-  },
-  // Subtle water color
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.government', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.medical', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.school', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.sports_complex', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.place_of_worship', stylers: [{ visibility: 'off' }] },
   {
     featureType: 'water',
     elementType: 'geometry.fill',
     stylers: [{ color: '#d4eaf7' }],
   },
-  // Lighter landscape
   {
     featureType: 'landscape.man_made',
     elementType: 'geometry.fill',
     stylers: [{ color: '#f0f4f0' }],
   },
-  // Subtle road colors
   {
     featureType: 'road.highway',
     elementType: 'geometry.fill',
@@ -125,7 +88,6 @@ const CUSTOM_MAP_STYLE = [
     elementType: 'geometry.fill',
     stylers: [{ color: '#f8f8f8' }],
   },
-  // Muted road labels
   {
     featureType: 'road',
     elementType: 'labels.text.fill',
@@ -138,13 +100,10 @@ const CustomMarkerView = React.memo(({ severity }: { severity: SeverityLevel }) 
   const theme = MARKER_THEMES[severity];
   return (
     <View style={markerStyles.wrapper}>
-      {/* Glow / shadow circle */}
       <View style={[markerStyles.glow, { backgroundColor: theme.glow }]} />
-      {/* Main circle */}
       <View style={[markerStyles.circle, { backgroundColor: theme.bg, borderColor: theme.border }]}>
         <Ionicons name={theme.icon as keyof typeof Ionicons.glyphMap} size={18} color="#FFFFFF" />
       </View>
-      {/* Triangle pointer */}
       <View style={[markerStyles.pointer, { borderTopColor: theme.bg }]} />
     </View>
   );
@@ -174,7 +133,6 @@ const markerStyles = StyleSheet.create({
     borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    // Shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
@@ -190,7 +148,6 @@ const markerStyles = StyleSheet.create({
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
     marginTop: -2,
-    // Shadow for pointer
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -205,7 +162,7 @@ const markerStyles = StyleSheet.create({
   },
 });
 
-// ─── API severity → UI severity mapping ─────────────────────────────
+// ─── API → UI severity mapping ──────────────────────────────────────
 const API_SEVERITY_TO_UI: Record<string, SeverityLevel> = {
   low: 'light',
   medium: 'medium',
@@ -213,16 +170,22 @@ const API_SEVERITY_TO_UI: Record<string, SeverityLevel> = {
   critical: 'extreme',
 };
 
-/** Transform API Report → UI WasteReport */
 function transformReportToWasteReport(r: Report): WasteReport {
   return {
     id: r.id,
-    title: r.location || r.title || r.address || `Report #${r.id.slice(0, 6)}`,
+    title: r.location || r.title || (r.address as string | undefined) || `Report #${r.id.slice(0, 6)}`,
     description: r.description || '',
     severity: API_SEVERITY_TO_UI[r.severity || 'low'] || 'light',
+    wasteTypes: [],
+    status: 'reported',
     distance: '',
     latitude: r.latitude || 0,
     longitude: r.longitude || 0,
+    image: r.report_img || '',
+    createdAt: r.created_at || new Date().toISOString(),
+    upvotes: 0,
+    comments: 0,
+    reporterName: r.reporter?.email || 'Anonymous',
   };
 }
 
@@ -232,26 +195,51 @@ export default function MapScreen() {
   const params = useLocalSearchParams<{ destLat?: string; destLng?: string; destTitle?: string }>();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
+  const markerSheetRef = useRef<MarkerPreviewSheetRef>(null);
   const { t } = useTranslation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilters, setActiveFilters] = useState<Set<SeverityLevel>>(
-    new Set(['light', 'medium', 'heavy', 'extreme']),
-  );
+
+  // ── Zustand Store ──
+  const {
+    searchQuery,
+    setSearchQuery,
+    isSearchFocused,
+    setSearchFocused,
+    recentSearches,
+    addRecentSearch,
+    removeRecentSearch,
+    clearRecentSearches,
+
+    filters,
+    isFilterSheetOpen,
+    setFilterSheetOpen,
+    toggleSeverityFilter,
+    toggleWasteTypeFilter,
+    toggleStatusFilter,
+    setDistanceRange,
+    resetFilters,
+
+    selectedMarker,
+    selectMarker,
+
+    isRouting,
+    setRouting,
+    routeCoordinates,
+    setRouteCoordinates,
+    routeInfo,
+    setRouteInfo,
+    isLoadingRoute,
+    setLoadingRoute,
+    cancelRoute: cancelRouteStore,
+  } = useMapStore();
+
+  // ── User Location ──
+  const [userLocation, setUserLocation] = React.useState<Location.LocationObject | null>(null);
 
   // ── Fetch reports from API ──
-  const { data: apiReports = [], isLoading: isLoadingReports } = useReports();
+  const { data: apiReports = [] } = useReports();
   const allReports: WasteReport[] = useMemo(() => apiReports.map(transformReportToWasteReport), [apiReports]);
 
-  // Routing State
-  const [routeCoordinates, setRouteCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
-  const [isRouting, setIsRouting] = useState(false);
-  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
-  const [routingDestTitle, setRoutingDestTitle] = useState('');
-  const [routeDistance, setRouteDistance] = useState('');
-  const [routeDuration, setRouteDuration] = useState('');
-  const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
-
-  // Compute real distance + motorbike time for each report based on user location
+  // Compute distance for each report
   const reportsWithDistance: WasteReport[] = useMemo(() => {
     if (!userLocation) return allReports;
     const uLat = userLocation.coords.latitude;
@@ -262,19 +250,38 @@ export default function MapScreen() {
     }));
   }, [userLocation, allReports]);
 
+  // Apply filters
+  const filteredReports = useMemo(() => {
+    return reportsWithDistance.filter((r) => {
+      // Severity filter
+      if (!filters.severity.includes(r.severity)) return false;
+      // Waste type filter (empty = show all)
+      if (filters.wasteTypes.length > 0 && !r.wasteTypes.some((wt) => filters.wasteTypes.includes(wt))) {
+        return false;
+      }
+      // Status filter
+      if (!filters.status.includes(r.status)) return false;
+      return true;
+    });
+  }, [reportsWithDistance, filters]);
+
+  // Filter count for FilterSheet apply button
+  const filterMatchCount = filteredReports.length;
+
+  // ── Location Permission ──
   useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
+      const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(t('map.permissionDenied'), t('map.locationDenied'));
         return;
       }
-      let location = await Location.getCurrentPositionAsync({});
+      const location = await Location.getCurrentPositionAsync({});
       setUserLocation(location);
     })();
-  }, []);
+  }, [t]);
 
-  // Handle incoming route params from deep linking
+  // ── Handle incoming route params ──
   useEffect(() => {
     if (params.destLat && params.destLng && userLocation) {
       calculateRoute(
@@ -285,135 +292,162 @@ export default function MapScreen() {
         params.destTitle || 'Destination',
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.destLat, params.destLng, params.destTitle, userLocation]);
 
-  const calculateRoute = async (
-    startLat: number,
-    startLng: number,
-    destLat: number,
-    destLng: number,
-    title: string,
-  ) => {
-    setIsLoadingRoute(true);
-    setRoutingDestTitle(title);
+  // ── Route Calculation ──
+  const calculateRoute = useCallback(
+    async (startLat: number, startLng: number, destLat: number, destLng: number, title: string) => {
+      setLoadingRoute(true);
 
-    try {
-      // OSRM coordinates are in longitude, latitude format
-      const response = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${destLng},${destLat}?overview=full&geometries=geojson`,
-      );
-      const data = await response.json();
-
-      if (data.routes && data.routes.length > 0) {
-        const route = data.routes[0];
-        const coords = route.geometry.coordinates.map((coord: [number, number]) => ({
-          latitude: coord[1],
-          longitude: coord[0],
-        }));
-
-        // Extract real distance (meters) and duration (seconds) from OSRM
-        const routeInfo = formatRouteInfo(route.distance, route.duration);
-        setRouteDistance(routeInfo.distance);
-        setRouteDuration(routeInfo.duration);
-
-        setRouteCoordinates(coords);
-        setIsRouting(true);
-
-        // Fit map to show both start and end points
-        if (mapRef.current) {
-          mapRef.current.fitToCoordinates(
-            [
-              { latitude: startLat, longitude: startLng },
-              { latitude: destLat, longitude: destLng },
-            ],
-            {
-              edgePadding: { top: 120, right: 60, bottom: 120, left: 60 },
-              animated: true,
-            },
-          );
-        }
-      } else {
-        Alert.alert(t('map.routeErrorTitle'), t('map.routeError'));
-      }
-    } catch (error) {
-      Alert.alert(t('common.error'), t('map.fetchError'));
-      console.error(error);
-    } finally {
-      setIsLoadingRoute(false);
-    }
-  };
-
-  const cancelRoute = () => {
-    setIsRouting(false);
-    setRouteCoordinates([]);
-    setRoutingDestTitle('');
-    setRouteDistance('');
-    setRouteDuration('');
-    // Clear params
-    router.setParams({ destLat: '', destLng: '', destTitle: '' });
-  };
-
-  const toggleFilter = useCallback((severity: SeverityLevel) => {
-    setActiveFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(severity)) {
-        if (next.size > 1) {
-          next.delete(severity);
-        }
-      } else {
-        next.add(severity);
-      }
-      return next;
-    });
-  }, []);
-
-  const filteredReports = reportsWithDistance.filter((r) => activeFilters.has(r.severity));
-  const filteredMarkers = reportsWithDistance.filter((m) => activeFilters.has(m.severity));
-
-  const handleMyLocation = useCallback(async () => {
-    try {
-      if (userLocation && mapRef.current) {
-        mapRef.current.animateToRegion(
-          {
-            latitude: userLocation.coords.latitude,
-            longitude: userLocation.coords.longitude,
-            latitudeDelta: 0.015,
-            longitudeDelta: 0.015,
-          },
-          1000,
+      try {
+        const response = await fetch(
+          `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${destLng},${destLat}?overview=full&geometries=geojson`,
         );
-      } else {
-        // Try requesting it
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          let location = await Location.getCurrentPositionAsync({});
-          setUserLocation(location);
+        const data = await response.json();
+
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          const coords = route.geometry.coordinates.map((coord: [number, number]) => ({
+            latitude: coord[1],
+            longitude: coord[0],
+          }));
+
+          const info = formatRouteInfo(route.distance, route.duration);
+          setRouteInfo({ distance: info.distance, duration: info.duration, destTitle: title });
+          setRouteCoordinates(coords);
+          setRouting(true);
+
           if (mapRef.current) {
-            mapRef.current.animateToRegion(
+            mapRef.current.fitToCoordinates(
+              [
+                { latitude: startLat, longitude: startLng },
+                { latitude: destLat, longitude: destLng },
+              ],
               {
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-                latitudeDelta: 0.015,
-                longitudeDelta: 0.015,
+                edgePadding: { top: 120, right: 60, bottom: 120, left: 60 },
+                animated: true,
               },
-              1000,
             );
           }
         } else {
-          Alert.alert(t('map.permissionDenied'), t('map.locationSettings'));
+          Alert.alert(t('map.routeErrorTitle'), t('map.routeError'));
         }
+      } catch (error) {
+        Alert.alert(t('common.error'), t('map.fetchError'));
+        console.error(error);
+      } finally {
+        setLoadingRoute(false);
       }
-    } catch (e) {
-      console.log('Error getting location: ', e);
-    }
-  }, [userLocation]);
+    },
+    [setLoadingRoute, setRouteInfo, setRouteCoordinates, setRouting, t],
+  );
+
+  const cancelRoute = useCallback(() => {
+    cancelRouteStore();
+    router.setParams({ destLat: '', destLng: '', destTitle: '' });
+  }, [cancelRouteStore, router]);
+
+  // ── Handlers ──
+  const handleSearchFocus = useCallback(() => {
+    setSearchFocused(true);
+  }, [setSearchFocused]);
+
+  const handleSearchClose = useCallback(() => {
+    setSearchFocused(false);
+  }, [setSearchFocused]);
+
+  const handleSearchSelect = useCallback(
+    (report: WasteReport) => {
+      setSearchFocused(false);
+      addRecentSearch(report.title);
+      setSearchQuery('');
+
+      // Zoom to marker
+      if (mapRef.current) {
+        mapRef.current.animateToRegion(
+          {
+            latitude: report.latitude,
+            longitude: report.longitude,
+            latitudeDelta: 0.012,
+            longitudeDelta: 0.012,
+          },
+          600,
+        );
+      }
+
+      // Show marker preview
+      selectMarker(report);
+      markerSheetRef.current?.show(report);
+    },
+    [addRecentSearch, setSearchFocused, setSearchQuery, selectMarker],
+  );
 
   const handleFilterPress = useCallback(() => {
+    setFilterSheetOpen(true);
+  }, [setFilterSheetOpen]);
+
+  const handleFilterApply = useCallback(() => {
+    setFilterSheetOpen(false);
     Toast.show({
-      type: 'info',
-      text1: t('map.filtersMessage')
-    })
-  }, []);
+      type: 'success',
+      text1: t('filter.applied', 'Filters applied'),
+      text2: `${filterMatchCount} ${t('filter.reportsFound', 'reports found')}`,
+    });
+  }, [setFilterSheetOpen, filterMatchCount, t]);
+
+  const handleFilterReset = useCallback(() => {
+    resetFilters();
+  }, [resetFilters]);
+
+  const handleFilterClose = useCallback(() => {
+    setFilterSheetOpen(false);
+  }, [setFilterSheetOpen]);
+
+  const handleMarkerClick = useCallback(
+    (marker: WasteReport) => {
+      if (mapRef.current) {
+        mapRef.current.animateToRegion(
+          {
+            latitude: marker.latitude,
+            longitude: marker.longitude,
+            latitudeDelta: 0.012,
+            longitudeDelta: 0.012,
+          },
+          600,
+        );
+      }
+      selectMarker(marker);
+      markerSheetRef.current?.show(marker);
+    },
+    [selectMarker],
+  );
+
+  const handleViewDetails = useCallback(
+    (report: WasteReport) => {
+      markerSheetRef.current?.dismiss();
+      router.push(`/location/${report.id}`);
+    },
+    [router],
+  );
+
+  const handleGetDirections = useCallback(
+    (report: WasteReport) => {
+      if (!userLocation) {
+        Alert.alert(t('map.permissionDenied'), t('map.locationDenied'));
+        return;
+      }
+      markerSheetRef.current?.dismiss();
+      calculateRoute(
+        userLocation.coords.latitude,
+        userLocation.coords.longitude,
+        report.latitude,
+        report.longitude,
+        report.title,
+      );
+    },
+    [userLocation, t, calculateRoute],
+  );
 
   const handleNavigateReport = useCallback(
     (report: WasteReport) => {
@@ -440,79 +474,102 @@ export default function MapScreen() {
     [router],
   );
 
-  const handleMarkerClick = useCallback(
-    (marker: WasteReport) => {
-      if (mapRef.current) {
+  const handleMyLocation = useCallback(async () => {
+    try {
+      if (userLocation && mapRef.current) {
         mapRef.current.animateToRegion(
           {
-            latitude: marker.latitude,
-            longitude: marker.longitude,
+            latitude: userLocation.coords.latitude,
+            longitude: userLocation.coords.longitude,
             latitudeDelta: 0.015,
             longitudeDelta: 0.015,
           },
-          800,
+          1000,
         );
+      } else {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const location = await Location.getCurrentPositionAsync({});
+          setUserLocation(location);
+          if (mapRef.current) {
+            mapRef.current.animateToRegion(
+              {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+                latitudeDelta: 0.015,
+                longitudeDelta: 0.015,
+              },
+              1000,
+            );
+          }
+        } else {
+          Alert.alert(t('map.permissionDenied'), t('map.locationSettings'));
+        }
       }
-      router.push(`/location/${marker.id}`);
-    },
-    [router],
+    } catch (e) {
+      console.log('Error getting location: ', e);
+    }
+  }, [userLocation, t]);
+
+  // ── Render Map ──
+  const renderMap = () => (
+    <MapView
+      ref={mapRef}
+      style={StyleSheet.absoluteFillObject}
+      initialRegion={INITIAL_REGION}
+      showsUserLocation
+      showsMyLocationButton={false}
+      showsCompass={false}
+      showsPointsOfInterest={false}
+      showsBuildings={false}
+      showsIndoors={false}
+      showsTraffic={false}
+      customMapStyle={CUSTOM_MAP_STYLE}
+      mapPadding={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      onPress={() => {
+        // Dismiss marker preview when tapping map
+        if (selectedMarker) {
+          selectMarker(null);
+          markerSheetRef.current?.dismiss();
+        }
+      }}
+    >
+      {/* Waste Report Markers */}
+      {filteredReports
+        .filter((m) => m.latitude && m.longitude)
+        .map((marker) => (
+          <Marker
+            key={marker.id}
+            coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
+            onPress={() => handleMarkerClick(marker)}
+            tracksViewChanges={false}
+            anchor={{ x: 0.5, y: 1 }}
+          >
+            <CustomMarkerView severity={marker.severity} />
+          </Marker>
+        ))}
+
+      {/* Route Polyline */}
+      {isRouting && routeCoordinates.length > 0 && (
+        <>
+          <Polyline
+            coordinates={routeCoordinates}
+            strokeColor="rgba(32, 105, 58, 0.15)"
+            strokeWidth={10}
+            lineCap="round"
+            lineJoin="round"
+          />
+          <Polyline
+            coordinates={routeCoordinates}
+            strokeColor={Colors.primary}
+            strokeWidth={5}
+            lineCap="round"
+            lineJoin="round"
+          />
+        </>
+      )}
+    </MapView>
   );
-
-  const renderMap = () => {
-    return (
-      <MapView
-        ref={mapRef}
-        style={StyleSheet.absoluteFillObject}
-        initialRegion={INITIAL_REGION}
-        showsUserLocation={true}
-        showsMyLocationButton={false}
-        showsCompass={false}
-        showsPointsOfInterest={false}
-        showsBuildings={false}
-        showsIndoors={false}
-        showsTraffic={false}
-        customMapStyle={CUSTOM_MAP_STYLE}
-        mapPadding={{ top: 0, right: 0, bottom: 0, left: 0 }}
-      >
-        {/* Waste Report Markers — from API */}
-        {filteredMarkers
-          .filter((m) => m.latitude && m.longitude)
-          .map((marker) => (
-            <Marker
-              key={marker.id}
-              coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
-              onPress={() => handleMarkerClick(marker)}
-              tracksViewChanges={false}
-              anchor={{ x: 0.5, y: 1 }}
-            >
-              <CustomMarkerView severity={marker.severity} />
-            </Marker>
-          ))}
-
-        {/* Route Polyline — smooth with rounded caps */}
-        {isRouting && routeCoordinates.length > 0 && (
-          <>
-            {/* Shadow/outline polyline for depth effect */}
-            <Polyline
-              coordinates={routeCoordinates}
-              strokeColor="rgba(32, 105, 58, 0.15)"
-              strokeWidth={10}
-              lineCap="round"
-              lineJoin="round"
-            />
-            {/* Main route polyline */}
-            <Polyline
-              coordinates={routeCoordinates}
-              strokeColor={Colors.primary}
-              strokeWidth={5}
-              lineCap="round"
-              lineJoin="round"
-            />
-          </>
-        )}
-      </MapView>
-    );
-  };
 
   return (
     <View style={styles.container}>
@@ -522,7 +579,7 @@ export default function MapScreen() {
       {renderMap()}
 
       {/* Routing Banner Overlay */}
-      {isRouting && (
+      {isRouting && routeInfo && (
         <View style={[styles.routingBanner, { top: insets.top + 16 }]}>
           <View style={styles.routingInfo}>
             <View style={styles.routingIconBg}>
@@ -531,25 +588,22 @@ export default function MapScreen() {
             <View style={styles.routingTextContainer}>
               <Text style={styles.routingLabel}>{t('map.routingLabel')}</Text>
               <Text style={styles.routingText} numberOfLines={1}>
-                {routingDestTitle}
+                {routeInfo.destTitle}
               </Text>
-              {/* Route stats: distance + duration */}
-              {(routeDistance || routeDuration) && (
-                <View style={styles.routeStatsRow}>
-                  {routeDistance ? (
-                    <View style={styles.routeStatChip}>
-                      <Ionicons name="speedometer-outline" size={12} color={Colors.primary} />
-                      <Text style={styles.routeStatText}>{routeDistance}</Text>
-                    </View>
-                  ) : null}
-                  {routeDuration ? (
-                    <View style={styles.routeStatChip}>
-                      <Ionicons name="time-outline" size={12} color={Colors.primary} />
-                      <Text style={styles.routeStatText}>{routeDuration}</Text>
-                    </View>
-                  ) : null}
-                </View>
-              )}
+              <View style={styles.routeStatsRow}>
+                {routeInfo.distance ? (
+                  <View style={styles.routeStatChip}>
+                    <Ionicons name="speedometer-outline" size={12} color={Colors.primary} />
+                    <Text style={styles.routeStatText}>{routeInfo.distance}</Text>
+                  </View>
+                ) : null}
+                {routeInfo.duration ? (
+                  <View style={styles.routeStatChip}>
+                    <Ionicons name="time-outline" size={12} color={Colors.primary} />
+                    <Text style={styles.routeStatText}>{routeInfo.duration}</Text>
+                  </View>
+                ) : null}
+              </View>
             </View>
           </View>
           <TouchableOpacity onPress={cancelRoute} style={styles.cancelRouteBtn} activeOpacity={0.7}>
@@ -568,35 +622,39 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* Top overlay - Search + Filters (Hide when routing) */}
+      {/* Top overlay — Search + Severity Chips (hide when routing) */}
       {!isRouting && (
         <View style={[styles.topOverlay, { paddingTop: insets.top + 24 }]}>
-          <SearchBar value={searchQuery} onChangeText={setSearchQuery} onFilterPress={handleFilterPress} />
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onFilterPress={handleFilterPress}
+            onFocus={handleSearchFocus}
+          />
           <View style={styles.filtersRow}>
             {SEVERITY_FILTERS.map((filter) => (
               <SeverityChip
                 key={filter.key}
                 severity={filter.key}
                 label={filter.label}
-                selected={activeFilters.has(filter.key)}
-                onPress={() => toggleFilter(filter.key)}
+                selected={filters.severity.includes(filter.key)}
+                onPress={() => toggleSeverityFilter(filter.key)}
               />
             ))}
           </View>
         </View>
       )}
 
-      {/* Floating buttons — right-aligned vertical stack */}
+      {/* Floating buttons */}
       <View style={[styles.floatingButtons, isRouting && { bottom: 32 }]}>
         <TouchableOpacity style={styles.locationButton} onPress={handleMyLocation} activeOpacity={0.7}>
           <Ionicons name="locate" size={22} color={Colors.primary} />
         </TouchableOpacity>
       </View>
 
-      {/* Sheets Container - Highest z-index (Hide when routing) */}
-      {!isRouting && (
+      {/* Bottom Sheet — Reports List (hide when routing or marker selected) */}
+      {!isRouting && !selectedMarker && (
         <View style={[StyleSheet.absoluteFillObject, { zIndex: 999, elevation: 999 }]} pointerEvents="box-none">
-          {/* Reports list sheet */}
           <ReportsBottomSheet
             reports={filteredReports}
             totalCount={filteredReports.length}
@@ -605,10 +663,49 @@ export default function MapScreen() {
           />
         </View>
       )}
+
+      {/* Marker Preview Sheet */}
+      <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000, elevation: 1000 }]} pointerEvents="box-none">
+        <MarkerPreviewSheet
+          ref={markerSheetRef}
+          onViewDetails={handleViewDetails}
+          onGetDirections={handleGetDirections}
+        />
+      </View>
+
+      {/* Search Overlay */}
+      <SearchOverlay
+        visible={isSearchFocused}
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        onClose={handleSearchClose}
+        onSelectReport={handleSearchSelect}
+        recentSearches={recentSearches}
+        onRemoveRecent={removeRecentSearch}
+        onClearRecents={clearRecentSearches}
+        reports={reportsWithDistance}
+      />
+
+      {/* Filter Sheet */}
+      <View style={[StyleSheet.absoluteFillObject, { zIndex: 1100, elevation: 1100 }]} pointerEvents="box-none">
+        <FilterSheet
+          visible={isFilterSheetOpen}
+          filters={filters}
+          onToggleSeverity={toggleSeverityFilter}
+          onToggleWasteType={toggleWasteTypeFilter}
+          onToggleStatus={toggleStatusFilter}
+          onDistanceChange={setDistanceRange}
+          onApply={handleFilterApply}
+          onReset={handleFilterReset}
+          onClose={handleFilterClose}
+          matchCount={filterMatchCount}
+        />
+      </View>
     </View>
   );
 }
 
+// ─── Styles ─────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -632,10 +729,11 @@ const styles = StyleSheet.create({
   floatingButtons: {
     position: 'absolute',
     right: Spacing.base,
-    bottom: 240,
+    bottom: 300,
     flexDirection: 'column',
     alignItems: 'center',
     gap: 12,
+    zIndex: 15,
   },
   locationButton: {
     width: 48,

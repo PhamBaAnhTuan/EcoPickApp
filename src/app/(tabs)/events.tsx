@@ -1,13 +1,23 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Platform, ActivityIndicator, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts } from '../../constants';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  Animated,
+  FlatList,
+  Image,
+  Platform,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { Event } from '../../api/services/eventService';
+import { Colors, Fonts } from '../../constants';
 import { useEvents } from '../../hooks/useEventQueries';
 import { useAuthStore } from '../../stores/authStore';
-import type { Event } from '../../api/services/eventService';
 
 const TAB_KEYS = ['upcoming', 'myEvents', 'past'] as const;
 
@@ -57,6 +67,52 @@ function formatEventTime(dateStr: string): string {
 /** Default cover image when event has none */
 const DEFAULT_EVENT_IMAGE = 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop';
 
+// ─── Skeleton Loader ───────────────────────────────────────────────────────────
+function EventSkeleton() {
+  const shimmer = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(shimmer, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+      ]),
+    ).start();
+  }, [shimmer]);
+
+  return (
+    <View style={styles.eventCard}>
+      {/* Image placeholder */}
+      <Animated.View style={[skeletonStyles.image, { opacity: shimmer }]} />
+
+      {/* Content area */}
+      <View style={styles.eventContent}>
+        <View style={styles.textContent}>
+          {/* Title lines */}
+          <Animated.View style={[skeletonStyles.line, { width: '80%', opacity: shimmer }]} />
+          <Animated.View style={[skeletonStyles.line, { width: '55%', height: 12, opacity: shimmer }]} />
+        </View>
+
+        {/* Footer */}
+        <View style={styles.eventFooter}>
+          <View style={styles.avatarsSection}>
+            <View style={styles.avatarsStack}>
+              {[0, 1, 2].map((idx) => (
+                <Animated.View
+                  key={idx}
+                  style={[skeletonStyles.avatar, { marginLeft: idx > 0 ? -8 : 0, opacity: shimmer }]}
+                />
+              ))}
+            </View>
+            <Animated.View style={[skeletonStyles.line, { width: 60, height: 10, marginLeft: 12, opacity: shimmer }]} />
+          </View>
+          <Animated.View style={[skeletonStyles.button, { opacity: shimmer }]} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function EventsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -80,23 +136,29 @@ export default function EventsScreen() {
     return apiEvents;
   }, [activeTab, apiEvents, user?.id]);
 
-  const handleJoinEvent = useCallback((event: Event) => {
-    router.push(`/events/${event.id}`);
-  }, [router]);
+  const handleJoinEvent = useCallback(
+    (event: Event) => {
+      router.push(`/events/${event.id}`);
+    },
+    [router],
+  );
 
-  const handlePressCard = useCallback((event: Event) => {
-    router.push(`/events/${event.id}`);
-  }, [router]);
+  const handlePressCard = useCallback(
+    (event: Event) => {
+      router.push(`/events/${event.id}`);
+    },
+    [router],
+  );
 
   const renderEvent = useCallback(
     ({ item }: { item: Event }) => (
-      <TouchableOpacity
-        style={styles.eventCard}
-        onPress={() => handlePressCard(item)}
-        activeOpacity={0.9}
-      >
+      <TouchableOpacity style={styles.eventCard} onPress={() => handlePressCard(item)} activeOpacity={0.9}>
         <View style={styles.imageContainer}>
-          <Image source={{ uri: item.cover_image_url || DEFAULT_EVENT_IMAGE }} style={styles.eventImage} resizeMode="cover" />
+          <Image
+            source={{ uri: item.cover_image_url || DEFAULT_EVENT_IMAGE }}
+            style={styles.eventImage}
+            resizeMode="cover"
+          />
           {item.organizer_id === user?.id && (
             <View style={styles.organizerBadge}>
               <Text style={styles.organizerText}>{t('common.organizer').toUpperCase()}</Text>
@@ -105,7 +167,9 @@ export default function EventsScreen() {
         </View>
         <View style={styles.eventContent}>
           <View style={styles.textContent}>
-            <Text style={styles.eventTitle} numberOfLines={2}>{item.title}</Text>
+            <Text style={styles.eventTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
             <View style={styles.eventDateContainer}>
               <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
               <Text style={styles.eventDateText}>
@@ -119,24 +183,14 @@ export default function EventsScreen() {
               <View style={styles.avatarsSection}>
                 <View style={styles.avatarsStack}>
                   {AVATAR_IMAGES.map((uri, idx) => (
-                    <View
-                      key={idx}
-                      style={[
-                        styles.avatar,
-                        { zIndex: 3 - idx, marginLeft: idx > 0 ? -8 : 0 },
-                      ]}
-                    >
+                    <View key={idx} style={[styles.avatar, { zIndex: 3 - idx, marginLeft: idx > 0 ? -8 : 0 }]}>
                       <Image source={{ uri }} style={styles.avatarImage} />
                     </View>
                   ))}
                 </View>
                 <Text style={styles.othersText}>{t('events.others', { count: item.current_paticipants || 0 })}</Text>
               </View>
-              <TouchableOpacity
-                style={styles.joinButton}
-                onPress={() => handleJoinEvent(item)}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={styles.joinButton} onPress={() => handleJoinEvent(item)} activeOpacity={0.8}>
                 <Text style={styles.joinButtonText}>{t('events.join')}</Text>
               </TouchableOpacity>
             </View>
@@ -144,7 +198,7 @@ export default function EventsScreen() {
         </View>
       </TouchableOpacity>
     ),
-    [handleJoinEvent, handlePressCard, user?.id, t]
+    [handleJoinEvent, handlePressCard, user?.id, t],
   );
 
   return (
@@ -152,10 +206,7 @@ export default function EventsScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'android' ? 16 : 0) }]}>
         <View style={styles.logoContainer}>
-          <Image
-            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3234/3234123.png' }}
-            style={styles.logo}
-          />
+          <Image source={require('../../assets/logo.png')} style={styles.logo} />
         </View>
         <Text style={styles.headerTitle}>{t('events.headerTitle')}</Text>
         <View style={styles.searchContainer}>
@@ -185,9 +236,13 @@ export default function EventsScreen() {
 
       {/* Event List */}
       {isLoading ? (
-        <View style={styles.emptyContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.emptyText}>{t('common.loading', { defaultValue: 'Loading...' })}</Text>
+        <View style={styles.listContent}>
+          {[0, 1, 2].map((i) => (
+            <React.Fragment key={i}>
+              <EventSkeleton />
+              {i < 2 && <View style={{ height: 16 }} />}
+            </React.Fragment>
+          ))}
         </View>
       ) : (
         <FlatList
@@ -438,5 +493,36 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
     fontSize: 16,
     color: '#94A3B8',
+  },
+});
+
+// ─── Skeleton Styles ───
+const skeletonStyles = StyleSheet.create({
+  image: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    backgroundColor: '#E8ECF0',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  line: {
+    height: 16,
+    backgroundColor: '#E8ECF0',
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 9999,
+    backgroundColor: '#E8ECF0',
+    borderWidth: 2,
+    borderColor: Colors.white,
+  },
+  button: {
+    width: 80,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#E8ECF0',
   },
 });

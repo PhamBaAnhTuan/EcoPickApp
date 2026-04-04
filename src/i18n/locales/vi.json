@@ -40,7 +40,33 @@
 		"filtersMessage": "Tu\u1ef3 ch\u1ecdn b\u1ed9 l\u1ecdc n\u00e2ng cao s\u1ebd xu\u1ea5t hi\u1ec7n \u1edf \u0111\u00e2y."
 	},
 	"search": {
-		"placeholder": "T\u00ecm ki\u1ebfm khu v\u1ef1c ho\u1eb7c \u0111i\u1ec3m d\u1ecdn r\u00e1c"
+		"placeholder": "Tìm kiếm khu vực hoặc điểm dọn rác",
+		"recentSearches": "Tìm kiếm gần đây",
+		"clearAll": "Xóa tất cả",
+		"results": "Kết quả tìm kiếm",
+		"nearbyReports": "Báo cáo gần đây",
+		"noResults": "Không tìm thấy kết quả"
+	},
+	"filter": {
+		"title": "Lọc báo cáo",
+		"severity": "MỨC ĐỘ",
+		"wasteType": "LOẠI RÁC",
+		"distance": "PHẠM VI",
+		"status": "TRẠNG THÁI",
+		"reset": "Đặt lại",
+		"apply": "Áp dụng"
+	},
+	"time": {
+		"daysAgo": "ngày trước",
+		"hoursAgo": "giờ trước",
+		"minsAgo": "phút trước"
+	},
+	"marker": {
+		"upvotes": "lượt thích",
+		"comments": "bình luận",
+		"wasteTypes": "Loại rác thải",
+		"viewDetails": "Xem chi tiết",
+		"getDirections": "Chỉ đường"
 	},
 	"severity": {
 		"light": "Nh\u1eb9",
@@ -155,7 +181,23 @@
 		"logoutMessage": "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n \u0111\u0103ng xu\u1ea5t kh\u00f4ng?",
 		"logout": "\u0110\u0103ng xu\u1ea5t",
 		"details": "Th\u00f4ng tin",
-		"isVerified": "Đã xác minh"
+		"isVerified": "Đã xác minh",
+		"editProfile": "Chỉnh sửa hồ sơ",
+		"events": "SỰ KIỆN",
+		"trees": "CÂY TRỒNG",
+		"impactStats": "Thống kê tác động",
+		"level": "Cấp {{level}}",
+		"followers": "Người theo dõi",
+		"following": "Đang theo dõi",
+		"viewAll": "Xem tất cả",
+		"emptyBadges": "Hãy bắt đầu tạo tác động để nhận huy hiệu!",
+		"myActivityMap": "Bản đồ hoạt động",
+		"viewOnMap": "Xem trên bản đồ",
+		"reportsOnMap": "{{count}} báo cáo trên bản đồ",
+		"noReportsYet": "Chưa có báo cáo. Hãy bắt đầu khám phá!",
+		"openMap": "Mở bản đồ",
+		"avatarUpdated": "Cập nhật ảnh đại diện thành công!",
+		"bannerUpdated": "Cập nhật ảnh bìa thành công!"
 	},
 	"badges": {
 		"title": "Huy hiệu",
