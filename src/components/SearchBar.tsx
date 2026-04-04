@@ -8,6 +8,7 @@ interface SearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
   onFilterPress?: () => void;
+  onFocus?: () => void;
   placeholder?: string;
 }
 
@@ -15,13 +16,18 @@ export function SearchBar({
   value,
   onChangeText,
   onFilterPress,
+  onFocus,
   placeholder,
 }: SearchBarProps) {
   const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <View style={styles.shadowWrapper} />
-      <View style={styles.inner}>
+      <TouchableOpacity
+        style={styles.inner}
+        activeOpacity={0.9}
+        onPress={onFocus}
+      >
         <Ionicons name="search-outline" size={18} color={Colors.textPlaceholder} style={styles.searchIcon} />
         <TextInput
           value={value}
@@ -29,11 +35,14 @@ export function SearchBar({
           placeholder={placeholder || t('search.placeholder')}
           placeholderTextColor={Colors.textPlaceholder}
           style={styles.input}
+          onFocus={onFocus}
+          editable={!onFocus} // When onFocus is provided, tapping opens the overlay instead
+          pointerEvents={onFocus ? 'none' : 'auto'}
         />
         <TouchableOpacity onPress={onFilterPress} style={styles.filterButton} activeOpacity={0.7}>
           <Ionicons name="options-outline" size={18} color={Colors.textPrimary} />
         </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 }

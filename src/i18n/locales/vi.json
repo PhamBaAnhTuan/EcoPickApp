@@ -40,7 +40,33 @@
 		"filtersMessage": "Tu\u1ef3 ch\u1ecdn b\u1ed9 l\u1ecdc n\u00e2ng cao s\u1ebd xu\u1ea5t hi\u1ec7n \u1edf \u0111\u00e2y."
 	},
 	"search": {
-		"placeholder": "T\u00ecm ki\u1ebfm khu v\u1ef1c ho\u1eb7c \u0111i\u1ec3m d\u1ecdn r\u00e1c"
+		"placeholder": "Tìm kiếm khu vực hoặc điểm dọn rác",
+		"recentSearches": "Tìm kiếm gần đây",
+		"clearAll": "Xóa tất cả",
+		"results": "Kết quả tìm kiếm",
+		"nearbyReports": "Báo cáo gần đây",
+		"noResults": "Không tìm thấy kết quả"
+	},
+	"filter": {
+		"title": "Lọc báo cáo",
+		"severity": "MỨC ĐỘ",
+		"wasteType": "LOẠI RÁC",
+		"distance": "PHẠM VI",
+		"status": "TRẠNG THÁI",
+		"reset": "Đặt lại",
+		"apply": "Áp dụng"
+	},
+	"time": {
+		"daysAgo": "ngày trước",
+		"hoursAgo": "giờ trước",
+		"minsAgo": "phút trước"
+	},
+	"marker": {
+		"upvotes": "lượt thích",
+		"comments": "bình luận",
+		"wasteTypes": "Loại rác thải",
+		"viewDetails": "Xem chi tiết",
+		"getDirections": "Chỉ đường"
 	},
 	"severity": {
 		"light": "Nh\u1eb9",

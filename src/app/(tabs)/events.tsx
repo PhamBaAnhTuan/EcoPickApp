@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Platform, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Platform, Animated, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,6 +56,55 @@ function formatEventTime(dateStr: string): string {
 
 /** Default cover image when event has none */
 const DEFAULT_EVENT_IMAGE = 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop';
+
+// ─── Skeleton Loader ───────────────────────────────────────────────────────────
+function EventSkeleton() {
+  const shimmer = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(shimmer, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+      ]),
+    ).start();
+  }, [shimmer]);
+
+  return (
+    <View style={styles.eventCard}>
+      {/* Image placeholder */}
+      <Animated.View style={[skeletonStyles.image, { opacity: shimmer }]} />
+
+      {/* Content area */}
+      <View style={styles.eventContent}>
+        <View style={styles.textContent}>
+          {/* Title lines */}
+          <Animated.View style={[skeletonStyles.line, { width: '80%', opacity: shimmer }]} />
+          <Animated.View style={[skeletonStyles.line, { width: '55%', height: 12, opacity: shimmer }]} />
+        </View>
+
+        {/* Footer */}
+        <View style={styles.eventFooter}>
+          <View style={styles.avatarsSection}>
+            <View style={styles.avatarsStack}>
+              {[0, 1, 2].map((idx) => (
+                <Animated.View
+                  key={idx}
+                  style={[
+                    skeletonStyles.avatar,
+                    { marginLeft: idx > 0 ? -8 : 0, opacity: shimmer },
+                  ]}
+                />
+              ))}
+            </View>
+            <Animated.View style={[skeletonStyles.line, { width: 60, height: 10, marginLeft: 12, opacity: shimmer }]} />
+          </View>
+          <Animated.View style={[skeletonStyles.button, { opacity: shimmer }]} />
+        </View>
+      </View>
+    </View>
+  );
+}
 
 export default function EventsScreen() {
   const insets = useSafeAreaInsets();
@@ -185,9 +234,13 @@ export default function EventsScreen() {
 
       {/* Event List */}
       {isLoading ? (
-        <View style={styles.emptyContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.emptyText}>{t('common.loading', { defaultValue: 'Loading...' })}</Text>
+        <View style={styles.listContent}>
+          {[0, 1, 2].map((i) => (
+            <React.Fragment key={i}>
+              <EventSkeleton />
+              {i < 2 && <View style={{ height: 16 }} />}
+            </React.Fragment>
+          ))}
         </View>
       ) : (
         <FlatList
@@ -438,5 +491,36 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
     fontSize: 16,
     color: '#94A3B8',
+  },
+});
+
+// ─── Skeleton Styles ───
+const skeletonStyles = StyleSheet.create({
+  image: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    backgroundColor: '#E8ECF0',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  line: {
+    height: 16,
+    backgroundColor: '#E8ECF0',
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 9999,
+    backgroundColor: '#E8ECF0',
+    borderWidth: 2,
+    borderColor: Colors.white,
+  },
+  button: {
+    width: 80,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#E8ECF0',
   },
 });

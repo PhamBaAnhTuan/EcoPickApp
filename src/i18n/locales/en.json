@@ -40,7 +40,33 @@
 		"filtersMessage": "Advanced filter options would appear here."
 	},
 	"search": {
-		"placeholder": "Search areas or cleanup spots"
+		"placeholder": "Search areas or cleanup spots",
+		"recentSearches": "Recent Searches",
+		"clearAll": "Clear all",
+		"results": "Search Results",
+		"nearbyReports": "Nearby Reports",
+		"noResults": "No results found"
+	},
+	"filter": {
+		"title": "Filter Reports",
+		"severity": "SEVERITY",
+		"wasteType": "WASTE TYPE",
+		"distance": "DISTANCE RANGE",
+		"status": "STATUS",
+		"reset": "Reset",
+		"apply": "Apply"
+	},
+	"time": {
+		"daysAgo": "days ago",
+		"hoursAgo": "hours ago",
+		"minsAgo": "mins ago"
+	},
+	"marker": {
+		"upvotes": "upvotes",
+		"comments": "comments",
+		"wasteTypes": "Waste Types",
+		"viewDetails": "View Details",
+		"getDirections": "Directions"
 	},
 	"severity": {
 		"light": "Light",
