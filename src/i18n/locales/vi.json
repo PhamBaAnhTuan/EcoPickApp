@@ -514,5 +514,9 @@
 		"validation": {
 			"endDateAfterStart": "Ng\u00e0y k\u1ebft th\u00fac ph\u1ea3i sau ng\u00e0y b\u1eaft \u0111\u1ea7u"
 		}
+	},
+	"share": {
+		"errorTitle": "Chia sẻ thất bại",
+		"errorMessage": "Không thể chia sẻ. Vui lòng thử lại."
 	}
 }

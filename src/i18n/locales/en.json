@@ -514,5 +514,9 @@
 		"validation": {
 			"endDateAfterStart": "End date must be after start date"
 		}
+	},
+	"share": {
+		"errorTitle": "Share Failed",
+		"errorMessage": "Could not share. Please try again."
 	}
 }

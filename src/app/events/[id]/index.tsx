@@ -26,6 +26,7 @@ import EventHero from './components/EventHero';
 import EventInfo from './components/EventInfo';
 import EventParticipants from './components/EventParticipants';
 import { parseEquipment } from './constants';
+import { shareContent } from '../../../utils/share';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -85,6 +86,24 @@ export default function EventDetailScreen() {
       params: { destLat: destLat.toString(), destLng: destLng.toString(), destTitle },
     });
   }, [event, router]);
+
+  const handleShare = useCallback(async () => {
+    if (!event) return;
+    const res = await shareContent({
+      type: 'event',
+      title: event.title,
+      description: event.description,
+      coords: { latitude: event.latitude || 37.7749, longitude: event.longitude || -122.4194 },
+      eventId: event.id,
+    });
+    if (!res.success && res.reason === 'error') {
+      Toast.show({
+        type: 'error',
+        text1: t('share.errorTitle', { defaultValue: 'Share Failed' }),
+        text2: t('share.errorMessage', { defaultValue: 'Could not share. Please try again.' }),
+      });
+    }
+  }, [event, t]);
 
   if (isLoading) {
     return (
@@ -149,7 +168,7 @@ export default function EventDetailScreen() {
         {/* <Text style={s.headerTitle} numberOfLines={1}>
           {event.title}
         </Text> */}
-        <TouchableOpacity style={s.headerBtn} activeOpacity={0.7}>
+        <TouchableOpacity style={s.headerBtn} activeOpacity={0.7} onPress={handleShare}>
           <Ionicons name="share-social-outline" size={18} color="#0F172A" />
         </TouchableOpacity>
       </View>

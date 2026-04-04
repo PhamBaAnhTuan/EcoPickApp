@@ -19,6 +19,8 @@ import { SeverityLevel } from '../../../data/mockData';
 import { useReport } from '../../../hooks/useReportQueries';
 import { formatDistanceInfo } from '../../../utils/distance';
 import { getSeverityTheme } from '../../../utils/severity';
+import { shareContent } from '../../../utils/share';
+import Toast from 'react-native-toast-message';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LocationActions from './components/LocationActions';
@@ -71,6 +73,26 @@ export default function LocationDetailScreen() {
     };
     checkLocation();
   }, [report]);
+
+  const handleShare = async () => {
+    if (!report) return;
+    const res = await shareContent({
+      type: 'report',
+      title: reportTitle,
+      description: report.description,
+      address: report.address,
+      severity: severityLabel,
+      coords: { latitude: report.latitude, longitude: report.longitude },
+      reportId: report.id as string,
+    });
+    if (!res.success && res.reason === 'error') {
+      Toast.show({
+        type: 'error',
+        text1: t('share.errorTitle', { defaultValue: 'Share Failed' }),
+        text2: t('share.errorMessage', { defaultValue: 'Could not share. Please try again.' }),
+      });
+    }
+  };
 
   const handleNavigate = () => {
     if (!report) return;
@@ -141,7 +163,7 @@ export default function LocationDetailScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('location.detailsTitle')}</Text>
-        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7} onPress={handleShare}>
           <Ionicons name="share-social-outline" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
       </View>
