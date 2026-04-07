@@ -405,25 +405,6 @@ export default function MapScreen() {
   }, [setFilterSheetOpen]);
 
   const handleMarkerClick = useCallback(
-    (marker: WasteReport) => {
-      if (mapRef.current) {
-        mapRef.current.animateToRegion(
-          {
-            latitude: marker.latitude,
-            longitude: marker.longitude,
-            latitudeDelta: 0.012,
-            longitudeDelta: 0.012,
-          },
-          600,
-        );
-      }
-      selectMarker(marker);
-      markerSheetRef.current?.show(marker);
-    },
-    [selectMarker],
-  );
-
-  const handleViewDetails = useCallback(
     (report: WasteReport) => {
       markerSheetRef.current?.dismiss();
       router.push(`/location/${report.id}`);
@@ -663,15 +644,6 @@ export default function MapScreen() {
           />
         </View>
       )}
-
-      {/* Marker Preview Sheet */}
-      <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000, elevation: 1000 }]} pointerEvents="box-none">
-        <MarkerPreviewSheet
-          ref={markerSheetRef}
-          onViewDetails={handleViewDetails}
-          onGetDirections={handleGetDirections}
-        />
-      </View>
 
       {/* Search Overlay */}
       <SearchOverlay

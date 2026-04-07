@@ -1,5 +1,5 @@
 
-import { useEvent, useEventParticipants, useJoinEvent } from '@/hooks/useEventQueries';
+import { useEvent, useEventParticipants, useJoinEvent, useLeaveEvent } from '@/hooks/useEventQueries';
 import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { Colors, Fonts } from '../../../constants';
+import { shareContent } from '../../../utils/share';
 import EventChat from './components/EventChat';
 import EventDetailSkeleton from './components/EventDetailSkeleton';
 import EventEquipment from './components/EventEquipment';
@@ -26,7 +27,6 @@ import EventHero from './components/EventHero';
 import EventInfo from './components/EventInfo';
 import EventParticipants from './components/EventParticipants';
 import { parseEquipment } from './constants';
-import { shareContent } from '../../../utils/share';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,6 +40,7 @@ export default function EventDetailScreen() {
     id ? { event_id: id } : undefined,
   );
   const joinMutation = useJoinEvent();
+  const leaveMutation = useLeaveEvent(id!);
 
   const userParticipant = participants.find((p) => p.user_id === user?.id);
   const [joined, setJoined] = useState(false);
@@ -74,6 +75,27 @@ export default function EventDetailScreen() {
       })
     }
   }, [event, user?.id, joined, joinMutation, t]);
+
+  // const handleLeaveEvent = useCallback(async () => {
+  //   if (!event || !user?.id) return;
+  //   if (!joined) {
+  //     setJoined(true);
+  //     return;
+  //   }
+
+  //   try {
+  //     await leaveMutation.mutateAsync();
+  //     setJoined(false);
+  //   } catch (error: any) {
+  //     console.log('Error leaving event:', error?.response?.data || error);
+  //     Toast.show({
+  //       type: 'error',
+  //       text1: t('common.error', { defaultValue: 'Error' }),
+  //       text2: error?.response?.data?.detail ||
+  //         t('eventDetail.leaveError', { defaultValue: 'Could not leave event. Please try again.' }),
+  //     })
+  //   }
+  // }, [event, user?.id, joined, leaveMutation, t]);
 
   const handleOpenMaps = useCallback(() => {
     if (!event) return;
@@ -165,9 +187,6 @@ export default function EventDetailScreen() {
         <TouchableOpacity style={s.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={16} color="#0F172A" />
         </TouchableOpacity>
-        {/* <Text style={s.headerTitle} numberOfLines={1}>
-          {event.title}
-        </Text> */}
         <TouchableOpacity style={s.headerBtn} activeOpacity={0.7} onPress={handleShare}>
           <Ionicons name="share-social-outline" size={18} color="#0F172A" />
         </TouchableOpacity>

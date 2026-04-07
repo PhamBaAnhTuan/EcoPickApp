@@ -9,6 +9,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Animated,
+  DeviceEventEmitter,
   Dimensions,
   Image,
   Platform,
@@ -313,10 +314,19 @@ export default function ProfileScreen() {
     );
   }
 
+  // ── Handle Tab Press ──
+  const scrollRef = React.useRef<ScrollView>(null);
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tabPress_profile', () => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    });
+    return () => sub.remove();
+  }, []);
+
   const avatarUri = pendingAvatar?.uri || user?.avatar || DEFAULT_AVATAR;
   const bannerUri = pendingBanner?.uri || DEFAULT_BANNER;
   const displayName = user?.fullname || user?.email?.split('@')[0] || 'User';
-  const username = user?.email?.split('@')[0] || 'user';
+  // const username = user?.email?.split('@')[0] || 'user';
 
   return (
     <View style={styles.safeArea}>
@@ -354,6 +364,7 @@ export default function ProfileScreen() {
       </View>
 
       <Animated.ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
@@ -374,10 +385,6 @@ export default function ProfileScreen() {
         <TouchableOpacity activeOpacity={0.9} onPress={handleSelectBanner} style={styles.bannerContainer}>
           <Image source={{ uri: bannerUri }} style={styles.bannerImage} />
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={styles.bannerGradient} />
-          {/* Banner edit hint */}
-          <View style={styles.bannerEditHint}>
-            <Ionicons name="camera-outline" size={14} color="rgba(255,255,255,0.8)" />
-          </View>
         </TouchableOpacity>
 
         {/* ═══════════════════════════════════════════════════ */}
@@ -412,7 +419,7 @@ export default function ProfileScreen() {
               <Text style={styles.userName}>{displayName}</Text>
               {user?.is_verified && <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />}
             </View>
-            <Text style={styles.userHandle}>@{username}</Text>
+            <Text style={styles.userHandle}>{user?.email}</Text>
 
             {user?.bio ? (
               <Text style={styles.userBio} numberOfLines={3}>

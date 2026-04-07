@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import {
   Animated,
+  DeviceEventEmitter,
   FlatList,
   Image,
   Platform,
@@ -119,9 +120,19 @@ export default function EventsScreen() {
   const [activeTab, setActiveTab] = useState('upcoming');
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const flatListRef = useRef<FlatList>(null);
 
   // ── Fetch events from API ──
   const { data: apiEvents = [], isLoading, isRefetching, refetch } = useEvents();
+
+  // ── Handle Tab Press ──
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tabPress_events', () => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return () => sub.remove();
+  }, []);
+
 
   const filteredEvents = useMemo(() => {
     if (activeTab === 'upcoming') {
@@ -246,6 +257,7 @@ export default function EventsScreen() {
         </View>
       ) : (
         <FlatList
+          ref={flatListRef}
           data={filteredEvents}
           renderItem={renderEvent}
           keyExtractor={(item) => item.id}

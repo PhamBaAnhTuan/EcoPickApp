@@ -1,21 +1,25 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet, Text, View } from 'react-native';
 import { Fonts, Spacing } from '../../../constants';
 
-export default function PointsCard() {
+interface PointsCardProps {
+  ecoPoints: number;
+  level: number;
+}
+
+export default function PointsCard({ ecoPoints, level }: PointsCardProps) {
   const { t } = useTranslation();
 
   return (
     <View style={styles.cardContainer}>
       <Text style={styles.cardLabel}>{t('reportSuccess.totalEcoPoints')}</Text>
       <View style={styles.cardScoreRow}>
-        <Text style={styles.cardScore}>450</Text>
-        <View style={styles.cardTrend}>
-          <Ionicons name="trending-up" size={16} color="#34D399" />
-          <Text style={styles.cardTrendText}>+10%</Text>
-        </View>
+        <Text style={styles.cardScore}>{ecoPoints ?? 0}</Text>
+      </View>
+      <Text style={styles.cardLabel}>{t('reportSuccess.level')}</Text>
+      <View style={styles.cardScoreRow}>
+        <Text style={styles.cardScore}>{level ?? 0}</Text>
       </View>
     </View>
   );

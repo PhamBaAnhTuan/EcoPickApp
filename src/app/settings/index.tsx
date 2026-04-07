@@ -332,7 +332,7 @@ export default function SettingsScreen() {
       />
 
       {/* ─── Delete Account Confirmation ─── */}
-      <ConfirmModal
+      {/* <ConfirmModal
         visible={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={() => setShowDeleteModal(false)}
@@ -342,7 +342,7 @@ export default function SettingsScreen() {
         cancelText={t('common.cancel')}
         variant="danger"
         icon="trash-outline"
-      />
+      /> */}
     </SafeAreaView>
   );
 }

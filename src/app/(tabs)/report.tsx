@@ -160,72 +160,51 @@ export default function ReportScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!image) {
-      alert(t('report.takePhotoFirst'));
-      return;
-    }
+    if (!image) return alert(t('report.takePhotoFirst'));
 
     try {
-      const manipulatedImage = await ImageManipulator.manipulateAsync(
+      const { uri } = await ImageManipulator.manipulateAsync(
         image,
         [],
         { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
       );
 
-      if (!manipulatedImage.uri) {
-        throw new Error('Image processing failed: URI is empty');
-      }
+      if (!uri) throw new Error('Image processing failed: URI is empty');
 
-      // 2. Lấy đúng extension & MIME type từ URI đã được manipulate
-      //    URI từ ImageManipulator luôn kết thúc bằng .jpg khi dùng SaveFormat.JPEG
-      const uriParts = manipulatedImage.uri.split('.');
-      const fileExt = uriParts[uriParts.length - 1]?.toLowerCase() || 'jpg';
-      const mimeType = fileExt === 'jpg' || fileExt === 'jpeg' ? 'image/jpeg'
-        : fileExt === 'png' ? 'image/png'
-          : 'image/jpeg'; // fallback
-
-      // 3. Tạo FormData — build một lần duy nhất ở đây, truyền thẳng xuống service
       const formData = new FormData();
-
-      const wasteTypesStr = Array.from(selectedWasteTypes).join(', ');
-      const severityApi = getSeverityApiValue(severityValue);
       const locationName = locationAddress || `${locationLat}, ${locationLng}`;
 
       formData.append('reporter_id', user?.id || '');
       formData.append('title', locationName);
-      if (description) formData.append('description', description);
       formData.append('location', locationName);
-      if (locationAddress) formData.append('address', locationAddress);
-      formData.append('latitude', String(locationLat ? parseFloat(locationLat) : 0));
-      formData.append('longitude', String(locationLng ? parseFloat(locationLng) : 0));
-      formData.append('severity', severityApi);
+      formData.append('latitude', String(parseFloat(locationLat || '0')));
+      formData.append('longitude', String(parseFloat(locationLng || '0')));
+      formData.append('severity', getSeverityApiValue(severityValue));
       formData.append('status', 'pending');
-      formData.append('waste_type', wasteTypesStr);
+      formData.append('waste_type', Array.from(selectedWasteTypes).join(', '));
 
-      // 4. Append file ảnh — giữ nguyên object {uri, name, type}, không dùng String()
+      if (description) formData.append('description', description);
+      if (locationAddress) formData.append('address', locationAddress);
+
+      // Append image object directly as JPEG based on ImageManipulator settings
       formData.append('report_img', {
-        uri: manipulatedImage.uri,
-        name: `report_${Date.now()}.${fileExt}`,
-        type: mimeType,
+        uri,
+        name: `report_${Date.now()}.jpg`,
+        type: 'image/jpeg',
       } as any);
 
       if (__DEV__) {
-        console.log('[handleSubmit] FormData parts:');
-        for (const [key, val] of (formData as any)._parts) {
-          console.log(`  ${key}:`, typeof val === 'object' ? JSON.stringify(val) : val);
-        }
+        console.log('[handleSubmit] FormData parts:', (formData as any)._parts);
       }
 
-      // 5. Gửi request
       const report = await createReportMutation.mutateAsync(formData);
 
-      // 6. Reset form
+      // Reset form on success
       setImage(null);
       setDescription('');
       setSeverityValue(0.6);
       setSelectedWasteTypes(new Set(['plastic']));
 
-      // 7. Điều hướng tới màn hình thành công
       router.replace({
         pathname: '/report-success',
         params: {

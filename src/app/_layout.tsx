@@ -4,7 +4,7 @@ import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import React, { useCallback, useEffect } from 'react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StatusBar, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '../components/ToastConfig';
@@ -109,6 +109,7 @@ export default function RootLayout() {
           </I18nextProvider>
         </QueryClientProvider>
       </GestureHandlerRootView>
+      <StatusBar barStyle={'default'} />
       <Toast config={toastConfig} topOffset={60} visibilityTime={3000} />
     </>
   );

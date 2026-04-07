@@ -22,7 +22,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { Colors, Fonts, FontSizes, Spacing, BorderRadius } from '../../constants';
+import { BorderRadius, Colors, Fonts, FontSizes, Spacing } from '../../constants';
 import { pickImage, type PickedImage } from '../../utils/pickImage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');

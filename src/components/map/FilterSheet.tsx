@@ -1,3 +1,4 @@
+import { useLayout } from '@/hooks/use-layout';
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import BottomSheetLib, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
@@ -42,6 +43,7 @@ export function FilterSheet({
   onClose,
   matchCount,
 }: FilterSheetProps) {
+  const { bottomTabHeight } = useLayout()
   const sheetRef = useRef<BottomSheetLib>(null);
   const snapPoints = useMemo(() => ['75%'], []);
   const { t } = useTranslation();
@@ -119,7 +121,7 @@ export function FilterSheet({
                     <Text style={[sheetStyles.chipLabel, { color: selected ? theme.textColor : Colors.textSecondary }]}>
                       {item.label}
                     </Text>
-                    {selected && <Ionicons name="checkmark" size={14} color={theme.textColor} />}
+                    {/* {selected && <Ionicons name="checkmark" size={14} color={theme.textColor} />} */}
                   </TouchableOpacity>
                 );
               })}
@@ -138,8 +140,8 @@ export function FilterSheet({
                     style={[
                       sheetStyles.filterChip,
                       {
-                        backgroundColor: selected ? `${item.color}12` : Colors.background,
-                        borderColor: selected ? `${item.color}30` : Colors.border,
+                        backgroundColor: selected ? `${item.color}20` : Colors.background,
+                        borderColor: selected ? `${item.color}40` : Colors.border,
                       },
                     ]}
                     onPress={() => onToggleWasteType(item.key)}
@@ -153,7 +155,7 @@ export function FilterSheet({
                     <Text style={[sheetStyles.chipLabel, { color: selected ? item.color : Colors.textSecondary }]}>
                       {item.label}
                     </Text>
-                    {selected && <Ionicons name="checkmark" size={14} color={item.color} />}
+                    {/* {selected && <Ionicons name="checkmark" size={14} color={item.color} />} */}
                   </TouchableOpacity>
                 );
               })}
@@ -210,7 +212,7 @@ export function FilterSheet({
                     <Text style={[sheetStyles.chipLabel, { color: selected ? item.color : Colors.textSecondary }]}>
                       {item.label}
                     </Text>
-                    {selected && <Ionicons name="checkmark" size={14} color={item.color} />}
+                    {/* {selected && <Ionicons name="checkmark" size={14} color={item.color} />} */}
                   </TouchableOpacity>
                 );
               })}
@@ -220,7 +222,7 @@ export function FilterSheet({
 
         {/* ── Action Buttons ── */}
         <View style={sheetStyles.actions}>
-          <TouchableOpacity style={sheetStyles.resetBtn} onPress={onReset} activeOpacity={0.7}>
+          <TouchableOpacity style={sheetStyles.resetBtn} onPress={onReset} >
             <Ionicons name="refresh-outline" size={16} color={Colors.textSecondary} />
             <Text style={sheetStyles.resetText}>{t('filter.reset', 'Reset')}</Text>
           </TouchableOpacity>
@@ -252,6 +254,7 @@ const sheetStyles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    // marginBottom: 150,
   },
   header: {
     flexDirection: 'row',
@@ -276,7 +279,7 @@ const sheetStyles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.base,
-    paddingBottom: 16,
+    // paddingBottom: 50,
   },
   section: {
     marginBottom: 20,

@@ -3,9 +3,10 @@ import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  DeviceEventEmitter,
   Image,
   Platform,
   RefreshControl,
@@ -129,6 +130,7 @@ export default function BadgesScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const userId = useAuthStore((s) => s.user?.id);
+  const scrollRef = React.useRef<ScrollView>(null);
 
   const {
     data: allBadges = [],
@@ -165,6 +167,13 @@ export default function BadgesScreen() {
     return t(`badges.category.${key}` as any);
   };
 
+  // ── Handle Tab Press ──
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tabPress_badges', () => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    });
+    return () => sub.remove();
+  }, []);
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
@@ -181,6 +190,7 @@ export default function BadgesScreen() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={

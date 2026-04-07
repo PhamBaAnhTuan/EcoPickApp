@@ -14,13 +14,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Colors, Fonts, FontSizes, Spacing } from '../../../constants';
 import { SeverityLevel } from '../../../data/mockData';
 import { useReport } from '../../../hooks/useReportQueries';
 import { formatDistanceInfo } from '../../../utils/distance';
 import { getSeverityTheme } from '../../../utils/severity';
 import { shareContent } from '../../../utils/share';
-import Toast from 'react-native-toast-message';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LocationActions from './components/LocationActions';
