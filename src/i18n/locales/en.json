@@ -54,7 +54,8 @@
 		"distance": "DISTANCE RANGE",
 		"status": "STATUS",
 		"reset": "Reset",
-		"apply": "Apply"
+		"apply": "Apply",
+		"reportsFound": "report was found"
 	},
 	"time": {
 		"daysAgo": "days ago",

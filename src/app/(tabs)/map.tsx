@@ -3,7 +3,7 @@ import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, DeviceEventEmitter, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,7 +12,7 @@ import Toast from 'react-native-toast-message';
 import type { Report } from '../../api/services/reportService';
 import { ReportsBottomSheet, SearchBar, SeverityChip } from '../../components';
 import type { MarkerPreviewSheetRef } from '../../components/map';
-import { FilterSheet, MarkerPreviewSheet, SearchOverlay } from '../../components/map';
+import { FilterSheet, SearchOverlay } from '../../components/map';
 import { BorderRadius, Colors, Fonts, FontSizes, Spacing } from '../../constants';
 import { INITIAL_REGION, SEVERITY_FILTERS, type SeverityLevel, type WasteReport } from '../../data/mockData';
 import { useReports } from '../../hooks/useReportQueries';
@@ -391,8 +391,8 @@ export default function MapScreen() {
     setFilterSheetOpen(false);
     Toast.show({
       type: 'success',
-      text1: t('filter.applied', 'Filters applied'),
-      text2: `${filterMatchCount} ${t('filter.reportsFound', 'reports found')}`,
+      text1: t('filter.apply'),
+      text2: `${filterMatchCount} ${t('filter.reportsFound')}`,
     });
   }, [setFilterSheetOpen, filterMatchCount, t]);
 
@@ -404,50 +404,13 @@ export default function MapScreen() {
     setFilterSheetOpen(false);
   }, [setFilterSheetOpen]);
 
-  const handleMarkerClick = useCallback(
-    (marker: WasteReport) => {
-      if (mapRef.current) {
-        mapRef.current.animateToRegion(
-          {
-            latitude: marker.latitude,
-            longitude: marker.longitude,
-            latitudeDelta: 0.012,
-            longitudeDelta: 0.012,
-          },
-          600,
-        );
-      }
-      selectMarker(marker);
-      markerSheetRef.current?.show(marker);
-    },
-    [selectMarker],
-  );
-
   const handleViewDetails = useCallback(
     (report: WasteReport) => {
-      markerSheetRef.current?.dismiss();
       router.push(`/location/${report.id}`);
     },
     [router],
   );
 
-  const handleGetDirections = useCallback(
-    (report: WasteReport) => {
-      if (!userLocation) {
-        Alert.alert(t('map.permissionDenied'), t('map.locationDenied'));
-        return;
-      }
-      markerSheetRef.current?.dismiss();
-      calculateRoute(
-        userLocation.coords.latitude,
-        userLocation.coords.longitude,
-        report.latitude,
-        report.longitude,
-        report.title,
-      );
-    },
-    [userLocation, t, calculateRoute],
-  );
 
   const handleNavigateReport = useCallback(
     (report: WasteReport) => {
@@ -494,8 +457,8 @@ export default function MapScreen() {
           if (mapRef.current) {
             mapRef.current.animateToRegion(
               {
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
+                latitude: location?.coords.latitude,
+                longitude: location?.coords.longitude,
                 latitudeDelta: 0.015,
                 longitudeDelta: 0.015,
               },
@@ -511,6 +474,20 @@ export default function MapScreen() {
     }
   }, [userLocation, t]);
 
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tabPress_map', () => {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: userLocation?.coords.latitude || 0,
+          longitude: userLocation?.coords.longitude || 0,
+          latitudeDelta: 0.015,
+          longitudeDelta: 0.015,
+        },
+        1000,
+      );
+    });
+    return () => sub.remove();
+  }, [userLocation]);
   // ── Render Map ──
   const renderMap = () => (
     <MapView
@@ -541,7 +518,7 @@ export default function MapScreen() {
           <Marker
             key={marker.id}
             coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
-            onPress={() => handleMarkerClick(marker)}
+            onPress={() => handleViewDetails(marker)}
             tracksViewChanges={false}
             anchor={{ x: 0.5, y: 1 }}
           >
@@ -663,15 +640,6 @@ export default function MapScreen() {
           />
         </View>
       )}
-
-      {/* Marker Preview Sheet */}
-      <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000, elevation: 1000 }]} pointerEvents="box-none">
-        <MarkerPreviewSheet
-          ref={markerSheetRef}
-          onViewDetails={handleViewDetails}
-          onGetDirections={handleGetDirections}
-        />
-      </View>
 
       {/* Search Overlay */}
       <SearchOverlay

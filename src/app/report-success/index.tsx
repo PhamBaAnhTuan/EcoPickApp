@@ -2,14 +2,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Fonts, Spacing } from '../../constants';
 
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { reportService } from '../../api/services/reportService';
+import { useUpdateUser } from '../../hooks/useUserQueries';
+import { useAuthStore } from '../../stores/authStore';
 import PointsCard from './components/PointsCard';
 import SuccessActions from './components/SuccessActions';
 import SuccessGraphic from './components/SuccessGraphic';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -17,6 +21,45 @@ export default function ReportSuccessScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ reportId?: string; latitude?: string; longitude?: string }>();
   const { t } = useTranslation();
+
+  const user = useAuthStore(s => s.user);
+  const updateUserStore = useAuthStore(s => s.updateUser);
+  const updateUserMutation = useUpdateUser();
+  const hasAwardedRef = useRef(false);
+
+  useEffect(() => {
+    const awardPoints = async () => {
+      if (!user?.id || hasAwardedRef.current) return;
+      hasAwardedRef.current = true;
+
+      try {
+        const userReports = await reportService.getAll({ reporter_id: user.id });
+        const totalReports = userReports.length;
+
+        const newEcoPoints = (user.eco_points || 0) + 10;
+        const newLevel = (user.level || 0) + 1;
+
+        await updateUserMutation.mutateAsync({
+          id: user.id,
+          payload: {
+            eco_points: newEcoPoints,
+            level: newLevel,
+            total_reports: totalReports,
+          }
+        });
+
+        updateUserStore({
+          eco_points: newEcoPoints,
+          level: newLevel,
+          total_reports: totalReports,
+        });
+      } catch (error) {
+        console.error("Failed to award eco points:", error);
+      }
+    };
+
+    awardPoints();
+  }, [user?.id]);
 
   const handleViewOnMap = () => {
     if (params.latitude && params.longitude) {
@@ -76,7 +119,10 @@ export default function ReportSuccessScreen() {
             <Text style={styles.pointsPillText}>{t('reportSuccess.earnedPoints')}</Text>
           </View>
 
-          <PointsCard />
+          <PointsCard
+            ecoPoints={user?.eco_points || 0}
+            level={user?.level || 0}
+          />
 
           <SuccessActions
             onViewMap={handleViewOnMap}

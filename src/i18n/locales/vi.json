@@ -54,7 +54,8 @@
 		"distance": "PHẠM VI",
 		"status": "TRẠNG THÁI",
 		"reset": "Đặt lại",
-		"apply": "Áp dụng"
+		"apply": "Áp dụng",
+		"reportsFound": "báo cáo được tìm thấy"
 	},
 	"time": {
 		"daysAgo": "ngày trước",
@@ -230,34 +231,94 @@
 			"loadError": "Không thể tải thông tin huy hiệu",
 			"steps": {
 				"event": [
-					{ "title": "Tìm kiếm sự kiện", "desc": "Duyệt qua danh sách sự kiện môi trường gần bạn." },
-					{ "title": "Đăng ký tham gia", "desc": "Nhấn \"Tham gia\" trên trang chi tiết sự kiện." },
-					{ "title": "Hoàn thành sự kiện", "desc": "Tham gia đầy đủ và hoàn thành hoạt động." },
-					{ "title": "Nhận huy hiệu", "desc": "Hệ thống tự động trao huy hiệu sau khi xác nhận." }
+					{
+						"title": "Tìm kiếm sự kiện",
+						"desc": "Duyệt qua danh sách sự kiện môi trường gần bạn."
+					},
+					{
+						"title": "Đăng ký tham gia",
+						"desc": "Nhấn \"Tham gia\" trên trang chi tiết sự kiện."
+					},
+					{
+						"title": "Hoàn thành sự kiện",
+						"desc": "Tham gia đầy đủ và hoàn thành hoạt động."
+					},
+					{
+						"title": "Nhận huy hiệu",
+						"desc": "Hệ thống tự động trao huy hiệu sau khi xác nhận."
+					}
 				],
 				"report": [
-					{ "title": "Chụp ảnh rác thải", "desc": "Dùng tính năng báo cáo và chụp ảnh điểm ô nhiễm." },
-					{ "title": "Xác nhận vị trí", "desc": "Đảm bảo GPS được bật để định vị chính xác." },
-					{ "title": "Gửi báo cáo", "desc": "Điền đầy đủ thông tin và gửi báo cáo." },
-					{ "title": "Nhận huy hiệu", "desc": "Báo cáo được duyệt → huy hiệu được trao." }
+					{
+						"title": "Chụp ảnh rác thải",
+						"desc": "Dùng tính năng báo cáo và chụp ảnh điểm ô nhiễm."
+					},
+					{
+						"title": "Xác nhận vị trí",
+						"desc": "Đảm bảo GPS được bật để định vị chính xác."
+					},
+					{
+						"title": "Gửi báo cáo",
+						"desc": "Điền đầy đủ thông tin và gửi báo cáo."
+					},
+					{
+						"title": "Nhận huy hiệu",
+						"desc": "Báo cáo được duyệt → huy hiệu được trao."
+					}
 				],
 				"eco": [
-					{ "title": "Hành động xanh", "desc": "Thực hiện các hoạt động thân thiện với môi trường." },
-					{ "title": "Duy trì thói quen", "desc": "Tiếp tục đóng góp liên tục để tích lũy điểm." },
-					{ "title": "Đạt ngưỡng điểm", "desc": "Tích đủ eco points theo yêu cầu của huy hiệu." },
-					{ "title": "Nhận huy hiệu", "desc": "Huy hiệu được mở khóa khi bạn đạt điều kiện." }
+					{
+						"title": "Hành động xanh",
+						"desc": "Thực hiện các hoạt động thân thiện với môi trường."
+					},
+					{
+						"title": "Duy trì thói quen",
+						"desc": "Tiếp tục đóng góp liên tục để tích lũy điểm."
+					},
+					{
+						"title": "Đạt ngưỡng điểm",
+						"desc": "Tích đủ eco points theo yêu cầu của huy hiệu."
+					},
+					{
+						"title": "Nhận huy hiệu",
+						"desc": "Huy hiệu được mở khóa khi bạn đạt điều kiện."
+					}
 				],
 				"social": [
-					{ "title": "Xây dựng mạng lưới", "desc": "Kết nối và theo dõi các thành viên cộng đồng." },
-					{ "title": "Chia sẻ hoạt động", "desc": "Chia sẻ tiến độ và khuyến khích người khác." },
-					{ "title": "Đóng góp cộng đồng", "desc": "Tham gia tích cực vào các thảo luận và sự kiện." },
-					{ "title": "Nhận huy hiệu", "desc": "Đạt đủ điều kiện xã hội để mở khóa huy hiệu này." }
+					{
+						"title": "Xây dựng mạng lưới",
+						"desc": "Kết nối và theo dõi các thành viên cộng đồng."
+					},
+					{
+						"title": "Chia sẻ hoạt động",
+						"desc": "Chia sẻ tiến độ và khuyến khích người khác."
+					},
+					{
+						"title": "Đóng góp cộng đồng",
+						"desc": "Tham gia tích cực vào các thảo luận và sự kiện."
+					},
+					{
+						"title": "Nhận huy hiệu",
+						"desc": "Đạt đủ điều kiện xã hội để mở khóa huy hiệu này."
+					}
 				],
 				"default": [
-					{ "title": "Tìm hiểu điều kiện", "desc": "Đọc kỹ yêu cầu và mục tiêu của huy hiệu." },
-					{ "title": "Thực hiện hoạt động", "desc": "Hoàn thành các nhiệm vụ liên quan." },
-					{ "title": "Đạt tiêu chí", "desc": "Đảm bảo đáp ứng đủ các điều kiện cần thiết." },
-					{ "title": "Nhận huy hiệu", "desc": "Hệ thống tự động cấp huy hiệu cho bạn." }
+					{
+						"title": "Tìm hiểu điều kiện",
+						"desc": "Đọc kỹ yêu cầu và mục tiêu của huy hiệu."
+					},
+					{
+						"title": "Thực hiện hoạt động",
+						"desc": "Hoàn thành các nhiệm vụ liên quan."
+					},
+					{
+						"title": "Đạt tiêu chí",
+						"desc": "Đảm bảo đáp ứng đủ các điều kiện cần thiết."
+					},
+					{
+						"title": "Nhận huy hiệu",
+						"desc": "Hệ thống tự động cấp huy hiệu cho bạn."
+					}
 				]
 			}
 		}

@@ -9,6 +9,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Animated,
+  DeviceEventEmitter,
   Dimensions,
   Image,
   Platform,
@@ -209,6 +210,14 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const updateUserMutation = useUpdateUser();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tabPress_profile', () => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    });
+    return () => sub.remove();
+  }, []);
 
   // Auth & user data
   const storeUser = useAuthStore((s) => s.user);
@@ -354,6 +363,7 @@ export default function ProfileScreen() {
       </View>
 
       <Animated.ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
@@ -374,10 +384,6 @@ export default function ProfileScreen() {
         <TouchableOpacity activeOpacity={0.9} onPress={handleSelectBanner} style={styles.bannerContainer}>
           <Image source={{ uri: bannerUri }} style={styles.bannerImage} />
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={styles.bannerGradient} />
-          {/* Banner edit hint */}
-          <View style={styles.bannerEditHint}>
-            <Ionicons name="camera-outline" size={14} color="rgba(255,255,255,0.8)" />
-          </View>
         </TouchableOpacity>
 
         {/* ═══════════════════════════════════════════════════ */}

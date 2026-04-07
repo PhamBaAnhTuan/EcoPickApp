@@ -4,12 +4,12 @@ import * as Location from 'expo-location';
 import { Tabs, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
+import { Alert, DeviceEventEmitter, Platform, StyleSheet, Text, View } from 'react-native';
 import { ImageSourceSheet } from '../../components/ImageSourceSheet';
 import { Colors, Fonts, FontSizes } from '../../constants';
 
-import { useLayout } from '../../hooks/use-layout';
 import Toast from 'react-native-toast-message';
+import { useLayout } from '../../hooks/use-layout';
 
 export default function TabLayout() {
   const { insets, bottomTabHeight, topTabHeight } = useLayout();
@@ -138,6 +138,11 @@ export default function TabLayout() {
               <Text style={[styles.tabBarLabel, { color }]}>{t('tabs.explore')}</Text>
             ),
           }}
+          listeners={{
+            tabPress: (e) => {
+              DeviceEventEmitter.emit('tabPress_map');
+            },
+          }}
         />
         <Tabs.Screen
           name="events"
@@ -149,6 +154,11 @@ export default function TabLayout() {
             tabBarLabel: ({ color }) => (
               <Text style={[styles.tabBarLabel, { color }]}>{t('tabs.events')}</Text>
             ),
+          }}
+          listeners={{
+            tabPress: (e) => {
+              DeviceEventEmitter.emit('tabPress_events');
+            },
           }}
         />
         <Tabs.Screen
@@ -180,6 +190,11 @@ export default function TabLayout() {
               <Text style={[styles.tabBarLabel, { color }]}>{t('tabs.badges')}</Text>
             ),
           }}
+          listeners={{
+            tabPress: (e) => {
+              DeviceEventEmitter.emit('tabPress_badges');
+            },
+          }}
         />
         <Tabs.Screen
           name="profile"
@@ -191,6 +206,11 @@ export default function TabLayout() {
             tabBarLabel: ({ color }) => (
               <Text style={[styles.tabBarLabel, { color }]}>{t('tabs.profile')}</Text>
             ),
+          }}
+          listeners={{
+            tabPress: (e) => {
+              DeviceEventEmitter.emit('tabPress_profile');
+            },
           }}
         />
       </Tabs>

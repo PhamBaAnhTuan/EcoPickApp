@@ -3,9 +3,10 @@ import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  DeviceEventEmitter,
   Image,
   Platform,
   RefreshControl,
@@ -13,7 +14,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BorderRadius, Colors, FontSizes, Fonts, LineHeights, Spacing } from '../../constants';
@@ -165,6 +166,15 @@ export default function BadgesScreen() {
     return t(`badges.category.${key}` as any);
   };
 
+  const flatListRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tabPress_badges', () => {
+      flatListRef.current?.scrollTo({ y: 0, animated: true });
+    });
+    return () => sub.remove();
+  }, []);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
@@ -181,6 +191,7 @@ export default function BadgesScreen() {
       </View>
 
       <ScrollView
+        ref={flatListRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={

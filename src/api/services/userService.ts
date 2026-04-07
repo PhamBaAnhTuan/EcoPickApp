@@ -75,6 +75,9 @@ export interface UpdateUserPayload {
 	 */
 	avatar?: { uri: string; name: string; type: string } | string;
 	bio?: string;
+	eco_points?: number;
+	level?: number;
+	total_reports?: number;
 }
 
 // ============================================================
@@ -123,6 +126,9 @@ export const userService = {
 		if (payload.address !== undefined) formData.append('address', payload.address);
 		if (payload.date_of_birth !== undefined) formData.append('date_of_birth', payload.date_of_birth);
 		if (payload.bio !== undefined) formData.append('bio', payload.bio);
+		if (payload.eco_points !== undefined) formData.append('eco_points', String(payload.eco_points));
+		if (payload.level !== undefined) formData.append('level', String(payload.level));
+		if (payload.total_reports !== undefined) formData.append('total_reports', String(payload.total_reports));
 
 		// Avatar: nếu là file object thì append trực tiếp, nếu là string URL thì append string
 		if (payload.avatar !== undefined) {

@@ -119,7 +119,6 @@ export function FilterSheet({
                     <Text style={[sheetStyles.chipLabel, { color: selected ? theme.textColor : Colors.textSecondary }]}>
                       {item.label}
                     </Text>
-                    {selected && <Ionicons name="checkmark" size={14} color={theme.textColor} />}
                   </TouchableOpacity>
                 );
               })}
@@ -153,7 +152,6 @@ export function FilterSheet({
                     <Text style={[sheetStyles.chipLabel, { color: selected ? item.color : Colors.textSecondary }]}>
                       {item.label}
                     </Text>
-                    {selected && <Ionicons name="checkmark" size={14} color={item.color} />}
                   </TouchableOpacity>
                 );
               })}
@@ -210,7 +208,6 @@ export function FilterSheet({
                     <Text style={[sheetStyles.chipLabel, { color: selected ? item.color : Colors.textSecondary }]}>
                       {item.label}
                     </Text>
-                    {selected && <Ionicons name="checkmark" size={14} color={item.color} />}
                   </TouchableOpacity>
                 );
               })}
