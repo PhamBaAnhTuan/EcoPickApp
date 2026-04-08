@@ -1,5 +1,5 @@
 
-import { useEvent, useEventParticipants, useJoinEvent } from '@/hooks/useEventQueries';
+import { useEvent, useEventParticipants, useJoinEvent, useLeaveEvent } from '@/hooks/useEventQueries';
 import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { Colors, Fonts } from '../../../constants';
+import { shareContent } from '../../../utils/share';
 import EventChat from './components/EventChat';
 import EventDetailSkeleton from './components/EventDetailSkeleton';
 import EventEquipment from './components/EventEquipment';
@@ -26,54 +27,78 @@ import EventHero from './components/EventHero';
 import EventInfo from './components/EventInfo';
 import EventParticipants from './components/EventParticipants';
 import { parseEquipment } from './constants';
-import { shareContent } from '../../../utils/share';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  // console.log('event id: ', id);
+  // console.log('user id: ', user?.id)
 
   // API
   const { data: event, isLoading, isError } = useEvent(id!);
   const { data: participants = [] } = useEventParticipants(
-    id ? { event_id: id } : undefined,
+    id ? { event: id } : undefined,
   );
-  const joinMutation = useJoinEvent();
 
-  const userParticipant = participants.find((p) => p.user_id === user?.id);
+  const joinMutation = useJoinEvent();
+  const leaveMutation = useLeaveEvent();
+
+  const userParticipant = participants.find(
+    (p) => p.event === id && p.user === user?.id
+  );
+
   const [joined, setJoined] = useState(false);
 
   React.useEffect(() => {
-    if (userParticipant) {
-      setJoined(true);
-    }
+    setJoined(!!userParticipant);
   }, [userParticipant]);
 
   const handleJoinEvent = useCallback(async () => {
     if (!event || !user?.id) return;
     if (joined) {
-      setJoined(false);
+      if (!userParticipant) return;
+      try {
+        await leaveMutation.mutateAsync(userParticipant.id);
+        setJoined(false);
+        Toast.show({
+          type: 'success',
+          text1: t('eventDetail.leaveEvent'),
+        });
+      } catch (error: any) {
+        console.log('Error leaving event:', error?.response?.data || error);
+        Toast.show({
+          type: 'error',
+          text1: t('common.error'),
+          text2: error?.response?.data?.detail ||
+            t('eventDetail.leaveError'),
+        });
+      }
       return;
     }
 
     try {
       await joinMutation.mutateAsync({
-        event_id: event.id,
-        user_id: user.id,
+        event: id,
+        user: user.id,
         status: 'joined',
       });
       setJoined(true);
+      Toast.show({
+        type: 'success',
+        text1: t('eventDetail.joinEvent'),
+      });
     } catch (error: any) {
       console.log('Error creating event:', error?.response?.data || error);
       Toast.show({
         type: 'error',
-        text1: t('common.error', { defaultValue: 'Error' }),
+        text1: t('common.error'),
         text2: error?.response?.data?.detail ||
-          t('eventDetail.joinError', { defaultValue: 'Could not join event. Please try again.' }),
+          t('eventDetail.joinError'),
       })
     }
-  }, [event, user?.id, joined, joinMutation, t]);
+  }, [event, user?.id, joined, userParticipant, joinMutation, leaveMutation, t]);
 
   const handleOpenMaps = useCallback(() => {
     if (!event) return;
@@ -200,9 +225,9 @@ export default function EventDetailScreen() {
           ]}
           onPress={handleJoinEvent}
           activeOpacity={0.8}
-          disabled={isEventEnded || joinMutation.isPending}
+          disabled={isEventEnded || joinMutation.isPending || leaveMutation.isPending}
         >
-          {joinMutation.isPending ? (
+          {joinMutation.isPending || leaveMutation.isPending ? (
             <ActivityIndicator size="small" color={Colors.white} />
           ) : (
             <Ionicons
@@ -219,10 +244,10 @@ export default function EventDetailScreen() {
           )}
           <Text style={s.mainJoinButtonText}>
             {isEventEnded
-              ? t('eventDetail.eventEnded', { defaultValue: 'Event Ended' })
+              ? t('eventDetail.eventEnded')
               : joined
                 ? t('eventDetail.joined')
-                : t('eventDetail.joinEvent')}
+                : t('eventDetail.letJoin')}
           </Text>
         </TouchableOpacity>
       </View>

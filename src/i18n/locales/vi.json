@@ -133,11 +133,16 @@
 		"coordination": "Ph\u1ed1i h\u1ee3p",
 		"newMessages": "{{count}} tin nh\u1eafn m\u1edbi",
 		"postUpdate": "\u0110\u0103ng c\u1eadp nh\u1eadt...",
-		"joinEvent": "Tham gia s\u1ef1 ki\u1ec7n",
-		"joined": "\u0110\u00e3 tham gia",
 		"openMaps": "M\u1edf b\u1ea3n \u0111\u1ed3",
 		"bringOwn": "T\u1ef0 MANG",
-		"provided": "\u0110\u01af\u1ee2C C\u1ea4P"
+		"provided": "\u0110\u01af\u1ee2C C\u1ea4P",
+		"joined": "Đã tham gia",
+		"letJoin": "Tham gia",
+		"eventEnded": "Sự kiện đã kết thúc",
+		"joinEvent": "Bạn đã tham gia sự kiện!",
+		"joinError": "Không thể tham gia. Vui lòng thử lại.",
+		"leaveEvent": "Bạn đã rời sự kiện!",
+		"leaveError": "Không thể rời sự kiện. Vui lòng thử lại."
 	},
 	"location": {
 		"detailsTitle": "Chi ti\u1ebft v\u1ecb tr\u00ed",
@@ -556,7 +561,8 @@
 			"participants": "S\u1ed1 ng\u01b0\u1eddi tham gia t\u1ed1i \u0111a",
 			"equipment": "D\u1ee5ng c\u1ee5",
 			"ecoPoints": "\u0110i\u1ec3m Eco th\u01b0\u1edfng",
-			"people": "ng\u01b0\u1eddi"
+			"people": "ng\u01b0\u1eddi",
+			"point": "điểm"
 		},
 		"equipment": {
 			"Gloves": "G\u0103ng tay",

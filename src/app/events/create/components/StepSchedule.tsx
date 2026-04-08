@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-  Modal,
-  TouchableWithoutFeedback,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, {
   DateTimePickerAndroid,
 } from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
+import React, { useState } from 'react';
+import {
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
 
-import { Fonts, Colors } from '../../../../constants';
+import { Colors, Fonts } from '../../../../constants';
 
 interface StepScheduleProps {
   t: any;
@@ -28,7 +28,7 @@ interface StepScheduleProps {
   durationMins: number;
 }
 
-const  StepSchedule=({
+const StepSchedule = ({
   t,
   startDate,
   endDate,
@@ -38,7 +38,7 @@ const  StepSchedule=({
   durationDays,
   durationHrs,
   durationMins,
-}: StepScheduleProps)=> {
+}: StepScheduleProps) => {
   const [tempDate, setTempDate] = useState<Date>(new Date());
 
   const openPicker = (type: string) => {

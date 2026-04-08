@@ -1,12 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/api/queryKeys';
 import {
-  eventService,
   eventParticipantService,
+  eventService,
   tourStopService,
   type CreateEventPayload,
   type JoinEventPayload,
 } from '@/api/services/eventService';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // ============================================================
 // Event Queries
@@ -79,6 +79,19 @@ export const useJoinEvent = () => {
 
   return useMutation({
     mutationFn: (payload: JoinEventPayload) => eventParticipantService.join(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.participants.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });
+    },
+  });
+};
+
+/** DELETE /api/event/event-participants/{id}/ – Rời event */
+export const useLeaveEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => eventParticipantService.leave(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.events.participants.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });

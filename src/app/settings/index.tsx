@@ -54,7 +54,6 @@ export default function SettingsScreen() {
 
   // Modal states
   const [showSignOutModal, setShowSignOutModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleLanguageChange = async (langCode: string) => {
     if (langCode !== currentLanguage) {
@@ -78,8 +77,6 @@ export default function SettingsScreen() {
       },
     });
   };
-
-  const handleDeleteAccount = () => setShowDeleteModal(true);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -278,22 +275,10 @@ export default function SettingsScreen() {
               label={t('settings.signOut')}
               onPress={handleSignOut}
               isLast
+              destructive
             />
           </View>
 
-          {/* Delete Account - Separate danger card */}
-          <TouchableOpacity style={styles.dangerCard} onPress={handleDeleteAccount} activeOpacity={0.6}>
-            <View style={styles.settingRowLeft}>
-              <View style={[styles.settingIconBox, { backgroundColor: 'rgba(239,68,68,0.1)' }]}>
-                <Ionicons name="trash-outline" size={16} color="#EF4444" />
-              </View>
-              <View>
-                <Text style={styles.destructiveText}>{t('settings.deleteAccount')}</Text>
-                <Text style={styles.dangerSubtitle}>{t('settings.deleteAccountWarning')}</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textPlaceholder} />
-          </TouchableOpacity>
         </View>
 
         {/* ═══ About Section ═══ */}
@@ -329,19 +314,6 @@ export default function SettingsScreen() {
         variant="danger"
         icon="log-out-outline"
         loading={signOut.isPending}
-      />
-
-      {/* ─── Delete Account Confirmation ─── */}
-      <ConfirmModal
-        visible={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={() => setShowDeleteModal(false)}
-        title={t('settings.deleteAccount')}
-        message={t('settings.deleteAccountWarning')}
-        confirmText={t('settings.deleteAccount')}
-        cancelText={t('common.cancel')}
-        variant="danger"
-        icon="trash-outline"
       />
     </SafeAreaView>
   );

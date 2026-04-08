@@ -17,6 +17,7 @@ import {
 import { Colors, Fonts, FontSizes, Spacing } from '../../../constants';
 import { SeverityLevel } from '../../../data/mockData';
 import { useReport } from '../../../hooks/useReportQueries';
+import { useAuthStore } from '../../../stores';
 import { formatDistanceInfo } from '../../../utils/distance';
 import { getSeverityTheme } from '../../../utils/severity';
 import { shareContent } from '../../../utils/share';
@@ -43,12 +44,13 @@ export default function LocationDetailScreen() {
   const { t } = useTranslation();
 
   const { data: report, isLoading, isError } = useReport(id as string);
+  const { user } = useAuthStore();
   // console.log('Report data:', report);
 
   const severity: SeverityLevel = API_SEVERITY_TO_UI[report?.severity || 'low'] || 'light';
   const severityTheme = getSeverityTheme(severity);
   const severityLabel = t(`severity.${severity}`);
-  const reportTitle = report?.location || report?.address || `Report #${(id as string)?.slice(0, 6)}`;
+  const reportTitle = (report?.location as string) || (report?.address as string) || `Report #${(id as string)?.slice(0, 6)}`;
 
   // Compute real distance from user location
   const [distanceText, setDistanceText] = useState('Đang tính...');
@@ -60,6 +62,10 @@ export default function LocationDetailScreen() {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') return;
         const location = await Location.getCurrentPositionAsync({});
+        if (report.latitude === undefined || report.longitude === undefined) {
+          setDistanceText(t('location.distanceUnknown', { defaultValue: 'Khoảng cách không rõ' }));
+          return;
+        }
         const info = formatDistanceInfo(
           location.coords.latitude,
           location.coords.longitude,
@@ -78,11 +84,11 @@ export default function LocationDetailScreen() {
     if (!report) return;
     const res = await shareContent({
       type: 'report',
-      title: reportTitle,
-      description: report.description,
-      address: report.address,
+      title: reportTitle as string,
+      description: (report.description as string) || '',
+      address: (report.address as string) || '',
       severity: severityLabel,
-      coords: { latitude: report.latitude, longitude: report.longitude },
+      coords: { latitude: report.latitude || 0, longitude: report.longitude || 0 },
       reportId: report.id as string,
     });
     if (!res.success && res.reason === 'error') {
@@ -96,9 +102,9 @@ export default function LocationDetailScreen() {
 
   const handleNavigate = () => {
     if (!report) return;
-    const destLat = report.latitude;
-    const destLng = report.longitude;
-    const destTitle = reportTitle;
+    const destLat = report.latitude || 0;
+    const destLng = report.longitude || 0;
+    const destTitle = reportTitle as string;
 
     router.dismissTo({
       pathname: '/(tabs)/map',
@@ -117,10 +123,10 @@ export default function LocationDetailScreen() {
       router.push({
         pathname: '/events/create',
         params: {
-          latitude: report.latitude.toString(),
-          longitude: report.longitude.toString(),
-          location: report.location || report.address || reportTitle,
-          address: report.address || '',
+          latitude: (report.latitude || 0).toString(),
+          longitude: (report.longitude || 0).toString(),
+          location: (report.location as string) || (report.address as string) || (reportTitle as string),
+          address: (report.address as string) || '',
           reportId: id as string,
         },
       });
@@ -176,16 +182,16 @@ export default function LocationDetailScreen() {
           />
 
           <LocationTitle
-            reportTitle={reportTitle}
+            reportTitle={reportTitle as string}
             severityLabel={severityLabel}
             severityTheme={severityTheme}
             distanceText={distanceText}
           />
 
-          <LocationActions
+          {user?.role?.name?.toLowerCase() === 'user' && <LocationActions
             onNavigate={handleNavigate}
             onCreateEvent={handleCreateEvent}
-          />
+          />}
 
           <LocationHistory
             reporter={report.reporter?.email}

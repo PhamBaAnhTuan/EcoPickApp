@@ -133,11 +133,16 @@
 		"coordination": "Coordination",
 		"newMessages": "{{count}} new messages",
 		"postUpdate": "Post an update...",
-		"joinEvent": "Join Event",
-		"joined": "Joined",
 		"openMaps": "Open Maps",
 		"bringOwn": "BRING OWN",
-		"provided": "PROVIDED"
+		"provided": "PROVIDED",
+		"joined": "Joined",
+		"letJoin": "Join",
+		"eventEnded": "Event Ended",
+		"joinEvent": "You joined the event!",
+		"joinError": "Could not join event. Please try again.",
+		"leaveEvent": "You left the event!",
+		"leaveError": "Could not leave event. Please try again."
 	},
 	"location": {
 		"detailsTitle": "Location Details",
@@ -496,7 +501,8 @@
 			"participants": "Max Participants",
 			"equipment": "Equipment",
 			"ecoPoints": "Eco Point Reward",
-			"people": "people"
+			"people": "people",
+			"point": "point"
 		},
 		"equipment": {
 			"Gloves": "Gloves",

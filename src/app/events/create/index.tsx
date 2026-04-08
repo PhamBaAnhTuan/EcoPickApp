@@ -24,13 +24,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCreateEvent } from '@/hooks/useEventQueries';
 import { useAuthStore } from '@/stores/authStore';
 import { formatDateTime } from '@/utils/formatDatetime';
+import * as ImageManipulator from 'expo-image-manipulator';
 import Toast from 'react-native-toast-message';
 import { Colors, Fonts } from '../../../constants';
-import  StepDetails  from './components/StepDetails';
-import  StepSchedule  from './components/StepSchedule';
-import  StepSettings  from './components/StepSettings';
+import StepDetails from './components/StepDetails';
+import StepSchedule from './components/StepSchedule';
+import StepSettings from './components/StepSettings';
 import { CreateEventFormData, createEventSchema, STEPS } from './constants';
-import * as ImageManipulator from 'expo-image-manipulator';
 
 export default function CreateEventScreen() {
   const router = useRouter();
@@ -191,19 +191,19 @@ export default function CreateEventScreen() {
 
     try {
       const manipulatedImage = await ImageManipulator.manipulateAsync(
-              coverImage,
-              [],
-              { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
-            );
-      
-            if (!manipulatedImage.uri) {
-              throw new Error('Image processing failed: URI is empty');
-            }
-            const uriParts = manipulatedImage.uri.split('.');
-            const fileExt = uriParts[uriParts.length - 1]?.toLowerCase() || 'jpg';
-            const mimeType = fileExt === 'jpg' || fileExt === 'jpeg' ? 'image/jpeg'
-              : fileExt === 'png' ? 'image/png'
-                : 'image/jpeg'; // fallback
+        coverImage,
+        [],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      if (!manipulatedImage.uri) {
+        throw new Error('Image processing failed: URI is empty');
+      }
+      const uriParts = manipulatedImage.uri.split('.');
+      const fileExt = uriParts[uriParts.length - 1]?.toLowerCase() || 'jpg';
+      const mimeType = fileExt === 'jpg' || fileExt === 'jpeg' ? 'image/jpeg'
+        : fileExt === 'png' ? 'image/png'
+          : 'image/jpeg'; // fallback
 
       const event = await createEvent.mutateAsync({
         organizer_id: user.id,
@@ -417,16 +417,6 @@ export default function CreateEventScreen() {
             <View style={s.backPlaceholder} />
           )}
 
-          {/* Step indicator dots */}
-          <View style={s.dots}>
-            {STEPS.map((_, idx) => (
-              <View
-                key={idx}
-                style={[s.dot, idx === activeStep && s.dotActive, idx < activeStep && s.dotDone]}
-              />
-            ))}
-          </View>
-
           {!isLastStep ? (
             <TouchableOpacity style={s.nextBtn} onPress={goNext} activeOpacity={0.8}>
               <Text style={s.nextBtnText}>{t('common.next')}</Text>
@@ -434,7 +424,7 @@ export default function CreateEventScreen() {
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              style={[s.publishBtn, createEvent.isPending && { opacity: 0.7 }]}
+              style={[s.publishBtn, { backgroundColor: Colors.primary }, createEvent.isPending && { opacity: 0.7 }]}
               onPress={handleSubmit(onSubmit as any)}
               activeOpacity={0.8}
               disabled={createEvent.isPending}
@@ -646,7 +636,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#0F172A',
+    // backgroundColor: '#0F172A',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 16,
