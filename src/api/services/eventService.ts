@@ -55,6 +55,12 @@ export interface EventParticipant {
 	checked_in_at: string;
 	event: string;
 	user: string;
+	participant: {
+		id: string;
+		fullname: string;
+		avatar: string;
+		email: string;
+	}
 }
 
 export interface JoinEventPayload {

@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Colors, Fonts, FontSizes, Spacing } from '../../../constants';
 import { SeverityLevel } from '../../../data/mockData';
 import { useReport } from '../../../hooks/useReportQueries';
@@ -21,7 +22,6 @@ import { useAuthStore } from '../../../stores';
 import { formatDistanceInfo } from '../../../utils/distance';
 import { getSeverityTheme } from '../../../utils/severity';
 import { shareContent } from '../../../utils/share';
-import Toast from 'react-native-toast-message';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LocationActions from './components/LocationActions';
@@ -178,7 +178,6 @@ export default function LocationDetailScreen() {
         <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
           <LocationHero
             imageUrl={report?.report_img}
-          // title={reportTitle}
           />
 
           <LocationTitle
@@ -188,10 +187,11 @@ export default function LocationDetailScreen() {
             distanceText={distanceText}
           />
 
-          {user?.role?.name?.toLowerCase() === 'user' && <LocationActions
+          <LocationActions
+            role={user?.role?.name?.toLowerCase()}
             onNavigate={handleNavigate}
             onCreateEvent={handleCreateEvent}
-          />}
+          />
 
           <LocationHistory
             reporter={report.reporter?.email}

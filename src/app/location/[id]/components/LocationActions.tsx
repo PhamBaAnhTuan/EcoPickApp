@@ -1,16 +1,17 @@
 
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts, FontSizes, Spacing, BorderRadius } from '../../../../constants';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { BorderRadius, Colors, Fonts, FontSizes, Spacing } from '../../../../constants';
 
 interface LocationActionsProps {
+  role?: string;
   onNavigate: () => void;
   onCreateEvent: () => void;
 }
 
-const LocationActions = ({ onNavigate, onCreateEvent }: LocationActionsProps) => {
+const LocationActions = ({ role, onNavigate, onCreateEvent }: LocationActionsProps) => {
   const { t } = useTranslation();
 
   return (
@@ -19,10 +20,12 @@ const LocationActions = ({ onNavigate, onCreateEvent }: LocationActionsProps) =>
         <Ionicons name="navigate" size={20} color={Colors.white} />
         <Text style={s.navigateText}>{t('location.navigate')}</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={s.eventBtn} activeOpacity={0.8} onPress={onCreateEvent}>
-        <Ionicons name="calendar-outline" size={20} color={Colors.white} />
-        <Text style={s.eventText}>{t('location.createEvent')}</Text>
-      </TouchableOpacity>
+      {role !== 'user' && (
+        <TouchableOpacity style={s.eventBtn} activeOpacity={0.8} onPress={onCreateEvent}>
+          <Ionicons name="calendar-outline" size={20} color={Colors.white} />
+          <Text style={s.eventText}>{t('location.createEvent')}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

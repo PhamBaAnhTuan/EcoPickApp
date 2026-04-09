@@ -4,7 +4,7 @@ import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import React, { useCallback, useEffect } from 'react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StatusBar, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '../components/ToastConfig';
@@ -87,6 +87,7 @@ export default function RootLayout() {
 
   return (
     <>
+      <StatusBar barStyle={'dark-content'} backgroundColor={Colors.border} />
       <GestureHandlerRootView style={{ flex: 1 }}>
         <QueryClientProvider client={queryClient}>
           <I18nextProvider i18n={i18n}>
@@ -99,6 +100,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
                 <Stack.Screen name="location/[id]/index" options={{ presentation: 'card' }} />
                 <Stack.Screen name="events/[id]/index" options={{ presentation: 'card' }} />
+                <Stack.Screen name="events/participants" />
                 <Stack.Screen name="badges/[id]/index" options={{ headerShown: false, presentation: 'card' }} />
                 <Stack.Screen name="settings/index" options={{ headerShown: false, presentation: 'card' }} />
                 <Stack.Screen name="profile/edit-profile" options={{ headerShown: false, presentation: 'card', animation: 'slide_from_right' }} />

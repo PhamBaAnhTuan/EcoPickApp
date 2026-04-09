@@ -1,4 +1,3 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/api/queryKeys';
 import {
   authService,
@@ -8,6 +7,7 @@ import {
   type UpdateUserPayload,
 } from '@/api/services/userService';
 import { useAuthStore } from '@/stores/authStore';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // ============================================================
 // Auth Mutations
@@ -73,6 +73,8 @@ export const useUserInfo = () => {
     queryKey: queryKeys.users.userInfo(),
     queryFn: () => userService.getUserInfo(),
     enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000, // 5 phút – ngăn refetch ngầm gây mất focus input
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -97,7 +99,7 @@ export const useUpdateUser = () => {
       userService.update(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-    },
+    }
   });
 };
 

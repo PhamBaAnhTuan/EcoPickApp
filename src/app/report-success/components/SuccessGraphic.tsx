@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 
 export default function SuccessGraphic() {
   return (
@@ -8,9 +8,9 @@ export default function SuccessGraphic() {
       <View style={styles.circleGraphic}>
         <Ionicons name="leaf" size={48} color="#FFFFFF" />
       </View>
-      <View style={styles.smallBadge}>
-        <Ionicons name="flower" size={12} color="#FFFFFF" />
-      </View>
+      {/* <View style={styles.smallBadge}>
+        <Ionicons name="flower-outline" size={12} color="#FFFFFF" />
+      </View> */}
     </View>
   );
 }

@@ -8,6 +8,7 @@ import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -45,11 +46,11 @@ export default function EventDetailScreen() {
   const joinMutation = useJoinEvent();
   const leaveMutation = useLeaveEvent();
 
+
+  const [joined, setJoined] = useState(false);
   const userParticipant = participants.find(
     (p) => p.event === id && p.user === user?.id
   );
-
-  const [joined, setJoined] = useState(false);
 
   React.useEffect(() => {
     setJoined(!!userParticipant);
@@ -60,12 +61,24 @@ export default function EventDetailScreen() {
     if (joined) {
       if (!userParticipant) return;
       try {
-        await leaveMutation.mutateAsync(userParticipant.id);
-        setJoined(false);
-        Toast.show({
-          type: 'success',
-          text1: t('eventDetail.leaveEvent'),
-        });
+        Alert.alert(
+          t('eventDetail.leaveEventWarning'),
+          t('eventDetail.leaveEventConfirm'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: t('eventDetail.confirm'), onPress: async () => {
+                await leaveMutation.mutateAsync(userParticipant.id);
+                setJoined(false);
+                Toast.show({
+                  type: 'success',
+                  text1: t('eventDetail.leaveEvent'),
+                });
+              },
+              style: 'destructive',
+            }
+          ]
+        );
       } catch (error: any) {
         console.log('Error leaving event:', error?.response?.data || error);
         Toast.show({
@@ -177,9 +190,11 @@ export default function EventDetailScreen() {
   }
 
   const equipmentList = parseEquipment(event.equipment);
-  const participantsCount = event.current_paticipants ?? participants.length;
-  const maxParticipants = event.max_paticipants;
   const isEventEnded = event.status === 'completed' || event.status === 'cancelled';
+  const participantCount = participants.filter(
+    (p) => p.event === id && p.status === 'joined'
+  ).length;
+  // console.log('participant count: ', participantCount)
 
   return (
     <SafeAreaView style={s.safeArea}>
@@ -208,7 +223,7 @@ export default function EventDetailScreen() {
 
           <View style={s.detailsSection}>
             <EventInfo event={event} />
-            <EventParticipants participantsCount={participantsCount} maxParticipants={maxParticipants} />
+            <EventParticipants participantsCount={participantCount} eventID={id} />
             <EventEquipment equipmentList={equipmentList} />
             <EventChat />
           </View>

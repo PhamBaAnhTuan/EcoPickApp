@@ -35,6 +35,7 @@ export const registerSchema = z
 			.string()
 			.optional()
 			.refine((val) => !val || val.length >= 2, "Tên phải có ít nhất 2 ký tự"),
+		role: z.enum(["user", "admin", "organizer", "moderator"]).default("user").optional(),
 	})
 	.refine((data) => data.password === data.confirmPassword, {
 		message: "Mật khẩu không khớp",

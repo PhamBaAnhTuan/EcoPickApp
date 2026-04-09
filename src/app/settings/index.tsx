@@ -263,7 +263,7 @@ export default function SettingsScreen() {
             <SettingNavRow
               icon="create-outline"
               label={t('settings.editProfile')}
-              onPress={() => { }}
+              onPress={() => { router.push('/profile/edit-profile') }}
             />
             <SettingNavRow
               icon="lock-closed-outline"
@@ -292,12 +292,6 @@ export default function SettingsScreen() {
               </View>
             </View>
           </View>
-        </View>
-
-        {/* ═══ Footer ═══ */}
-        <View style={styles.footer}>
-          <Ionicons name="leaf" size={16} color={Colors.primary} />
-          <Text style={styles.footerText}>{t('settings.madeWith')} {'💚'}</Text>
         </View>
 
       </ScrollView>

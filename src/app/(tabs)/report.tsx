@@ -37,7 +37,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import Toast from 'react-native-toast-message';
 const { height } = Dimensions.get('window');
 
-const WASTE_TYPE_KEYS = ['plastic', 'paper', 'glass', 'organic', 'metal'] as const;
+const WASTE_TYPE_KEYS = ['plastic', 'paper', 'glass', 'organic', 'metal', 'other'] as const;
 
 const PHOTO_HEIGHT = height * 0.42;
 const SHEET_TOP = height * 0.34;
@@ -193,9 +193,9 @@ export default function ReportScreen() {
         type: 'image/jpeg',
       } as any);
 
-      if (__DEV__) {
-        console.log('[handleSubmit] FormData parts:', (formData as any)._parts);
-      }
+      // if (__DEV__) {
+      //   console.log('[handleSubmit] FormData parts:', (formData as any)._parts);
+      // }
 
       const report = await createReportMutation.mutateAsync(formData);
 
@@ -300,8 +300,8 @@ export default function ReportScreen() {
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('report.reviewTitle')}</Text>
-          <View style={styles.headerPlaceholder} />
+          {/* <Text style={styles.headerTitle}>{t('report.reviewTitle')}</Text>
+          <View style={styles.headerPlaceholder} /> */}
         </View>
       </SafeAreaView>
 
@@ -544,7 +544,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
   },
   backBtn: {
     width: 40,

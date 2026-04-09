@@ -37,6 +37,24 @@ export const useEventParticipants = (filters?: Record<string, unknown>) => {
   });
 };
 
+/** GET /api/event/event-participants/?event_id={eventId} */
+export const useEventParticipantsByEvent = (eventId?: string) => {
+  return useQuery({
+    queryKey: queryKeys.events.participants.list({ event_id: eventId }),
+    queryFn: () => eventParticipantService.getAll({ event_id: eventId }),
+    enabled: !!eventId,
+  });
+};
+
+/** GET /api/event/event-participants/?user_id={userId} */
+export const useEventParticipantsByUser = (userId?: string) => {
+  return useQuery({
+    queryKey: queryKeys.events.participants.list({ user_id: userId }),
+    queryFn: () => eventParticipantService.getAll({ user_id: userId }),
+    enabled: !!userId,
+  });
+};
+
 /** GET /api/event/tour-stops/ */
 export const useTourStops = (filters?: Record<string, unknown>) => {
   return useQuery({

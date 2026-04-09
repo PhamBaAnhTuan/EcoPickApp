@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ActivityIndicator, Alert, DeviceEventEmitter, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -236,7 +236,12 @@ export default function MapScreen() {
   const [userLocation, setUserLocation] = React.useState<Location.LocationObject | null>(null);
 
   // ── Fetch reports from API ──
-  const { data: apiReports = [] } = useReports();
+  const { data: apiReports = [], refetch: refetchReports } = useReports();
+  useFocusEffect(
+    useCallback(() => {
+      refetchReports();
+    }, [refetchReports])
+  );
   const allReports: WasteReport[] = useMemo(() => apiReports.map(transformReportToWasteReport), [apiReports]);
 
   // Compute distance for each report
