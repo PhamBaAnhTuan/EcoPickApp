@@ -4,8 +4,8 @@ import axios from "axios";
 // ============================================================
 // Axios Instance - Cấu hình chung cho tất cả API calls
 // ============================================================
-const IP_ADDRESS = '192.168.20.38'		//192.168.20.66
-const PORT = '8000'						//5500
+const IP_ADDRESS = "192.168.20.66"; //		192.168.20.66		192.168.20.38
+const PORT = "5500"; //5500
 // export const API_BASE_URL = 'https://ecopickapi.onrender.com';
 export const API_BASE_URL = `http://${IP_ADDRESS}:${PORT}`;
 
