@@ -109,7 +109,7 @@ export default function CompleteProfileScreen() {
             <View style={styles.avatarSection}>
               <TouchableOpacity style={styles.avatarContainer} activeOpacity={0.7}>
                 <Image
-                  source={require('../../assets/auth/avatar_default.png')}
+                  source={require('../../assets/logo.png')}
                   style={styles.avatarImage}
                   resizeMode="cover"
                 />

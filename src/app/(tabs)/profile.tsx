@@ -293,9 +293,22 @@ export default function ProfileScreen() {
     );
   }
 
+  // ── Handle Tab Press ──
+  const scrollRef = React.useRef<ScrollView>(null);
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tabPress_profile', () => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    });
+    return () => sub.remove();
+  }, []);
+
   const avatarUri = pendingAvatar?.uri || user?.avatar || DEFAULT_AVATAR;
   const bannerUri = pendingBanner?.uri || DEFAULT_BANNER;
   const displayName = user?.fullname || user?.email?.split('@')[0] || 'User';
+<<<<<<< HEAD
+=======
+  // const username = user?.email?.split('@')[0] || 'user';
+>>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
 
   return (
     <View style={styles.safeArea}>
@@ -387,6 +400,7 @@ export default function ProfileScreen() {
               <Text style={styles.userName}>{displayName}</Text>
               {user?.is_verified && <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />}
             </View>
+<<<<<<< HEAD
             <View style={styles.userMetaRow}>
               <Text style={styles.userHandle}>{user?.email}</Text>
               <View style={styles.metaItem}>
@@ -402,6 +416,9 @@ export default function ProfileScreen() {
                 </View>
               )}
             </View>
+=======
+            <Text style={styles.userHandle}>{user?.email}</Text>
+>>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
 
             {user?.bio ? (
               <Text style={styles.userBio} numberOfLines={3}>

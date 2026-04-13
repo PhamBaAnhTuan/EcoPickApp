@@ -97,11 +97,11 @@ export default function WelcomeScreen() {
 
             {/* Community Goal Card */}
             <Animated.View entering={FadeInUp.delay(500).duration(500)} style={styles.communityCard}>
-              <Image
+              {/* <Image
                 source={require('../../assets/auth/community.png')}
                 style={styles.communityImage}
                 resizeMode="cover"
-              />
+              /> */}
               <View style={styles.communityText}>
                 <Text style={styles.communityLabel}>{t('auth.communityGoal')}</Text>
                 <Text style={styles.communityValue}>{t('auth.communityValue')}</Text>

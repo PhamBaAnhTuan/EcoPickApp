@@ -120,7 +120,12 @@ export default function ReportSuccessScreen() {
           </View>
 
           <PointsCard
+<<<<<<< HEAD
             points={user?.eco_points || 0}
+=======
+            ecoPoints={user?.eco_points || 0}
+            level={user?.level || 0}
+>>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
           />
 
           <SuccessActions

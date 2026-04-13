@@ -121,6 +121,7 @@ export default function EventsScreen() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const flatListRef = useRef<FlatList>(null);
+<<<<<<< HEAD
 
   useEffect(() => {
     const sub = DeviceEventEmitter.addListener('tabPress_events', () => {
@@ -128,9 +129,20 @@ export default function EventsScreen() {
     });
     return () => sub.remove();
   }, []);
+=======
+>>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
 
   // ── Fetch events from API ──
   const { data: apiEvents = [], isLoading, isRefetching, refetch } = useEvents();
+
+  // ── Handle Tab Press ──
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tabPress_events', () => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return () => sub.remove();
+  }, []);
+
 
   const filteredEvents = useMemo(() => {
     if (activeTab === 'upcoming') {

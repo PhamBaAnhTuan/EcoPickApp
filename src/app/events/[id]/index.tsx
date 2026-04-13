@@ -42,6 +42,11 @@ export default function EventDetailScreen() {
   const { data: participants = [] } = useEventParticipants(
     id ? { event: id } : undefined,
   );
+<<<<<<< HEAD
+=======
+  const joinMutation = useJoinEvent();
+  const leaveMutation = useLeaveEvent(id!);
+>>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
 
   const joinMutation = useJoinEvent();
   const leaveMutation = useLeaveEvent();
@@ -112,6 +117,27 @@ export default function EventDetailScreen() {
       })
     }
   }, [event, user?.id, joined, userParticipant, joinMutation, leaveMutation, t]);
+
+  // const handleLeaveEvent = useCallback(async () => {
+  //   if (!event || !user?.id) return;
+  //   if (!joined) {
+  //     setJoined(true);
+  //     return;
+  //   }
+
+  //   try {
+  //     await leaveMutation.mutateAsync();
+  //     setJoined(false);
+  //   } catch (error: any) {
+  //     console.log('Error leaving event:', error?.response?.data || error);
+  //     Toast.show({
+  //       type: 'error',
+  //       text1: t('common.error', { defaultValue: 'Error' }),
+  //       text2: error?.response?.data?.detail ||
+  //         t('eventDetail.leaveError', { defaultValue: 'Could not leave event. Please try again.' }),
+  //     })
+  //   }
+  // }, [event, user?.id, joined, leaveMutation, t]);
 
   const handleOpenMaps = useCallback(() => {
     if (!event) return;
@@ -205,9 +231,6 @@ export default function EventDetailScreen() {
         <TouchableOpacity style={s.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={16} color="#0F172A" />
         </TouchableOpacity>
-        {/* <Text style={s.headerTitle} numberOfLines={1}>
-          {event.title}
-        </Text> */}
         <TouchableOpacity style={s.headerBtn} activeOpacity={0.7} onPress={handleShare}>
           <Ionicons name="share-social-outline" size={18} color="#0F172A" />
         </TouchableOpacity>

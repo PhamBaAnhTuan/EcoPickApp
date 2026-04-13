@@ -111,6 +111,7 @@ export default function RootLayout() {
           </I18nextProvider>
         </QueryClientProvider>
       </GestureHandlerRootView>
+      <StatusBar barStyle={'default'} />
       <Toast config={toastConfig} topOffset={60} visibilityTime={3000} />
     </>
   );

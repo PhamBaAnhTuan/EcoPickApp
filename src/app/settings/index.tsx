@@ -309,6 +309,22 @@ export default function SettingsScreen() {
         icon="log-out-outline"
         loading={signOut.isPending}
       />
+<<<<<<< HEAD
+=======
+
+      {/* ─── Delete Account Confirmation ─── */}
+      {/* <ConfirmModal
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => setShowDeleteModal(false)}
+        title={t('settings.deleteAccount')}
+        message={t('settings.deleteAccountWarning')}
+        confirmText={t('settings.deleteAccount')}
+        cancelText={t('common.cancel')}
+        variant="danger"
+        icon="trash-outline"
+      /> */}
+>>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
     </SafeAreaView>
   );
 }

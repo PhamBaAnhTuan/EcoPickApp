@@ -37,6 +37,7 @@ export const useEventParticipants = (filters?: Record<string, unknown>) => {
   });
 };
 
+<<<<<<< HEAD
 /** GET /api/event/event-participants/?event_id={eventId} */
 export const useEventParticipantsByEvent = (eventId?: string) => {
   return useQuery({
@@ -52,6 +53,13 @@ export const useEventParticipantsByUser = (userId?: string) => {
     queryKey: queryKeys.events.participants.list({ user_id: userId }),
     queryFn: () => eventParticipantService.getAll({ user_id: userId }),
     enabled: !!userId,
+=======
+export const useEventParticipant = (event_id: string, user_id: string) => {
+  return useQuery({
+    queryKey: queryKeys.events.participants.detail(event_id, user_id),
+    queryFn: () => eventParticipantService.getById(event_id, user_id),
+    enabled: !!event_id && !!user_id,
+>>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
   });
 };
 
@@ -104,15 +112,27 @@ export const useJoinEvent = () => {
   });
 };
 
+<<<<<<< HEAD
 /** DELETE /api/event/event-participants/{id}/ – Rời event */
 export const useLeaveEvent = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => eventParticipantService.leave(id),
+=======
+export const useLeaveEvent = (id: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => eventParticipantService.leave(id),
+>>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.events.participants.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });
     },
   });
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
