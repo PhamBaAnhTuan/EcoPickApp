@@ -121,10 +121,7 @@ export function FilterSheet({
                     <Text style={[sheetStyles.chipLabel, { color: selected ? theme.textColor : Colors.textSecondary }]}>
                       {item.label}
                     </Text>
-<<<<<<< HEAD
-=======
                     {/* {selected && <Ionicons name="checkmark" size={14} color={theme.textColor} />} */}
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
                   </TouchableOpacity>
                 );
               })}
@@ -158,10 +155,7 @@ export function FilterSheet({
                     <Text style={[sheetStyles.chipLabel, { color: selected ? item.color : Colors.textSecondary }]}>
                       {item.label}
                     </Text>
-<<<<<<< HEAD
-=======
                     {/* {selected && <Ionicons name="checkmark" size={14} color={item.color} />} */}
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
                   </TouchableOpacity>
                 );
               })}
@@ -218,10 +212,7 @@ export function FilterSheet({
                     <Text style={[sheetStyles.chipLabel, { color: selected ? item.color : Colors.textSecondary }]}>
                       {item.label}
                     </Text>
-<<<<<<< HEAD
-=======
                     {/* {selected && <Ionicons name="checkmark" size={14} color={item.color} />} */}
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
                   </TouchableOpacity>
                 );
               })}

@@ -193,15 +193,9 @@ export default function ReportScreen() {
         type: 'image/jpeg',
       } as any);
 
-<<<<<<< HEAD
       // if (__DEV__) {
       //   console.log('[handleSubmit] FormData parts:', (formData as any)._parts);
       // }
-=======
-      if (__DEV__) {
-        console.log('[handleSubmit] FormData parts:', (formData as any)._parts);
-      }
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
 
       const report = await createReportMutation.mutateAsync(formData);
 

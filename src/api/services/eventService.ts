@@ -126,11 +126,6 @@ export const eventParticipantService = {
 		return data;
 	},
 
-<<<<<<< HEAD
-	/** Rời event – DELETE /api/event/event-participants/{id}/ */
-	leave: async (id: string) => {
-		const { data } = await api.delete(ENDPOINTS.EVENTS.PARTICIPANTS.BY_ID(id));
-=======
 	/** Lấy chi tiết participant – GET /api/event/event-participants/{id}/ */
 	getById: async (event_id: string) => {
 		const { data } = await api.get<EventParticipant>(ENDPOINTS.EVENTS.PARTICIPANTS.BY_ID(event_id));
@@ -140,7 +135,6 @@ export const eventParticipantService = {
 	/** Hủy tham gia event – DELETE /api/event/event-participants/{id}/ */
 	leave: async (event_id: string) => {
 		const { data } = await api.delete(ENDPOINTS.EVENTS.PARTICIPANTS.BY_ID(event_id));
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
 		return data;
 	},
 };

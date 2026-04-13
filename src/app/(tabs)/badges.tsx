@@ -3,11 +3,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-<<<<<<< HEAD
-import React, { useEffect, useMemo, useRef } from 'react';
-=======
 import React, { useEffect, useMemo } from 'react';
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
 import { useTranslation } from 'react-i18next';
 import {
   DeviceEventEmitter,
@@ -171,17 +167,6 @@ export default function BadgesScreen() {
     return t(`badges.category.${key}` as any);
   };
 
-<<<<<<< HEAD
-  const flatListRef = useRef<ScrollView>(null);
-
-  useEffect(() => {
-    const sub = DeviceEventEmitter.addListener('tabPress_badges', () => {
-      flatListRef.current?.scrollTo({ y: 0, animated: true });
-    });
-    return () => sub.remove();
-  }, []);
-
-=======
   // ── Handle Tab Press ──
   useEffect(() => {
     const sub = DeviceEventEmitter.addListener('tabPress_badges', () => {
@@ -189,7 +174,6 @@ export default function BadgesScreen() {
     });
     return () => sub.remove();
   }, []);
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
@@ -206,11 +190,7 @@ export default function BadgesScreen() {
       </View>
 
       <ScrollView
-<<<<<<< HEAD
-        ref={flatListRef}
-=======
         ref={scrollRef}
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
