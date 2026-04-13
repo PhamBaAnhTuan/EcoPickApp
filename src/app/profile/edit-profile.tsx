@@ -1,12 +1,10 @@
 import { useUpdateUser, useUserInfo } from '@/hooks/useUserQueries';
-import { profileSchema, type ProfileFormData } from '@/lib/validations/profile';
 import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -32,11 +30,12 @@ const BANNER_HEIGHT = 160;
 const AVATAR_SIZE = 88;
 const BIO_MAX_LENGTH = 200;
 
-const DEFAULT_AVATAR = 'https://bizweb.dktcdn.net/100/324/808/files/san-pham-co-nguon-goc-thien-nhien.jpg?v=1702028320944';
+const DEFAULT_AVATAR =
+  'https://bizweb.dktcdn.net/100/324/808/files/san-pham-co-nguon-goc-thien-nhien.jpg?v=1702028320944';
 const DEFAULT_BANNER = 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80';
 
-// ─── Form Input Component (memoized to prevent keyboard dismiss) ───
-const FormInput = React.memo(function FormInput({
+// ─── Form Input Component ───
+function FormInput({
   label,
   value,
   onChangeText,
@@ -61,30 +60,26 @@ const FormInput = React.memo(function FormInput({
   error?: string;
   charCount?: boolean;
 }) {
-  const [isFocused, setIsFocused] = useState(false);
-
   return (
     <View style={formStyles.inputGroup}>
       <Text style={formStyles.label}>{label}</Text>
-      <View style={[
-        formStyles.inputContainer,
-        isFocused && formStyles.inputContainerFocused,
-        error ? formStyles.inputContainerError : null,
-        multiline && { minHeight: 100, alignItems: 'flex-start' as const },
-      ]}>
+      <View
+        style={[
+          formStyles.inputContainer,
+          error ? formStyles.inputContainerError : null,
+          multiline && { minHeight: 100, alignItems: 'flex-start' as const },
+        ]}
+      >
         {icon && (
           <Ionicons
             name={icon as any}
             size={18}
-            color={isFocused ? Colors.primary : Colors.textSecondary}
+            color={Colors.textSecondary}
             style={{ marginTop: multiline ? 14 : 0 }}
           />
         )}
         <TextInput
-          style={[
-            formStyles.input,
-            multiline && { textAlignVertical: 'top', minHeight: 80 },
-          ]}
+          style={[formStyles.input, multiline && { textAlignVertical: 'top', minHeight: 80 }]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -93,28 +88,19 @@ const FormInput = React.memo(function FormInput({
           maxLength={maxLength}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
         />
       </View>
       <View style={formStyles.inputFooter}>
-        {error ? (
-          <Text style={formStyles.errorText}>{error}</Text>
-        ) : (
-          <View />
-        )}
+        {error ? <Text style={formStyles.errorText}>{error}</Text> : <View />}
         {charCount && maxLength ? (
-          <Text style={[
-            formStyles.charCount,
-            value.length >= maxLength && { color: '#EF4444' },
-          ]}>
+          <Text style={[formStyles.charCount, value.length >= maxLength && { color: '#EF4444' }]}>
             {value.length}/{maxLength}
           </Text>
         ) : null}
       </View>
     </View>
   );
-});
+}
 
 // ─── Section Header Component ───
 function SectionHeader({ title, icon }: { title: string; icon: string }) {
@@ -139,22 +125,12 @@ export default function EditProfileScreen() {
   const user = apiUser ?? storeUser;
 
   // ─── Form State ───
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isDirty },
-    reset,
-  } = useForm<ProfileFormData>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      fullname: '',
-      bio: '',
-      phone: '',
-      address: '',
-      dateOfBirth: '',
-      website: '',
-    },
-  });
+  const [fullname, setFullname] = useState('');
+  const [bio, setBio] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [website, setWebsite] = useState('');
 
   // ─── Image State ───
   const [pendingAvatar, setPendingAvatar] = useState<PickedImage | null>(null);
@@ -162,27 +138,58 @@ export default function EditProfileScreen() {
 
   // ─── UI State ───
   const [isSaving, setIsSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [hasChanges, setHasChanges] = useState(false);
 
   // ─── Animations ───
   const saveButtonScale = useRef(new Animated.Value(1)).current;
 
   // ─── Initialize form with user data ───
-  const hasInitialized = useRef(false);
   useEffect(() => {
-    if (user && !hasInitialized.current) {
-      reset({
-        fullname: user.fullname || '',
-        bio: user.bio || '',
-        phone: user.phone_number || '',
-        address: user.address || '',
-        dateOfBirth: user.date_of_birth || '',
-        website: '', // Assuming website is not in UserInfo API currently
-      });
-      hasInitialized.current = true;
+    if (user) {
+      setFullname(user.fullname || '');
+      setBio(user.bio || '');
+      setPhone(user.phone_number || '');
+      setAddress(user.address || '');
+      setDateOfBirth(user.date_of_birth || '');
     }
-  }, [user, reset]);
+  }, [user]);
 
-  const hasChanges = isDirty || pendingAvatar !== null || pendingBanner !== null;
+  // ─── Track changes ───
+  useEffect(() => {
+    if (!user) return;
+    const changed =
+      fullname !== (user.fullname || '') ||
+      bio !== (user.bio || '') ||
+      phone !== (user.phone_number || '') ||
+      address !== (user.address || '') ||
+      dateOfBirth !== (user.date_of_birth || '') ||
+      pendingAvatar !== null ||
+      pendingBanner !== null;
+    setHasChanges(changed);
+  }, [fullname, bio, phone, address, dateOfBirth, pendingAvatar, pendingBanner, user]);
+
+  // ─── Validation ───
+  const validate = useCallback(() => {
+    const newErrors: Record<string, string> = {};
+
+    if (!fullname.trim()) {
+      newErrors.fullname = 'Full name is required';
+    } else if (fullname.trim().length < 2) {
+      newErrors.fullname = 'Name must be at least 2 characters';
+    }
+
+    if (bio.length > BIO_MAX_LENGTH) {
+      newErrors.bio = `Bio must be under ${BIO_MAX_LENGTH} characters`;
+    }
+
+    if (phone && !/^[\d\s+()-]{7,20}$/.test(phone)) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [fullname, bio, phone]);
 
   // ─── Image Handlers ───
   const handleChangeAvatar = useCallback(async () => {
@@ -216,7 +223,8 @@ export default function EditProfileScreen() {
   }, [t]);
 
   // ─── Save Handler ───
-  const onSubmit = async (data: ProfileFormData) => {
+  const handleSave = useCallback(async () => {
+    if (!validate()) return;
     if (!user?.id) return;
 
     // Button press animation
@@ -230,11 +238,11 @@ export default function EditProfileScreen() {
     try {
       const payload: Record<string, any> = {};
 
-      if (data.fullname.trim() !== (user.fullname || '')) payload.fullname = data.fullname.trim();
-      if (data.bio !== (user.bio || '')) payload.bio = data.bio;
-      if (data.phone !== (user.phone_number || '')) payload.phone_number = data.phone;
-      if (data.address !== (user.address || '')) payload.address = data.address;
-      if (data.dateOfBirth !== (user.date_of_birth || '')) payload.date_of_birth = data.dateOfBirth;
+      if (fullname.trim() !== (user.fullname || '')) payload.fullname = fullname.trim();
+      if (bio !== (user.bio || '')) payload.bio = bio;
+      if (phone !== (user.phone_number || '')) payload.phone_number = phone;
+      if (address !== (user.address || '')) payload.address = address;
+      if (dateOfBirth !== (user.date_of_birth || '')) payload.date_of_birth = dateOfBirth;
       if (pendingAvatar) payload.avatar = pendingAvatar.file;
 
       // Only call API if there are actual changes
@@ -247,18 +255,18 @@ export default function EditProfileScreen() {
 
       // Optimistic update in store
       useAuthStore.getState().updateUser({
-        fullname: data.fullname.trim() || user.fullname,
-        bio: data.bio || user.bio,
-        phone_number: data.phone || user.phone_number,
-        address: data.address || user.address,
-        date_of_birth: data.dateOfBirth || user.date_of_birth,
+        fullname: fullname.trim() || user.fullname,
+        bio: bio || user.bio,
+        phone_number: phone || user.phone_number,
+        address: address || user.address,
+        date_of_birth: dateOfBirth || user.date_of_birth,
       } as any);
 
       refetch();
       Toast.show({
         type: 'success',
-        text1: t('common.save') + ' Thành công',
-        text2: 'Hồ sơ đã được cập nhật.',
+        text1: 'Profile Updated',
+        text2: 'Your changes have been saved successfully.',
       });
       router.back();
     } catch (_err) {
@@ -270,7 +278,20 @@ export default function EditProfileScreen() {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [
+    validate,
+    user,
+    fullname,
+    bio,
+    phone,
+    address,
+    dateOfBirth,
+    pendingAvatar,
+    updateUserMutation,
+    refetch,
+    router,
+    saveButtonScale,
+  ]);
 
   // ─── Cancel Handler ───
   const handleCancel = useCallback(() => {
@@ -286,30 +307,25 @@ export default function EditProfileScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar style="light" />
+
       {/* ─── Header ─── */}
       <View style={[styles.header, { paddingTop: insets.top }]}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          activeOpacity={0.7}
-          onPress={handleCancel}
-        >
+        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7} onPress={handleCancel}>
           <Ionicons name="close" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('profile.editProfile')}</Text>
+        <Text style={styles.headerTitle}>Edit Profile</Text>
         <Animated.View style={{ transform: [{ scale: saveButtonScale }] }}>
           <TouchableOpacity
-            style={[
-              styles.saveBtn,
-              (!hasChanges || isSaving) && styles.saveBtnDisabled,
-            ]}
+            style={[styles.saveBtn, (!hasChanges || isSaving) && styles.saveBtnDisabled]}
             activeOpacity={0.7}
-            onPress={handleSubmit(onSubmit)}
+            onPress={handleSave}
             disabled={!hasChanges || isSaving}
           >
             {isSaving ? (
               <ActivityIndicator size="small" color={Colors.white} />
             ) : (
-              <Text style={styles.saveBtnText}>{t('common.save')}</Text>
+              <Text style={styles.saveBtnText}>Save</Text>
             )}
           </TouchableOpacity>
         </Animated.View>
@@ -317,8 +333,8 @@ export default function EditProfileScreen() {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'android' ? 0 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
       >
         <ScrollView
           style={styles.scrollView}
@@ -331,31 +347,20 @@ export default function EditProfileScreen() {
           {/* ═══════════════════════════════════════════════════ */}
           <View style={styles.mediaSection}>
             {/* Banner */}
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleChangeBanner}
-              style={styles.bannerContainer}
-            >
+            <TouchableOpacity activeOpacity={0.85} onPress={handleChangeBanner} style={styles.bannerContainer}>
               <Image source={{ uri: bannerUri }} style={styles.bannerImage} />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.4)']}
-                style={styles.bannerGradient}
-              />
+              <LinearGradient colors={['transparent', 'rgba(0,0,0,0.4)']} style={styles.bannerGradient} />
               <View style={styles.bannerOverlay}>
                 <View style={styles.changeBannerBtn}>
                   <Ionicons name="camera-outline" size={16} color={Colors.white} />
-                  <Text style={styles.changeBannerText}>{t('profile.changeCover')}</Text>
+                  <Text style={styles.changeBannerText}>Change Cover</Text>
                 </View>
               </View>
             </TouchableOpacity>
 
             {/* Avatar */}
             <View style={styles.avatarSection}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={handleChangeAvatar}
-                style={styles.avatarWrapper}
-              >
+              <TouchableOpacity activeOpacity={0.8} onPress={handleChangeAvatar} style={styles.avatarWrapper}>
                 <View style={styles.avatarBorder}>
                   <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
                 </View>
@@ -363,7 +368,7 @@ export default function EditProfileScreen() {
                   <Ionicons name="camera" size={20} color={Colors.white} />
                 </View>
               </TouchableOpacity>
-              <Text style={styles.changeAvatarText}>{t('profile.changePhoto')}</Text>
+              <Text style={styles.changeAvatarText}>Change Photo</Text>
             </View>
           </View>
 
@@ -371,86 +376,54 @@ export default function EditProfileScreen() {
           {/* BASIC INFO SECTION                                 */}
           {/* ═══════════════════════════════════════════════════ */}
           <View style={formStyles.section}>
-            <SectionHeader title={t('profile.basicInfo')} icon="person-outline" />
+            <SectionHeader title="Basic Information" icon="person-outline" />
 
-            <Controller
-              control={control}
-              name="fullname"
-              render={({ field: { value, onChange } }) => (
-                <FormInput
-                  label={t('profile.fullName')}
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder="Enter your full name"
-                  icon="person-outline"
-                  autoCapitalize="words"
-                  error={errors.fullname?.message}
-                />
-              )}
+            <FormInput
+              label="Full Name"
+              value={fullname}
+              onChangeText={setFullname}
+              placeholder="Enter your full name"
+              icon="person-outline"
+              autoCapitalize="words"
+              error={errors.fullname}
             />
 
-            <Controller
-              control={control}
-              name="bio"
-              render={({ field: { value, onChange } }) => (
-                <FormInput
-                  label={t('profile.bio')}
-                  value={value || ''}
-                  onChangeText={onChange}
-                  placeholder="Tell us about yourself and your eco-journey..."
-                  icon="chatbubble-outline"
-                  multiline
-                  maxLength={BIO_MAX_LENGTH}
-                  charCount
-                  error={errors.bio?.message}
-                />
-              )}
+            <FormInput
+              label="Bio"
+              value={bio}
+              onChangeText={setBio}
+              placeholder="Tell us about yourself and your eco-journey..."
+              icon="chatbubble-outline"
+              multiline
+              maxLength={BIO_MAX_LENGTH}
+              charCount
+              error={errors.bio}
             />
 
-            <Controller
-              control={control}
-              name="phone"
-              render={({ field: { value, onChange } }) => (
-                <FormInput
-                  label={t('profile.phoneNumber')}
-                  value={value || ''}
-                  onChangeText={onChange}
-                  placeholder="+84 xxx xxx xxx"
-                  icon="call-outline"
-                  keyboardType="phone-pad"
-                  error={errors.phone?.message}
-                />
-              )}
+            <FormInput
+              label="Phone Number"
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="+84 xxx xxx xxx"
+              icon="call-outline"
+              keyboardType="phone-pad"
+              error={errors.phone}
             />
 
-            <Controller
-              control={control}
-              name="address"
-              render={({ field: { value, onChange } }) => (
-                <FormInput
-                  label={t('profile.address')}
-                  value={value || ''}
-                  onChangeText={onChange}
-                  placeholder="Your city or location"
-                  icon="location-outline"
-                  error={errors.address?.message}
-                />
-              )}
+            <FormInput
+              label="Address"
+              value={address}
+              onChangeText={setAddress}
+              placeholder="Your city or location"
+              icon="location-outline"
             />
 
-            <Controller
-              control={control}
-              name="dateOfBirth"
-              render={({ field: { value, onChange } }) => (
-                <FormInput
-                  label={t('profile.dateOfBirth')}
-                  value={value || ''}
-                  onChangeText={onChange}
-                  placeholder="YYYY-MM-DD"
-                  icon="calendar-outline"
-                  error={errors.dateOfBirth?.message}
-                />
-              )}
+            <FormInput
+              label="Date of Birth"
+              value={dateOfBirth}
+              onChangeText={setDateOfBirth}
+              placeholder="YYYY-MM-DD"
+              icon="calendar-outline"
             />
           </View>
 
@@ -458,23 +431,16 @@ export default function EditProfileScreen() {
           {/* SOCIAL / OPTIONAL SECTION                          */}
           {/* ═══════════════════════════════════════════════════ */}
           <View style={formStyles.section}>
-            <SectionHeader title={t('profile.socialLinks')} icon="globe-outline" />
+            <SectionHeader title="Social Links" icon="globe-outline" />
 
-            <Controller
-              control={control}
-              name="website"
-              render={({ field: { value, onChange } }) => (
-                <FormInput
-                  label={t('profile.website')}
-                  value={value || ''}
-                  onChangeText={onChange}
-                  placeholder="https://your-website.com"
-                  icon="link-outline"
-                  keyboardType="url"
-                  autoCapitalize="none"
-                  error={errors.website?.message}
-                />
-              )}
+            <FormInput
+              label="Website"
+              value={website}
+              onChangeText={setWebsite}
+              placeholder="https://your-website.com"
+              icon="link-outline"
+              keyboardType="url"
+              autoCapitalize="none"
             />
           </View>
 
@@ -482,12 +448,12 @@ export default function EditProfileScreen() {
           {/* ACCOUNT INFO (READ-ONLY)                           */}
           {/* ═══════════════════════════════════════════════════ */}
           <View style={formStyles.section}>
-            <SectionHeader title={t('profile.account')} icon="shield-checkmark-outline" />
+            <SectionHeader title="Account" icon="shield-checkmark-outline" />
 
             <View style={formStyles.readOnlyRow}>
               <View style={formStyles.readOnlyLeft}>
                 <Ionicons name="mail-outline" size={16} color={Colors.textSecondary} />
-                <Text style={formStyles.readOnlyLabel}>{t('profile.email')}</Text>
+                <Text style={formStyles.readOnlyLabel}>Email</Text>
               </View>
               <Text style={formStyles.readOnlyValue}>{user?.email || '—'}</Text>
             </View>
@@ -495,7 +461,7 @@ export default function EditProfileScreen() {
             <View style={formStyles.readOnlyRow}>
               <View style={formStyles.readOnlyLeft}>
                 <Ionicons name="shield-checkmark-outline" size={16} color={Colors.textSecondary} />
-                <Text style={formStyles.readOnlyLabel}>{t('profile.role')}</Text>
+                <Text style={formStyles.readOnlyLabel}>Role</Text>
               </View>
               <View style={formStyles.roleBadge}>
                 <Text style={formStyles.roleBadgeText}>{user?.role?.name ?? 'user'}</Text>
@@ -505,7 +471,7 @@ export default function EditProfileScreen() {
             <View style={formStyles.readOnlyRow}>
               <View style={formStyles.readOnlyLeft}>
                 <Ionicons name="star-outline" size={16} color={Colors.textSecondary} />
-                <Text style={formStyles.readOnlyLabel}>{t('profile.ecoPoints')}</Text>
+                <Text style={formStyles.readOnlyLabel}>Eco Points</Text>
               </View>
               <Text style={formStyles.readOnlyValue}>{user?.eco_points ?? 0}</Text>
             </View>
@@ -518,7 +484,6 @@ export default function EditProfileScreen() {
     </View>
   );
 }
-
 
 // ═══════════════════════════════════════════════════════════════
 // STYLES - MAIN
@@ -675,7 +640,6 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 });
-
 
 // ═══════════════════════════════════════════════════════════════
 // STYLES - FORM

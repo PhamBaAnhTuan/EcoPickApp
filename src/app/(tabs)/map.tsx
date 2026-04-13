@@ -409,11 +409,7 @@ export default function MapScreen() {
     setFilterSheetOpen(false);
   }, [setFilterSheetOpen]);
 
-<<<<<<< HEAD
-  const handleViewDetails = useCallback(
-=======
   const handleMarkerClick = useCallback(
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
     (report: WasteReport) => {
       router.push(`/location/${report.id}`);
     },

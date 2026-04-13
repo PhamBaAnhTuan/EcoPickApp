@@ -17,14 +17,6 @@ export default function SuccessActions({ onViewMap }: SuccessActionsProps) {
         <Ionicons name="map-outline" size={20} color="#1E293B" />
         <Text style={styles.primaryBtnText}>{t('reportSuccess.viewOnMap')}</Text>
       </TouchableOpacity>
-<<<<<<< HEAD
-=======
-
-      {/* <TouchableOpacity style={styles.secondaryBtn} onPress={onExplore} activeOpacity={0.7}>
-        <Text style={styles.secondaryBtnText}>{t('reportSuccess.continueExploring')}</Text>
-        <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-      </TouchableOpacity> */}
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
     </View>
   );
 }

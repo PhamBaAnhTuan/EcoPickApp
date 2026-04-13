@@ -42,11 +42,6 @@ export default function EventDetailScreen() {
   const { data: participants = [] } = useEventParticipants(
     id ? { event: id } : undefined,
   );
-<<<<<<< HEAD
-=======
-  const joinMutation = useJoinEvent();
-  const leaveMutation = useLeaveEvent(id!);
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
 
   const joinMutation = useJoinEvent();
   const leaveMutation = useLeaveEvent();

@@ -139,11 +139,7 @@ export default function TabLayout() {
             ),
           }}
           listeners={{
-<<<<<<< HEAD
             tabPress: (e) => {
-=======
-            tabPress: () => {
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
               DeviceEventEmitter.emit('tabPress_map');
             },
           }}
@@ -160,11 +156,7 @@ export default function TabLayout() {
             ),
           }}
           listeners={{
-<<<<<<< HEAD
-            tabPress: (e) => {
-=======
             tabPress: () => {
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
               DeviceEventEmitter.emit('tabPress_events');
             },
           }}
@@ -199,11 +191,7 @@ export default function TabLayout() {
             ),
           }}
           listeners={{
-<<<<<<< HEAD
-            tabPress: (e) => {
-=======
             tabPress: () => {
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
               DeviceEventEmitter.emit('tabPress_badges');
             },
           }}
@@ -220,11 +208,7 @@ export default function TabLayout() {
             ),
           }}
           listeners={{
-<<<<<<< HEAD
-            tabPress: (e) => {
-=======
             tabPress: () => {
->>>>>>> ce8a48819a99962c1633e8a700deffdbc01c3c94
               DeviceEventEmitter.emit('tabPress_profile');
             },
           }}
