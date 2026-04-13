@@ -92,7 +92,7 @@ function FormInput({
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          // onBlur={() => setIsFocused(false)}
         />
       </View>
       <View style={formStyles.inputFooter}>

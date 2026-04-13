@@ -6,8 +6,9 @@ import axios from "axios";
 // ============================================================
 const IP_ADDRESS = "192.168.20.66"; //		192.168.20.66		192.168.20.38
 const PORT = "5500"; //5500
-// export const API_BASE_URL = 'https://ecopickapi.onrender.com';
-export const API_BASE_URL = `http://${IP_ADDRESS}:${PORT}`;
+// export const API_BASE_URL = "https://ecopickapi.onrender.com";
+export const API_BASE_URL = "https://ecopick-api.vercel.app";
+// export const API_BASE_URL = `http://${IP_ADDRESS}:${PORT}`;
 
 const api = axios.create({
 	baseURL: API_BASE_URL,

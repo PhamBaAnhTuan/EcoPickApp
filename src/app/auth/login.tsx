@@ -26,6 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import LanguageToggle from '../../components/LanguageToggle';
 import { AuthColors, authStyles, Fonts } from '../../constants';
+import { API_BASE_URL } from '@/lib/axios';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -64,6 +65,7 @@ export default function LoginScreen() {
 
   // ─── Submit handler ────────────────────────────────────────
   const onSubmit = (data: LoginFormData) => {
+    console.error('calling api: ', API_BASE_URL);
     signIn.mutate(
       { email: data.email.trim(), password: data.password },
       {

@@ -24,6 +24,7 @@
     },
     "android": {
       "package": "com.luanthnh.EcoPick",
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./src/assets/android-icon-foreground.png",
