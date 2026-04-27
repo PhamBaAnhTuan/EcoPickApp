@@ -1,12 +1,12 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Controller } from 'react-hook-form';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { Controller } from 'react-hook-form';
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-import { Fonts, Colors } from '../../../../constants';
+import { Colors, Fonts } from '../../../../constants';
 import { EVENT_TYPES } from '../constants';
-import { FieldError } from './FieldError';
+import FieldError from './FieldError';
 
 function LocationSyncEffect({
   paramsLocation,
@@ -39,7 +39,7 @@ interface StepDetailsProps {
   params: any;
 }
 
-const StepDetails =({
+const StepDetails = ({
   control,
   errors,
   t,
@@ -51,7 +51,7 @@ const StepDetails =({
   longitude,
   address,
   params,
-}: StepDetailsProps)=> {
+}: StepDetailsProps) => {
   const router = useRouter();
 
   const openLocationPicker = () => {
@@ -135,7 +135,6 @@ const StepDetails =({
           <Text style={s.sectionTitle}>
             {t('createEvent.labels.description', { defaultValue: 'Description' })}
           </Text>
-          <Text style={s.optionalBadge}>{t('common.optional', { defaultValue: 'Optional' })}</Text>
         </View>
         <Controller
           control={control}
@@ -220,7 +219,6 @@ const StepDetails =({
           <Text style={s.sectionTitle}>
             {t('createEvent.labels.coverImage')}
           </Text>
-          <Text style={s.optionalBadge}>{t('common.optional', { defaultValue: 'Optional' })}</Text>
         </View>
         <TouchableOpacity style={s.coverBtn} onPress={pickCoverImage} activeOpacity={0.8}>
           {coverImage ? (

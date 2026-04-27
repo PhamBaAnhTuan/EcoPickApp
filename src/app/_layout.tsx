@@ -87,6 +87,7 @@ export default function RootLayout() {
 
   return (
     <>
+      <StatusBar barStyle={'dark-content'} backgroundColor={Colors.border} />
       <GestureHandlerRootView style={{ flex: 1 }}>
         <QueryClientProvider client={queryClient}>
           <I18nextProvider i18n={i18n}>
@@ -99,6 +100,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
                 <Stack.Screen name="location/[id]/index" options={{ presentation: 'card' }} />
                 <Stack.Screen name="events/[id]/index" options={{ presentation: 'card' }} />
+                <Stack.Screen name="events/participants" />
                 <Stack.Screen name="badges/[id]/index" options={{ headerShown: false, presentation: 'card' }} />
                 <Stack.Screen name="settings/index" options={{ headerShown: false, presentation: 'card' }} />
                 <Stack.Screen name="profile/edit-profile" options={{ headerShown: false, presentation: 'card', animation: 'slide_from_right' }} />
@@ -109,7 +111,7 @@ export default function RootLayout() {
           </I18nextProvider>
         </QueryClientProvider>
       </GestureHandlerRootView>
-      <StatusBar barStyle={'default'} />
+      <StatusBar barStyle={'dark-content'} />
       <Toast config={toastConfig} topOffset={60} visibilityTime={3000} />
     </>
   );

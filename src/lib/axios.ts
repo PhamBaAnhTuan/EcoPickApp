@@ -1,18 +1,12 @@
 import { useAuthStore } from "@/stores/authStore";
 import axios from "axios";
+import Constants from "expo-constants";
 
-// ============================================================
-// Axios Instance - Cấu hình chung cho tất cả API calls
-// ============================================================
-const IP_ADDRESS = "192.168.20.66"; //		192.168.20.66		192.168.20.38
-const PORT = "5500"; //5500
-// export const API_BASE_URL = "https://ecopickapi.onrender.com";
-export const API_BASE_URL = "https://ecopick-api.vercel.app";
-// export const API_BASE_URL = `http://${IP_ADDRESS}:${PORT}`;
+export const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_BASE_URL;
+// console.log("API Base URL:", API_BASE_URL);
 
 const api = axios.create({
 	baseURL: API_BASE_URL,
-	timeout: 30000, // 30s - Render free tier có thể cold start chậm
 	headers: {
 		"Content-Type": "application/json",
 		Accept: "application/json",

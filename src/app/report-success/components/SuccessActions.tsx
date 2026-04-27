@@ -6,10 +6,9 @@ import { Fonts } from '../../../constants';
 
 interface SuccessActionsProps {
   onViewMap: () => void;
-  onExplore: () => void;
 }
 
-export default function SuccessActions({ onViewMap, onExplore }: SuccessActionsProps) {
+export default function SuccessActions({ onViewMap }: SuccessActionsProps) {
   const { t } = useTranslation();
 
   return (
@@ -18,11 +17,6 @@ export default function SuccessActions({ onViewMap, onExplore }: SuccessActionsP
         <Ionicons name="map-outline" size={20} color="#1E293B" />
         <Text style={styles.primaryBtnText}>{t('reportSuccess.viewOnMap')}</Text>
       </TouchableOpacity>
-
-      {/* <TouchableOpacity style={styles.secondaryBtn} onPress={onExplore} activeOpacity={0.7}>
-        <Text style={styles.secondaryBtnText}>{t('reportSuccess.continueExploring')}</Text>
-        <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-      </TouchableOpacity> */}
     </View>
   );
 }

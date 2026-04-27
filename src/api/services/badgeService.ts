@@ -1,5 +1,5 @@
-import api from '@/lib/axios';
 import { ENDPOINTS } from '@/api/endpoints';
+import api from '@/lib/axios';
 
 // ============================================================
 // Types
@@ -8,17 +8,20 @@ import { ENDPOINTS } from '@/api/endpoints';
 export interface Badge {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   icon_url: string;
-  category: string; // "event", etc.
+  category?: string; // "event", etc.
   [key: string]: unknown;
 }
+
+
 
 export interface UserBadge {
   id: string;
   user_id: string;
   badge_id: string;
   [key: string]: unknown;
+  badge: Badge
 }
 
 export interface ExchangeItem {

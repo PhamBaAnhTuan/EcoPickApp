@@ -87,7 +87,7 @@ export function FilterSheet({
       handleIndicatorStyle={sheetStyles.handle}
       onChange={handleSheetChange}
     >
-      <BottomSheetView style={sheetStyles.container}>
+      <BottomSheetView style={[sheetStyles.container, { paddingBottom: bottomTabHeight + 16 }]}>
         {/* Header */}
         <View style={sheetStyles.header}>
           <Text style={sheetStyles.headerTitle}>{t('filter.title', 'Filter Reports')}</Text>
@@ -250,11 +250,12 @@ const sheetStyles = StyleSheet.create({
     borderRadius: 9999,
     backgroundColor: Colors.divider,
     alignSelf: 'center',
-    marginVertical: 8,
+    marginVertical: 5,
   },
   container: {
     flex: 1,
-    // marginBottom: 150,
+    // marginBottom: 300,
+    height: '100%',
   },
   header: {
     flexDirection: 'row',
@@ -282,7 +283,7 @@ const sheetStyles = StyleSheet.create({
     // paddingBottom: 50,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 10,
   },
   sectionLabel: {
     fontFamily: Fonts.semiBold,

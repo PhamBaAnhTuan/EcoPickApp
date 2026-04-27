@@ -37,11 +37,21 @@ export const useEventParticipants = (filters?: Record<string, unknown>) => {
   });
 };
 
-export const useEventParticipant = (event_id: string, user_id: string) => {
+/** GET /api/event/event-participants/?event_id={eventId} */
+export const useEventParticipantsByEvent = (eventId?: string) => {
   return useQuery({
-    queryKey: queryKeys.events.participants.detail(event_id, user_id),
-    queryFn: () => eventParticipantService.getById(event_id, user_id),
-    enabled: !!event_id && !!user_id,
+    queryKey: queryKeys.events.participants.list({ event_id: eventId }),
+    queryFn: () => eventParticipantService.getAll({ event_id: eventId }),
+    enabled: !!eventId,
+  });
+};
+
+/** GET /api/event/event-participants/?user_id={userId} */
+export const useEventParticipantsByUser = (userId?: string) => {
+  return useQuery({
+    queryKey: queryKeys.events.participants.list({ user_id: userId }),
+    queryFn: () => eventParticipantService.getAll({ user_id: userId }),
+    enabled: !!userId,
   });
 };
 
@@ -94,11 +104,12 @@ export const useJoinEvent = () => {
   });
 };
 
-export const useLeaveEvent = (id: string) => {
+/** DELETE /api/event/event-participants/{id}/ – Rời event */
+export const useLeaveEvent = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => eventParticipantService.leave(id),
+    mutationFn: (id: string) => eventParticipantService.leave(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.events.participants.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });

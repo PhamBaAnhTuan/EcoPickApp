@@ -8,6 +8,7 @@ import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -33,48 +34,84 @@ export default function EventDetailScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  // console.log('event id: ', id);
+  // console.log('user id: ', user?.id)
 
   // API
   const { data: event, isLoading, isError } = useEvent(id!);
   const { data: participants = [] } = useEventParticipants(
-    id ? { event_id: id } : undefined,
+    id ? { event: id } : undefined,
   );
-  const joinMutation = useJoinEvent();
-  const leaveMutation = useLeaveEvent(id!);
 
-  const userParticipant = participants.find((p) => p.user_id === user?.id);
+  const joinMutation = useJoinEvent();
+  const leaveMutation = useLeaveEvent();
+
+
   const [joined, setJoined] = useState(false);
+  const userParticipant = participants.find(
+    (p) => p.event === id && p.user === user?.id
+  );
 
   React.useEffect(() => {
-    if (userParticipant) {
-      setJoined(true);
-    }
+    setJoined(!!userParticipant);
   }, [userParticipant]);
 
   const handleJoinEvent = useCallback(async () => {
     if (!event || !user?.id) return;
     if (joined) {
-      setJoined(false);
+      if (!userParticipant) return;
+      try {
+        Alert.alert(
+          t('eventDetail.leaveEventWarning'),
+          t('eventDetail.leaveEventConfirm'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: t('eventDetail.confirm'), onPress: async () => {
+                await leaveMutation.mutateAsync(userParticipant.id);
+                setJoined(false);
+                Toast.show({
+                  type: 'success',
+                  text1: t('eventDetail.leaveEvent'),
+                });
+              },
+              style: 'destructive',
+            }
+          ]
+        );
+      } catch (error: any) {
+        console.log('Error leaving event:', error?.response?.data || error);
+        Toast.show({
+          type: 'error',
+          text1: t('common.error'),
+          text2: error?.response?.data?.detail ||
+            t('eventDetail.leaveError'),
+        });
+      }
       return;
     }
 
     try {
       await joinMutation.mutateAsync({
-        event_id: event.id,
-        user_id: user.id,
+        event: id,
+        user: user.id,
         status: 'joined',
       });
       setJoined(true);
+      Toast.show({
+        type: 'success',
+        text1: t('eventDetail.joinEvent'),
+      });
     } catch (error: any) {
       console.log('Error creating event:', error?.response?.data || error);
       Toast.show({
         type: 'error',
-        text1: t('common.error', { defaultValue: 'Error' }),
+        text1: t('common.error'),
         text2: error?.response?.data?.detail ||
-          t('eventDetail.joinError', { defaultValue: 'Could not join event. Please try again.' }),
+          t('eventDetail.joinError'),
       })
     }
-  }, [event, user?.id, joined, joinMutation, t]);
+  }, [event, user?.id, joined, userParticipant, joinMutation, leaveMutation, t]);
 
   // const handleLeaveEvent = useCallback(async () => {
   //   if (!event || !user?.id) return;
@@ -174,9 +211,11 @@ export default function EventDetailScreen() {
   }
 
   const equipmentList = parseEquipment(event.equipment);
-  const participantsCount = event.current_paticipants ?? participants.length;
-  const maxParticipants = event.max_paticipants;
   const isEventEnded = event.status === 'completed' || event.status === 'cancelled';
+  const participantCount = participants.filter(
+    (p) => p.event === id && p.status === 'joined'
+  ).length;
+  // console.log('participant count: ', participantCount)
 
   return (
     <SafeAreaView style={s.safeArea}>
@@ -202,7 +241,7 @@ export default function EventDetailScreen() {
 
           <View style={s.detailsSection}>
             <EventInfo event={event} />
-            <EventParticipants participantsCount={participantsCount} maxParticipants={maxParticipants} />
+            <EventParticipants participantsCount={participantCount} eventID={id} />
             <EventEquipment equipmentList={equipmentList} />
             <EventChat />
           </View>
@@ -219,9 +258,9 @@ export default function EventDetailScreen() {
           ]}
           onPress={handleJoinEvent}
           activeOpacity={0.8}
-          disabled={isEventEnded || joinMutation.isPending}
+          disabled={isEventEnded || joinMutation.isPending || leaveMutation.isPending}
         >
-          {joinMutation.isPending ? (
+          {joinMutation.isPending || leaveMutation.isPending ? (
             <ActivityIndicator size="small" color={Colors.white} />
           ) : (
             <Ionicons
@@ -238,10 +277,10 @@ export default function EventDetailScreen() {
           )}
           <Text style={s.mainJoinButtonText}>
             {isEventEnded
-              ? t('eventDetail.eventEnded', { defaultValue: 'Event Ended' })
+              ? t('eventDetail.eventEnded')
               : joined
                 ? t('eventDetail.joined')
-                : t('eventDetail.joinEvent')}
+                : t('eventDetail.letJoin')}
           </Text>
         </TouchableOpacity>
       </View>

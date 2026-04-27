@@ -1,18 +1,18 @@
 
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Fonts } from '../../../../constants';
-import { PARTICIPANT_AVATARS } from '../constants';
 
 interface EventParticipantsProps {
   participantsCount: number;
-  maxParticipants: number | null | undefined;
+  eventID: string;
 }
 
-export default function EventParticipants({ participantsCount, maxParticipants }: EventParticipantsProps) {
-  const { t } = useTranslation();
+export default function EventParticipants({ participantsCount, eventID }: EventParticipantsProps) {
+  const { t } = useTranslation()
 
   return (
     <View style={s.participantsSection}>
@@ -23,44 +23,9 @@ export default function EventParticipants({ participantsCount, maxParticipants }
             {t('eventDetail.participants', { count: participantsCount })}
           </Text>
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push({ pathname: `/events/participants`, params: { id: eventID } })}>
           <Text style={s.viewAllText}>{t('common.viewAll')}</Text>
         </TouchableOpacity>
-      </View>
-
-      <View style={s.participantsRow}>
-        <View style={s.avatarsContainer}>
-          {PARTICIPANT_AVATARS.map((uri, idx) => (
-            <View
-              key={idx}
-              style={[
-                s.participantAvatar,
-                { zIndex: 4 - idx, marginLeft: idx > 0 ? -12 : 0 },
-              ]}
-            >
-              <Image source={{ uri }} style={s.participantAvatarImage} />
-            </View>
-          ))}
-          {/* +N circle */}
-          <View style={[s.participantCountCircle, { zIndex: 0, marginLeft: -12 }]}>
-            <Text style={s.participantCountText}>
-              +{participantsCount > 4 ? participantsCount - 4 : 0}
-            </Text>
-          </View>
-        </View>
-
-        {/* RSVP Separator */}
-        <View style={s.rsvpSection}>
-          <View style={s.rsvpDivider} />
-          <View style={s.rsvpContent}>
-            <Text style={s.rsvpLabel}>{t('eventDetail.rsvpStatus')}</Text>
-            <Text style={s.rsvpValue}>
-              {maxParticipants
-                ? `${participantsCount}/${maxParticipants}`
-                : t('eventDetail.confirmed', { count: participantsCount })}
-            </Text>
-          </View>
-        </View>
       </View>
     </View>
   );

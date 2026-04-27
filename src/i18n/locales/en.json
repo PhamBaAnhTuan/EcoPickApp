@@ -54,7 +54,8 @@
 		"distance": "DISTANCE RANGE",
 		"status": "STATUS",
 		"reset": "Reset",
-		"apply": "Apply"
+		"apply": "Apply",
+		"reportsFound": "report was found"
 	},
 	"time": {
 		"daysAgo": "days ago",
@@ -94,6 +95,7 @@
 		"glass": "Glass",
 		"organic": "Organic",
 		"metal": "Metal",
+		"other": "Other",
 		"sliderMinor": "MINOR",
 		"sliderExtreme": "EXTREME",
 		"chooseSource": "Choose Source",
@@ -125,18 +127,26 @@
 		"defaultDescription": "Help us restore the natural beauty of the north bank. We'll be collecting plastic waste and clearing invasive ivy.",
 		"date": "Date",
 		"time": "Time",
-		"participants": "Participants ({{count}})",
+		"participants": "Participants: {{count}}",
 		"rsvpStatus": "RSVP STATUS",
 		"confirmed": "{{count}} Confirmed",
 		"equipmentNeeded": "Equipment Needed",
-		"coordination": "Coordination",
+		"coordination": "Communication",
 		"newMessages": "{{count}} new messages",
 		"postUpdate": "Post an update...",
-		"joinEvent": "Join Event",
-		"joined": "Joined",
 		"openMaps": "Open Maps",
 		"bringOwn": "BRING OWN",
-		"provided": "PROVIDED"
+		"provided": "PROVIDED",
+		"joined": "Joined",
+		"letJoin": "Join",
+		"eventEnded": "Event Ended",
+		"joinEvent": "You joined the event!",
+		"joinError": "Could not join event. Please try again.",
+		"leaveEvent": "You left the event!",
+		"leaveError": "Could not leave event. Please try again.",
+		"leaveEventConfirm": "Are you sure you want to leave this event?",
+		"leaveEventWarning": "Leave event?",
+		"confirm": "Confirm"
 	},
 	"location": {
 		"detailsTitle": "Location Details",
@@ -161,11 +171,9 @@
 	"profile": {
 		"title": "My Eco Profile",
 		"name": "Alex Green",
-		"role": "Forest Guardian",
 		"memberSince": "Member since March 2023",
 		"reports": "REPORTS",
 		"cleanups": "CLEANUPS",
-		"ecoPoints": "ECO POINTS",
 		"events": "EVENTS",
 		"trees": "TREES",
 		"impact": "IMPACT",
@@ -183,9 +191,25 @@
 		"logoutTitle": "Sign Out",
 		"logoutMessage": "Are you sure you want to sign out?",
 		"logout": "Sign Out",
+		"save":"Save",
 		"details": "Details",
 		"isVerified": "Verified",
 		"editProfile": "Edit Profile",
+		"changeCover": "Change Cover",
+		"changePhoto": "Change Photo",
+		"basicInfo": "Basic Information",
+		"fullName": "Full Name",
+		"username": "Username",
+		"bio": "Bio",
+		"phoneNumber": "Phone Number",
+		"address": "Address",
+		"dateOfBirth": "Date of Birth",
+		"socialLinks": "Social Links",
+		"website": "Website",
+		"account": "Account",
+		"email": "Email",
+		"role": "Role",
+		"ecoPoints": "Eco Points",
 		"level": "Level {{level}}",
 		"followers": "Followers",
 		"following": "Following",
@@ -230,34 +254,94 @@
 			"loadError": "Could not load badge details",
 			"steps": {
 				"event": [
-					{ "title": "Find an Event", "desc": "Browse nearby environmental events." },
-					{ "title": "Register to Join", "desc": "Tap \"Join\" on the event detail page." },
-					{ "title": "Complete the Event", "desc": "Participate fully and finish the activity." },
-					{ "title": "Receive the Badge", "desc": "The system automatically awards the badge after confirmation." }
+					{
+						"title": "Find an Event",
+						"desc": "Browse nearby environmental events."
+					},
+					{
+						"title": "Register to Join",
+						"desc": "Tap \"Join\" on the event detail page."
+					},
+					{
+						"title": "Complete the Event",
+						"desc": "Participate fully and finish the activity."
+					},
+					{
+						"title": "Receive the Badge",
+						"desc": "The system automatically awards the badge after confirmation."
+					}
 				],
 				"report": [
-					{ "title": "Take a Photo", "desc": "Use the report feature to photograph a pollution site." },
-					{ "title": "Confirm Location", "desc": "Make sure GPS is on for accurate positioning." },
-					{ "title": "Submit Report", "desc": "Fill in all details and send the report." },
-					{ "title": "Receive the Badge", "desc": "Upon approval, the badge is awarded." }
+					{
+						"title": "Take a Photo",
+						"desc": "Use the report feature to photograph a pollution site."
+					},
+					{
+						"title": "Confirm Location",
+						"desc": "Make sure GPS is on for accurate positioning."
+					},
+					{
+						"title": "Submit Report",
+						"desc": "Fill in all details and send the report."
+					},
+					{
+						"title": "Receive the Badge",
+						"desc": "Upon approval, the badge is awarded."
+					}
 				],
 				"eco": [
-					{ "title": "Take Green Actions", "desc": "Perform eco-friendly activities." },
-					{ "title": "Build the Habit", "desc": "Keep contributing consistently to accumulate points." },
-					{ "title": "Reach the Threshold", "desc": "Accumulate enough eco points as required by the badge." },
-					{ "title": "Receive the Badge", "desc": "The badge unlocks once you meet the conditions." }
+					{
+						"title": "Take Green Actions",
+						"desc": "Perform eco-friendly activities."
+					},
+					{
+						"title": "Build the Habit",
+						"desc": "Keep contributing consistently to accumulate points."
+					},
+					{
+						"title": "Reach the Threshold",
+						"desc": "Accumulate enough eco points as required by the badge."
+					},
+					{
+						"title": "Receive the Badge",
+						"desc": "The badge unlocks once you meet the conditions."
+					}
 				],
 				"social": [
-					{ "title": "Build Your Network", "desc": "Connect and follow community members." },
-					{ "title": "Share Activities", "desc": "Share your progress and encourage others." },
-					{ "title": "Contribute to Community", "desc": "Actively participate in discussions and events." },
-					{ "title": "Receive the Badge", "desc": "Reach enough social conditions to unlock this badge." }
+					{
+						"title": "Build Your Network",
+						"desc": "Connect and follow community members."
+					},
+					{
+						"title": "Share Activities",
+						"desc": "Share your progress and encourage others."
+					},
+					{
+						"title": "Contribute to Community",
+						"desc": "Actively participate in discussions and events."
+					},
+					{
+						"title": "Receive the Badge",
+						"desc": "Reach enough social conditions to unlock this badge."
+					}
 				],
 				"default": [
-					{ "title": "Learn the Conditions", "desc": "Read the requirements and goals of the badge." },
-					{ "title": "Perform Activities", "desc": "Complete the related tasks." },
-					{ "title": "Meet the Criteria", "desc": "Ensure you fulfill all necessary conditions." },
-					{ "title": "Receive the Badge", "desc": "The system automatically grants the badge." }
+					{
+						"title": "Learn the Conditions",
+						"desc": "Read the requirements and goals of the badge."
+					},
+					{
+						"title": "Perform Activities",
+						"desc": "Complete the related tasks."
+					},
+					{
+						"title": "Meet the Criteria",
+						"desc": "Ensure you fulfill all necessary conditions."
+					},
+					{
+						"title": "Receive the Badge",
+						"desc": "The system automatically grants the badge."
+					}
 				]
 			}
 		}
@@ -495,7 +579,8 @@
 			"participants": "Max Participants",
 			"equipment": "Equipment",
 			"ecoPoints": "Eco Point Reward",
-			"people": "people"
+			"people": "people",
+			"point": "point"
 		},
 		"equipment": {
 			"Gloves": "Gloves",

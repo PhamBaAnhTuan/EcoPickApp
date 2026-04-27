@@ -3,7 +3,6 @@ import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -30,7 +29,8 @@ const BANNER_HEIGHT = 160;
 const AVATAR_SIZE = 88;
 const BIO_MAX_LENGTH = 200;
 
-const DEFAULT_AVATAR = 'https://bizweb.dktcdn.net/100/324/808/files/san-pham-co-nguon-goc-thien-nhien.jpg?v=1702028320944';
+const DEFAULT_AVATAR =
+  'https://bizweb.dktcdn.net/100/324/808/files/san-pham-co-nguon-goc-thien-nhien.jpg?v=1702028320944';
 const DEFAULT_BANNER = 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80';
 
 // ─── Form Input Component ───
@@ -59,30 +59,26 @@ function FormInput({
   error?: string;
   charCount?: boolean;
 }) {
-  const [isFocused, setIsFocused] = useState(false);
-
   return (
     <View style={formStyles.inputGroup}>
       <Text style={formStyles.label}>{label}</Text>
-      <View style={[
-        formStyles.inputContainer,
-        isFocused && formStyles.inputContainerFocused,
-        error ? formStyles.inputContainerError : null,
-        multiline && { minHeight: 100, alignItems: 'flex-start' as const },
-      ]}>
+      <View
+        style={[
+          formStyles.inputContainer,
+          error ? formStyles.inputContainerError : null,
+          multiline && { minHeight: 100, alignItems: 'flex-start' as const },
+        ]}
+      >
         {icon && (
           <Ionicons
             name={icon as any}
             size={18}
-            color={isFocused ? Colors.primary : Colors.textSecondary}
+            color={Colors.textSecondary}
             style={{ marginTop: multiline ? 14 : 0 }}
           />
         )}
         <TextInput
-          style={[
-            formStyles.input,
-            multiline && { textAlignVertical: 'top', minHeight: 80 },
-          ]}
+          style={[formStyles.input, multiline && { textAlignVertical: 'top', minHeight: 80 }]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -91,21 +87,12 @@ function FormInput({
           maxLength={maxLength}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
-          onFocus={() => setIsFocused(true)}
-          // onBlur={() => setIsFocused(false)}
         />
       </View>
       <View style={formStyles.inputFooter}>
-        {error ? (
-          <Text style={formStyles.errorText}>{error}</Text>
-        ) : (
-          <View />
-        )}
+        {error ? <Text style={formStyles.errorText}>{error}</Text> : <View />}
         {charCount && maxLength ? (
-          <Text style={[
-            formStyles.charCount,
-            value.length >= maxLength && { color: '#EF4444' },
-          ]}>
+          <Text style={[formStyles.charCount, value.length >= maxLength && { color: '#EF4444' }]}>
             {value.length}/{maxLength}
           </Text>
         ) : null}
@@ -290,7 +277,20 @@ export default function EditProfileScreen() {
     } finally {
       setIsSaving(false);
     }
-  }, [validate, user, fullname, bio, phone, address, dateOfBirth, pendingAvatar, updateUserMutation, refetch, router, saveButtonScale]);
+  }, [
+    validate,
+    user,
+    fullname,
+    bio,
+    phone,
+    address,
+    dateOfBirth,
+    pendingAvatar,
+    updateUserMutation,
+    refetch,
+    router,
+    saveButtonScale,
+  ]);
 
   // ─── Cancel Handler ───
   const handleCancel = useCallback(() => {
@@ -306,24 +306,16 @@ export default function EditProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
 
       {/* ─── Header ─── */}
       <View style={[styles.header, { paddingTop: insets.top }]}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          activeOpacity={0.7}
-          onPress={handleCancel}
-        >
+        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7} onPress={handleCancel}>
           <Ionicons name="close" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
+        <Text style={styles.headerTitle}>{t('profile.editProfile')}</Text>
         <Animated.View style={{ transform: [{ scale: saveButtonScale }] }}>
           <TouchableOpacity
-            style={[
-              styles.saveBtn,
-              (!hasChanges || isSaving) && styles.saveBtnDisabled,
-            ]}
+            style={[styles.saveBtn, (!hasChanges || isSaving) && styles.saveBtnDisabled]}
             activeOpacity={0.7}
             onPress={handleSave}
             disabled={!hasChanges || isSaving}
@@ -331,7 +323,7 @@ export default function EditProfileScreen() {
             {isSaving ? (
               <ActivityIndicator size="small" color={Colors.white} />
             ) : (
-              <Text style={styles.saveBtnText}>Save</Text>
+              <Text style={styles.saveBtnText}>{t('profile.save')}</Text>
             )}
           </TouchableOpacity>
         </Animated.View>
@@ -353,31 +345,20 @@ export default function EditProfileScreen() {
           {/* ═══════════════════════════════════════════════════ */}
           <View style={styles.mediaSection}>
             {/* Banner */}
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleChangeBanner}
-              style={styles.bannerContainer}
-            >
+            <TouchableOpacity activeOpacity={0.85} onPress={handleChangeBanner} style={styles.bannerContainer}>
               <Image source={{ uri: bannerUri }} style={styles.bannerImage} />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.4)']}
-                style={styles.bannerGradient}
-              />
+              <LinearGradient colors={['transparent', 'rgba(0,0,0,0.4)']} style={styles.bannerGradient} />
               <View style={styles.bannerOverlay}>
                 <View style={styles.changeBannerBtn}>
                   <Ionicons name="camera-outline" size={16} color={Colors.white} />
-                  <Text style={styles.changeBannerText}>Change Cover</Text>
+                  <Text style={styles.changeBannerText}>{t('profile.changeCover')}</Text>
                 </View>
               </View>
             </TouchableOpacity>
 
             {/* Avatar */}
             <View style={styles.avatarSection}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={handleChangeAvatar}
-                style={styles.avatarWrapper}
-              >
+              <TouchableOpacity activeOpacity={0.8} onPress={handleChangeAvatar} style={styles.avatarWrapper}>
                 <View style={styles.avatarBorder}>
                   <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
                 </View>
@@ -385,7 +366,7 @@ export default function EditProfileScreen() {
                   <Ionicons name="camera" size={20} color={Colors.white} />
                 </View>
               </TouchableOpacity>
-              <Text style={styles.changeAvatarText}>Change Photo</Text>
+              <Text style={styles.changeAvatarText}>{t('profile.changePhoto')}</Text>
             </View>
           </View>
 
@@ -393,20 +374,20 @@ export default function EditProfileScreen() {
           {/* BASIC INFO SECTION                                 */}
           {/* ═══════════════════════════════════════════════════ */}
           <View style={formStyles.section}>
-            <SectionHeader title="Basic Information" icon="person-outline" />
+            <SectionHeader title={t('profile.basicInfo')} icon="person-outline" />
 
             <FormInput
-              label="Full Name"
+              label={t('profile.fullName')}
               value={fullname}
               onChangeText={setFullname}
-              placeholder="Enter your full name"
+              placeholder='Your full name as you want it to appear on your profile'
               icon="person-outline"
               autoCapitalize="words"
               error={errors.fullname}
             />
 
             <FormInput
-              label="Bio"
+              label={t('profile.bio')}
               value={bio}
               onChangeText={setBio}
               placeholder="Tell us about yourself and your eco-journey..."
@@ -418,7 +399,7 @@ export default function EditProfileScreen() {
             />
 
             <FormInput
-              label="Phone Number"
+              label={t('profile.phoneNumber')}
               value={phone}
               onChangeText={setPhone}
               placeholder="+84 xxx xxx xxx"
@@ -428,7 +409,7 @@ export default function EditProfileScreen() {
             />
 
             <FormInput
-              label="Address"
+              label={t('profile.address')}
               value={address}
               onChangeText={setAddress}
               placeholder="Your city or location"
@@ -436,7 +417,7 @@ export default function EditProfileScreen() {
             />
 
             <FormInput
-              label="Date of Birth"
+              label={t('profile.dateOfBirth')}
               value={dateOfBirth}
               onChangeText={setDateOfBirth}
               placeholder="YYYY-MM-DD"
@@ -448,10 +429,10 @@ export default function EditProfileScreen() {
           {/* SOCIAL / OPTIONAL SECTION                          */}
           {/* ═══════════════════════════════════════════════════ */}
           <View style={formStyles.section}>
-            <SectionHeader title="Social Links" icon="globe-outline" />
+            <SectionHeader title={t('profile.socialLinks')} icon="globe-outline" />
 
             <FormInput
-              label="Website"
+              label={t('profile.website')}
               value={website}
               onChangeText={setWebsite}
               placeholder="https://your-website.com"
@@ -465,12 +446,12 @@ export default function EditProfileScreen() {
           {/* ACCOUNT INFO (READ-ONLY)                           */}
           {/* ═══════════════════════════════════════════════════ */}
           <View style={formStyles.section}>
-            <SectionHeader title="Account" icon="shield-checkmark-outline" />
+            <SectionHeader title={t('profile.account')} icon="shield-checkmark-outline" />
 
             <View style={formStyles.readOnlyRow}>
               <View style={formStyles.readOnlyLeft}>
                 <Ionicons name="mail-outline" size={16} color={Colors.textSecondary} />
-                <Text style={formStyles.readOnlyLabel}>Email</Text>
+                <Text style={formStyles.readOnlyLabel}>{t('profile.email')}</Text>
               </View>
               <Text style={formStyles.readOnlyValue}>{user?.email || '—'}</Text>
             </View>
@@ -478,7 +459,7 @@ export default function EditProfileScreen() {
             <View style={formStyles.readOnlyRow}>
               <View style={formStyles.readOnlyLeft}>
                 <Ionicons name="shield-checkmark-outline" size={16} color={Colors.textSecondary} />
-                <Text style={formStyles.readOnlyLabel}>Role</Text>
+                <Text style={formStyles.readOnlyLabel}>{t('profile.role')}</Text>
               </View>
               <View style={formStyles.roleBadge}>
                 <Text style={formStyles.roleBadgeText}>{user?.role?.name ?? 'user'}</Text>
@@ -488,7 +469,7 @@ export default function EditProfileScreen() {
             <View style={formStyles.readOnlyRow}>
               <View style={formStyles.readOnlyLeft}>
                 <Ionicons name="star-outline" size={16} color={Colors.textSecondary} />
-                <Text style={formStyles.readOnlyLabel}>Eco Points</Text>
+                <Text style={formStyles.readOnlyLabel}>{t('profile.ecoPoints')}</Text>
               </View>
               <Text style={formStyles.readOnlyValue}>{user?.eco_points ?? 0}</Text>
             </View>
@@ -501,7 +482,6 @@ export default function EditProfileScreen() {
     </View>
   );
 }
-
 
 // ═══════════════════════════════════════════════════════════════
 // STYLES - MAIN
@@ -659,7 +639,6 @@ const styles = StyleSheet.create({
   },
 });
 
-
 // ═══════════════════════════════════════════════════════════════
 // STYLES - FORM
 // ═══════════════════════════════════════════════════════════════
@@ -703,7 +682,7 @@ const formStyles = StyleSheet.create({
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
     marginBottom: 6,
-    textTransform: 'uppercase',
+    // textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   inputContainer: {

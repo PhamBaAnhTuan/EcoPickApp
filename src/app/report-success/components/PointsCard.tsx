@@ -3,23 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { Fonts, Spacing } from '../../../constants';
 
-interface PointsCardProps {
-  ecoPoints: number;
-  level: number;
-}
-
-export default function PointsCard({ ecoPoints, level }: PointsCardProps) {
+export default function PointsCard({ points }: { points: number }) {
   const { t } = useTranslation();
 
   return (
     <View style={styles.cardContainer}>
       <Text style={styles.cardLabel}>{t('reportSuccess.totalEcoPoints')}</Text>
       <View style={styles.cardScoreRow}>
-        <Text style={styles.cardScore}>{ecoPoints ?? 0}</Text>
-      </View>
-      <Text style={styles.cardLabel}>{t('reportSuccess.level')}</Text>
-      <View style={styles.cardScoreRow}>
-        <Text style={styles.cardScore}>{level ?? 0}</Text>
+        <Text style={styles.cardScore}>{points | 0}</Text>
       </View>
     </View>
   );

@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, DeviceEventEmitter, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,7 +11,7 @@ import Toast from 'react-native-toast-message';
 import type { Report } from '../../api/services/reportService';
 import { ReportsBottomSheet, SearchBar, SeverityChip } from '../../components';
 import type { MarkerPreviewSheetRef } from '../../components/map';
-import { FilterSheet, MarkerPreviewSheet, SearchOverlay } from '../../components/map';
+import { FilterSheet, SearchOverlay } from '../../components/map';
 import { BorderRadius, Colors, Fonts, FontSizes, Spacing } from '../../constants';
 import { INITIAL_REGION, SEVERITY_FILTERS, type SeverityLevel, type WasteReport } from '../../data/mockData';
 import { useReports } from '../../hooks/useReportQueries';
@@ -100,10 +99,20 @@ const CustomMarkerView = React.memo(({ severity }: { severity: SeverityLevel }) 
   const theme = MARKER_THEMES[severity];
   return (
     <View style={markerStyles.wrapper}>
+      {/* Glow */}
       <View style={[markerStyles.glow, { backgroundColor: theme.glow }]} />
+
+      {/* Circle + Icon */}
       <View style={[markerStyles.circle, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-        <Ionicons name={theme.icon as keyof typeof Ionicons.glyphMap} size={18} color="#FFFFFF" />
+        <Ionicons
+          name={theme.icon as keyof typeof Ionicons.glyphMap}
+          size={17}                    // giảm nhẹ từ 18 → 17 để an toàn hơn trên Android
+          color="#FFFFFF"
+          style={markerStyles.icon}    // đảm bảo zIndex
+        />
       </View>
+
+      {/* Pointer (đuôi marker) */}
       <View style={[markerStyles.pointer, { borderTopColor: theme.bg }]} />
     </View>
   );
@@ -114,23 +123,27 @@ CustomMarkerView.displayName = 'CustomMarkerView';
 const markerStyles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
-    width: 52,
-    height: 58,
+    justifyContent: 'center',
+    // width: 10,          // tăng nhẹ để có khoảng thở
+    // height: 10,         // tăng nhẹ để glow + pointer không bị cắt
+    backgroundColor: 'transparent',
+    overflow: 'visible', // ← FIX QUAN TRỌNG trên Android
   },
+
   glow: {
     position: 'absolute',
-    top: -2,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    top: -4,            // điều chỉnh nhẹ để glow cân đối hơn
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     opacity: 0.6,
   },
+
   circle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,          // tăng từ 40 → 42 để icon có thêm không gian
+    height: 42,
+    borderRadius: 21,
     borderWidth: 3,
-    borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -138,16 +151,22 @@ const markerStyles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
+    overflow: 'visible', // ← FIX QUAN TRỌNG trên Android
   },
+
+  icon: {
+    zIndex: 2,          // đảm bảo icon luôn ở trên cùng
+  },
+
   pointer: {
     width: 0,
     height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderTopWidth: 10,
+    borderLeftWidth: 9,
+    borderRightWidth: 9,
+    borderTopWidth: 11,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    marginTop: -2,
+    marginTop: -3,      // điều chỉnh overlap mượt hơn
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -156,7 +175,7 @@ const markerStyles = StyleSheet.create({
         shadowRadius: 3,
       },
       android: {
-        elevation: 4,
+        elevation: 5,
       },
     }),
   },
@@ -236,7 +255,12 @@ export default function MapScreen() {
   const [userLocation, setUserLocation] = React.useState<Location.LocationObject | null>(null);
 
   // ── Fetch reports from API ──
-  const { data: apiReports = [] } = useReports();
+  const { data: apiReports = [], refetch: refetchReports } = useReports();
+  useFocusEffect(
+    useCallback(() => {
+      refetchReports();
+    }, [refetchReports])
+  );
   const allReports: WasteReport[] = useMemo(() => apiReports.map(transformReportToWasteReport), [apiReports]);
 
   // Compute distance for each report
@@ -335,7 +359,7 @@ export default function MapScreen() {
         }
       } catch (error) {
         Alert.alert(t('common.error'), t('map.fetchError'));
-        console.error(error);
+        console.log(error);
       } finally {
         setLoadingRoute(false);
       }
@@ -391,8 +415,8 @@ export default function MapScreen() {
     setFilterSheetOpen(false);
     Toast.show({
       type: 'success',
-      text1: t('filter.applied', 'Filters applied'),
-      text2: `${filterMatchCount} ${t('filter.reportsFound', 'reports found')}`,
+      text1: t('filter.apply'),
+      text2: `${filterMatchCount} ${t('filter.reportsFound')}`,
     });
   }, [setFilterSheetOpen, filterMatchCount, t]);
 
@@ -404,31 +428,13 @@ export default function MapScreen() {
     setFilterSheetOpen(false);
   }, [setFilterSheetOpen]);
 
-  const handleMarkerClick = useCallback(
+  const handleViewDetails = useCallback(
     (report: WasteReport) => {
-      markerSheetRef.current?.dismiss();
       router.push(`/location/${report.id}`);
     },
     [router],
   );
 
-  const handleGetDirections = useCallback(
-    (report: WasteReport) => {
-      if (!userLocation) {
-        Alert.alert(t('map.permissionDenied'), t('map.locationDenied'));
-        return;
-      }
-      markerSheetRef.current?.dismiss();
-      calculateRoute(
-        userLocation.coords.latitude,
-        userLocation.coords.longitude,
-        report.latitude,
-        report.longitude,
-        report.title,
-      );
-    },
-    [userLocation, t, calculateRoute],
-  );
 
   const handleNavigateReport = useCallback(
     (report: WasteReport) => {
@@ -454,7 +460,6 @@ export default function MapScreen() {
     },
     [router],
   );
-
   const handleMyLocation = useCallback(async () => {
     try {
       if (userLocation && mapRef.current) {
@@ -475,8 +480,8 @@ export default function MapScreen() {
           if (mapRef.current) {
             mapRef.current.animateToRegion(
               {
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
+                latitude: location?.coords.latitude,
+                longitude: location?.coords.longitude,
                 latitudeDelta: 0.015,
                 longitudeDelta: 0.015,
               },
@@ -492,6 +497,20 @@ export default function MapScreen() {
     }
   }, [userLocation, t]);
 
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tabPress_map', () => {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: userLocation?.coords.latitude || 0,
+          longitude: userLocation?.coords.longitude || 0,
+          latitudeDelta: 0.015,
+          longitudeDelta: 0.015,
+        },
+        1000,
+      );
+    });
+    return () => sub.remove();
+  }, [userLocation]);
   // ── Render Map ──
   const renderMap = () => (
     <MapView
@@ -522,7 +541,7 @@ export default function MapScreen() {
           <Marker
             key={marker.id}
             coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
-            onPress={() => handleMarkerClick(marker)}
+            onPress={() => handleViewDetails(marker)}
             tracksViewChanges={false}
             anchor={{ x: 0.5, y: 1 }}
           >
@@ -554,7 +573,6 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
 
       {/* Map */}
       {renderMap()}

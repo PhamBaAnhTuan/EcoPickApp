@@ -3,6 +3,7 @@ import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
 import { useCommonStore } from '@/stores';
 import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -26,7 +27,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import LanguageToggle from '../../components/LanguageToggle';
 import { AuthColors, authStyles, Fonts } from '../../constants';
-import { API_BASE_URL } from '@/lib/axios';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -37,7 +37,10 @@ export default function LoginScreen() {
   // console.log('===rememberedEmail:', rememberedEmail, 'rememberedPassword:', rememberedPassword);
   const [rememberMe, setRememberMe] = useState(!!rememberedEmail);
 
+
   const signIn = useSignIn();
+  const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_BASE_URL;
+  // console.error("API Base URL in login:", API_BASE_URL);
 
   // ─── React Hook Form + Zod ────────────────────────────────
   const {
@@ -65,7 +68,7 @@ export default function LoginScreen() {
 
   // ─── Submit handler ────────────────────────────────────────
   const onSubmit = (data: LoginFormData) => {
-    console.error('calling api: ', API_BASE_URL);
+    // console.error('calling api: ', API_BASE_URL);
     signIn.mutate(
       { email: data.email.trim(), password: data.password },
       {

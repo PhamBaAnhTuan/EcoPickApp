@@ -120,13 +120,11 @@ export default function ReportSuccessScreen() {
           </View>
 
           <PointsCard
-            ecoPoints={user?.eco_points || 0}
-            level={user?.level || 0}
+            points={user?.eco_points || 0}
           />
 
           <SuccessActions
             onViewMap={handleViewOnMap}
-            onExplore={handleContinueExploring}
           />
         </View>
       </SafeAreaView>

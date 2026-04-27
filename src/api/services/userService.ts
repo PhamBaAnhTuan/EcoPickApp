@@ -69,10 +69,6 @@ export interface UpdateUserPayload {
 	phone_number?: string;
 	address?: string;
 	date_of_birth?: string;
-	/**
-	 * File object từ pickImage().file — { uri, name, type }
-	 * Hoặc string URL nếu chỉ muốn lưu URL (không upload file mới)
-	 */
 	avatar?: { uri: string; name: string; type: string } | string;
 	bio?: string;
 	eco_points?: number;

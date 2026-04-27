@@ -1,3 +1,4 @@
+import { useLayout } from '@/hooks/use-layout';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -122,6 +123,13 @@ export default function EventsScreen() {
   const user = useAuthStore((s) => s.user);
   const flatListRef = useRef<FlatList>(null);
 
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tabPress_events', () => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return () => sub.remove();
+  }, []);
+
   // ── Fetch events from API ──
   const { data: apiEvents = [], isLoading, isRefetching, refetch } = useEvents();
 
@@ -211,6 +219,7 @@ export default function EventsScreen() {
     ),
     [handleJoinEvent, handlePressCard, user?.id, t],
   );
+  const {bottomTabHeight} = useLayout();
 
   return (
     <View style={styles.container}>
@@ -261,8 +270,8 @@ export default function EventsScreen() {
           data={filteredEvents}
           renderItem={renderEvent}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+          contentContainerStyle={[styles.listContent, { paddingBottom: bottomTabHeight }]}
+          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -372,7 +381,7 @@ const styles = StyleSheet.create({
   // ─── Event List ───
   listContent: {
     paddingHorizontal: 16,
-    paddingBottom: 100,
+    // paddingBottom: 300,
   },
 
   // ─── Event Card ───

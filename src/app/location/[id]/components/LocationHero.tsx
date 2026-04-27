@@ -1,15 +1,13 @@
 
 import React from 'react';
-import { View, Image, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Image, StyleSheet, View } from 'react-native';
 import { Colors, Fonts, Spacing } from '../../../../constants';
 
 interface LocationHeroProps {
   imageUrl?: string;
-  title?: string;
 }
 
-const LocationHero = ({imageUrl, title}: LocationHeroProps) => {
+const LocationHero = ({ imageUrl }: LocationHeroProps) => {
   return (
     <View style={s.heroContainer}>
       <Image
@@ -19,10 +17,6 @@ const LocationHero = ({imageUrl, title}: LocationHeroProps) => {
         style={s.heroImage}
         resizeMode="cover"
       />
-      <View style={s.imageOverlay}>
-        <Ionicons name="location-outline" size={16} color={Colors.white} />
-        <Text style={s.imageOverlayText}>{title || 'Riverside Recreation Trail'}</Text>
-      </View>
     </View>
   );
 }

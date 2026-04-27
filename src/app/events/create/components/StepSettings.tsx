@@ -1,19 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
+import { Controller } from 'react-hook-form';
 import {
-  View,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Modal,
   TouchableWithoutFeedback,
-  KeyboardAvoidingView,
-  Platform,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Controller } from 'react-hook-form';
 
-import { Fonts, Colors } from '../../../../constants';
+import { Colors, Fonts } from '../../../../constants';
 import { DIFFICULTIES, EQUIPMENT_OPTIONS } from '../constants';
 import { FieldError } from './FieldError';
 
@@ -57,7 +57,7 @@ const ICON_CHOICES = [
   'megaphone-outline',
 ] as const;
 
-const StepSettings =({
+const StepSettings = ({
   t,
   control,
   errors,
@@ -65,7 +65,7 @@ const StepSettings =({
   setDifficulty,
   selectedEquipment,
   toggleEquipment,
-}: StepSettingsProps)=> {
+}: StepSettingsProps) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [customLabel, setCustomLabel] = useState('');
   const [customIcon, setCustomIcon] = useState('hammer-outline');
@@ -272,7 +272,7 @@ const StepSettings =({
                   onChangeText={(txt) => onChange(parseInt(txt) || 0)}
                   onBlur={onBlur}
                 />
-                <Text style={s.inputSuffix}>pts</Text>
+                <Text style={s.inputSuffix}>{t('createEvent.settings.point')}</Text>
               </View>
               {errors.ecoPointReward && (
                 <FieldError message={t(errors.ecoPointReward.message as string)} />

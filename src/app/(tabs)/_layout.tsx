@@ -12,7 +12,7 @@ import Toast from 'react-native-toast-message';
 import { useLayout } from '../../hooks/use-layout';
 
 export default function TabLayout() {
-  const { insets, bottomTabHeight, topTabHeight } = useLayout();
+  const {bottomTabHeight } = useLayout();
   const router = useRouter();
   const { t } = useTranslation();
   const [showSheet, setShowSheet] = useState(false);
@@ -139,7 +139,7 @@ export default function TabLayout() {
             ),
           }}
           listeners={{
-            tabPress: () => {
+            tabPress: (e) => {
               DeviceEventEmitter.emit('tabPress_map');
             },
           }}

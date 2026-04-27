@@ -14,27 +14,27 @@
     "scheme": "ecopick",
     "ios": {
       "supportsTablet": true,
-      "config": {
-        "googleMapsApiKey": ""
-      },
-      "bundleIdentifier": "com.luanthnh.EcoPick",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+      "splash": {
+        "image": "./src/assets/logo.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#C3D9CA"
       }
     },
     "android": {
       "package": "com.luanthnh.EcoPick",
-      "usesCleartextTraffic": true,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./src/assets/android-icon-foreground.png",
-        "backgroundImage": "./src/assets/android-icon-background.png",
-        "monochromeImage": "./src/assets/android-icon-monochrome.png"
+        "foregroundImage": "./src/assets/logo.png",
+        "backgroundColor": "#C3D9CA"
+      },
+      "splash": {
+        "image": "./src/assets/logo.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#C3D9CA"
       },
       "predictiveBackGestureEnabled": false,
       "config": {
         "googleMaps": {
-          "apiKey": ""
+          "apiKey": "AlzaSyAYyF2UqbWg1w0x3lI3SZQv30Ug1JKTqVI"
         }
       },
       "permissions": [
@@ -74,6 +74,7 @@
       "@react-native-community/datetimepicker"
     ],
     "extra": {
+      "EXPO_PUBLIC_API_BASE_URL": "https://ecopick-api.vercel.app",
       "router": {},
       "eas": {
         "projectId": "a736421d-41f1-4841-bcd1-8cb638183132"

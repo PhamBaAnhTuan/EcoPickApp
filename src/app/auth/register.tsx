@@ -49,6 +49,7 @@ export default function RegisterScreen() {
       password: '',
       confirmPassword: '',
       fullname: '',
+      role: 'user',
     },
   });
 

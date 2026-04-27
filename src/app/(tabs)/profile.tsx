@@ -1,4 +1,5 @@
 import { useUserBadges } from '@/hooks';
+import { useLayout } from '@/hooks/use-layout';
 import { useUpdateUser, useUserInfo } from '@/hooks/useUserQueries';
 import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -122,35 +123,6 @@ function ProfileSkeleton() {
   );
 }
 
-// ─── Badge Item Component ───
-function BadgeItem({ badge, onPress }: { badge: any; onPress?: () => void }) {
-  const isUnlocked = badge.is_unlocked !== false;
-  return (
-    <TouchableOpacity style={styles.badgeItem} activeOpacity={0.7} onPress={onPress}>
-      <View
-        style={[
-          styles.badgeCircle,
-          {
-            backgroundColor: isUnlocked ? 'rgba(32,105,58,0.1)' : 'rgba(148,163,184,0.1)',
-          },
-        ]}
-      >
-        {badge.icon ? (
-          <Image source={{ uri: badge.icon }} style={{ width: 28, height: 28 }} />
-        ) : (
-          <Ionicons
-            name={isUnlocked ? 'trophy' : 'lock-closed'}
-            size={24}
-            color={isUnlocked ? Colors.primary : '#94A3B8'}
-          />
-        )}
-      </View>
-      <Text style={[styles.badgeText, !isUnlocked && styles.badgeTextLocked]} numberOfLines={2}>
-        {badge.name || badge.title || 'Badge'}
-      </Text>
-    </TouchableOpacity>
-  );
-}
 
 // ─── Stat Card Component ───
 function StatCard({
@@ -208,6 +180,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const {bottomTabHeight} = useLayout();
   const updateUserMutation = useUpdateUser();
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -326,11 +299,9 @@ export default function ProfileScreen() {
   const avatarUri = pendingAvatar?.uri || user?.avatar || DEFAULT_AVATAR;
   const bannerUri = pendingBanner?.uri || DEFAULT_BANNER;
   const displayName = user?.fullname || user?.email?.split('@')[0] || 'User';
-  // const username = user?.email?.split('@')[0] || 'user';
 
   return (
     <View style={styles.safeArea}>
-      <StatusBar style="light" />
 
       {/* ─── Floating Header (appears on scroll) ─── */}
       <Animated.View
@@ -419,7 +390,21 @@ export default function ProfileScreen() {
               <Text style={styles.userName}>{displayName}</Text>
               {user?.is_verified && <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />}
             </View>
-            <Text style={styles.userHandle}>{user?.email}</Text>
+            <View style={styles.userMetaRow}>
+              <Text style={styles.userHandle}>{user?.email}</Text>
+              <View style={styles.metaItem}>
+                <Ionicons name="leaf" size={14} color={Colors.primary} />
+                <Text style={[styles.metaText, { color: Colors.primary }]}>{t('profile.level', { level: user?.level ?? 1 })}</Text>
+              </View>
+              {user?.address && (
+                <View style={styles.metaItem}>
+                  <Ionicons name="location" size={14} color={Colors.primary} />
+                  <Text style={styles.metaText} numberOfLines={1}>
+                    {user.address}
+                  </Text>
+                </View>
+              )}
+            </View>
 
             {user?.bio ? (
               <Text style={styles.userBio} numberOfLines={3}>
@@ -427,20 +412,7 @@ export default function ProfileScreen() {
               </Text>
             ) : null}
 
-            <View style={styles.userMetaRow}>
-              {user?.address ? (
-                <View style={styles.metaItem}>
-                  <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
-                  <Text style={styles.metaText} numberOfLines={1}>
-                    {user.address}
-                  </Text>
-                </View>
-              ) : null}
-              <View style={styles.metaItem}>
-                <Ionicons name="leaf-outline" size={14} color={Colors.primary} />
-                <Text style={[styles.metaText, { color: Colors.primary }]}>{t('profile.level', { level: user?.level ?? 1 })}</Text>
-              </View>
-            </View>
+
           </View>
 
           {/* ─── Social Stats Bar ─── */}
@@ -497,41 +469,6 @@ export default function ProfileScreen() {
               bgColor="rgba(234,179,8,0.1)"
             />
           </View>
-        </View>
-
-        {/* ═══════════════════════════════════════════════════ */}
-        {/* BADGES / ACHIEVEMENTS                              */}
-        {/* ═══════════════════════════════════════════════════ */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('profile.achievements')}</Text>
-            <TouchableOpacity activeOpacity={0.6} onPress={() => router.push('/(tabs)/badges')}>
-              <Text style={styles.viewAllText}>{t('profile.viewAll')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {userBadges && userBadges.length > 0 ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.badgesScrollContent}
-            >
-              {userBadges.slice(0, 8).map((badge: any, index: number) => (
-                <BadgeItem
-                  key={badge.id || index}
-                  badge={badge}
-                  onPress={() => {
-                    if (badge.id) router.push(`/badges/${badge.id}`);
-                  }}
-                />
-              ))}
-            </ScrollView>
-          ) : (
-            <View style={styles.emptyBadgesCard}>
-              <Ionicons name="trophy-outline" size={32} color="#CBD5E1" />
-              <Text style={styles.emptyBadgesText}>{t('profile.emptyBadges')}</Text>
-            </View>
-          )}
         </View>
 
         {/* ═══════════════════════════════════════════════════ */}
@@ -812,7 +749,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 16,
-    marginTop: 10,
+    // marginTop: 10,
   },
   metaItem: {
     flexDirection: 'row',

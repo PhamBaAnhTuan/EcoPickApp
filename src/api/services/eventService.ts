@@ -53,14 +53,21 @@ export interface EventParticipant {
 	status: string; // "joined"
 	joined_at: string;
 	checked_in_at: string;
-	event_id: string;
-	user_id: string;
+	event: string;
+	user: string;
+	participant: {
+		id: string;
+		fullname: string;
+		avatar: string;
+		email: string;
+	}
 }
 
 export interface JoinEventPayload {
-	event_id: string;
-	user_id: string;
+	event: string;
+	user: string;
 	checked_in_at?: string;
+	status?: string;
 }
 
 export interface TourStop {
@@ -110,8 +117,8 @@ export const eventParticipantService = {
 	/** Tham gia event – POST /api/event/event-participants/ (formdata) */
 	join: async (payload: JoinEventPayload) => {
 		const formData = new FormData();
-		formData.append("event_id", payload.event_id);
-		formData.append("user_id", payload.user_id);
+		formData.append("event", payload.event);
+		formData.append("user", payload.user);
 		if (payload.checked_in_at) formData.append("checked_in_at", payload.checked_in_at);
 		const { data } = await api.post<EventParticipant>(ENDPOINTS.EVENTS.PARTICIPANTS.LIST, formData, {
 			headers: { "Content-Type": "multipart/form-data" },
